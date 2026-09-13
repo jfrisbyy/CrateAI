@@ -10,7 +10,8 @@
     "OPEN_QUESTIONS 14 and 37) decides against on the fast and slow items by design; the set",
     "scored 0.562 exact and 1.000 octave-tolerant on 2026-09-13. The 0.80 stays for the public",
     "sets and the corrections set, where the material sets the octave.",
-    "harmonix carries the packet's numbers: it is real popular music with human beat, downbeat and segment annotations, so unlike the synthetic set its tempo octave is a fact about the record, not a convention. It has no key truth, so its key gates report n/a."
+    "harmonix carries the packet's numbers: it is real popular music with human beat, downbeat and segment annotations, so unlike the synthetic set its tempo octave is a fact about the record, not a convention. It has no key truth, so its key gates report n/a.",
+    "sample_pairs is deliberately ungated. Its metrics (flip_top1, flip_topk, flip_mrr, flip_mark, tempo_ratio, pitch_shift) have never been measured on a real pair, and a threshold invented before the first measurement would be a number with nothing behind it. Run it with --no-gate (with no gate for the dataset, a run that scores only sample_pairs reports 'no gate applied to any scored item' and fails, which is the harness working as intended). Gate it once ten or more real pairs have been scored twice with the same result: put flip_topk a couple of points under what it holds, and leave flip_top1 ungated until the ranking is worth defending. See docs/HANDOFF_sample_pairs.md."
   ],
   "synthetic": {
     "bpm_exact": 0.5,

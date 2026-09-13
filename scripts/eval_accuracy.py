@@ -5,7 +5,8 @@
     python scripts/eval_accuracy.py --dataset all --gates scripts/gates.json --workers 4
     python scripts/eval_accuracy.py --dataset giantsteps_key,ballroom --limit 50 --json out.json --markdown out.md
 
-Datasets: synthetic | giantsteps_tempo | giantsteps_key | ballroom | harmonix | corrections | all
+Datasets: synthetic | giantsteps_tempo | giantsteps_key | ballroom | harmonix |
+sample_pairs | corrections | all
 (``all`` runs whatever is present under data/ and skips the rest with a message;
 naming a dataset that is missing fails the run when gates are on).
 
@@ -15,6 +16,12 @@ relative-tolerant (exact, alternate, or relative major/minor), downbeat (median
 absolute offset modulo the bar within +-60 ms), structure boundary F-measure at
 +-1 bar where labels exist. A metric is skipped where the truth lacks the field
 and counted as a miss where the pipeline produced nothing for it.
+
+``sample_pairs`` scores a second family in its own table: pointed at an original
+record, does the loop finder surface the section a producer actually flipped
+(flip_top1, flip_topk, flip_mrr, flip_mark), and does our alignment measure the
+tempo ratio and pitch shift the producer used. It reads a hand-written manifest
+under data/sample_pairs/; --make-synthetic-pairs writes a working example of one.
 
 Results go to data/eval/<timestamp>.json and data/eval/latest.json (+ latest.md).
 Exit status 1 when any gate in scripts/gates.json is not met, unless --no-gate.
@@ -40,7 +47,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "analysis"))
 
 from lockedgroove.eval import harness as H  # noqa: E402
-from lockedgroove.eval.metrics import METRICS  # noqa: E402
+from lockedgroove.eval.metrics import ALL_METRICS  # noqa: E402
 
 DEFAULT_GATES = ROOT / "scripts" / "gates.json"
 DEFAULT_DATA_DIR = ROOT / "data"
@@ -61,7 +68,7 @@ def load_gates(path: pathlib.Path) -> dict[str, dict[str, float]]:
     for dataset, metrics in raw.items():
         if dataset.startswith("_") or not isinstance(metrics, Mapping):
             continue
-        gates[dataset] = {m: float(v) for m, v in metrics.items() if m in METRICS}
+        gates[dataset] = {m: float(v) for m, v in metrics.items() if m in ALL_METRICS}
     return gates
 
 
@@ -129,7 +136,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter,
                                  epilog=__doc__.split("\n\n", 1)[1])
     ap.add_argument("--dataset", action="append", default=None,
-                    help="synthetic|giantsteps_tempo|giantsteps_key|ballroom|harmonix|corrections|all (repeat or comma-separate)")
+                    help="synthetic|giantsteps_tempo|giantsteps_key|ballroom|harmonix|sample_pairs|"
+                         "corrections|all (repeat or comma-separate)")
     ap.add_argument("--limit", type=int, default=None, help="first N items of each dataset")
     ap.add_argument("--workers", type=int, default=max(1, min(4, os.cpu_count() or 1)),
                     help="multiprocessing workers (default: min(4, cpus))")
@@ -141,6 +149,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--genres", default=None,
                     help="harmonix only: comma-separated genres to keep, or 'hiphop' for "
                          "Hip-Hop, R&B and Funk/Disco (the subset this product is for)")
+    ap.add_argument("--make-synthetic-pairs", nargs="?", type=pathlib.Path, const=True, default=None,
+                    metavar="DIR",
+                    help="write a synthetic sample-pair set (two pairs, audio + manifest) into DIR "
+                         "(default: <data-dir>/sample_pairs) and exit; proves the path before real audio arrives")
     ap.add_argument("--no-gate", action="store_true", help="report gates but never fail on them")
     ap.add_argument("--no-save", action="store_true", help="do not write data/eval/<timestamp>.json and latest.json")
     ap.add_argument("--verbose", "-v", action="store_true", help="one line per item")
@@ -150,6 +162,17 @@ def main(argv: list[str] | None = None) -> int:
     # warnings only add noise unless asked for
     logging.basicConfig(level=logging.WARNING if args.verbose else logging.ERROR,
                         format="%(levelname)s %(name)s: %(message)s")
+    if args.make_synthetic_pairs is not None:
+        from lockedgroove.eval.pairs import write_synthetic_pair_set
+
+        out_dir = (args.data_dir / "sample_pairs" if args.make_synthetic_pairs is True
+                   else args.make_synthetic_pairs)
+        manifest = write_synthetic_pair_set(out_dir)
+        print(f"wrote {manifest} and the audio beside it\n"
+              f"run: python scripts/eval_accuracy.py --dataset sample_pairs --no-gate"
+              + ("" if args.make_synthetic_pairs is True else f" --data-dir {out_dir.parent}"))
+        return 0
+
     names, explicit = resolve_datasets(args.dataset or ["synthetic"])
     stages = [s.strip() for s in args.stages.split(",") if s.strip()] if args.stages else None
     gates = load_gates(args.gates) if args.gates and args.gates.exists() else {}

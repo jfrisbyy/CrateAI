@@ -1,7 +1,15 @@
-"""The six accuracy metrics (BUILD_PACKET section 16), as pure functions.
+"""The accuracy metrics, as pure functions.
 
-Both ``scripts/eval_accuracy.py`` and ``tests/test_eval_metrics.py`` import
-these, so there is exactly one definition of each metric:
+Both ``scripts/eval_accuracy.py`` and the eval tests import these, so there is
+exactly one definition of each metric. Two families:
+
+* :data:`METRICS` -- the six of BUILD_PACKET section 16, scored on every
+  dataset whose truth carries the field;
+* :data:`PAIR_METRICS` -- the sample-pair metrics (``sample_pairs`` only),
+  which ask whether the loop finder surfaces the section a producer actually
+  flipped. See :mod:`lockedgroove.eval.pairs` and ``docs/HANDOFF_sample_pairs.md``.
+
+The section-16 six:
 
 ===================  =====================================================================
 metric               definition
@@ -14,6 +22,26 @@ metric               definition
 ``downbeat``         median absolute offset between predicted and true downbeats, taken
                      modulo the bar length, within +-60 ms
 ``structure_f``      section-boundary F-measure at +-1 bar, where labels exist
+===================  =====================================================================
+
+The sample-pair six, scored against the section the producer used:
+
+===================  =====================================================================
+metric               definition
+===================  =====================================================================
+``flip_top1``        the finder's *top* candidate overlaps the used section,
+                     IoU >= ``FLIP_IOU_THRESHOLD``
+``flip_topk``        any of the top ``FLIP_TOP_K`` does (the rack a producer scrolls)
+``flip_mrr``         1 / rank of the first candidate that does, over the top
+                     ``FLIP_RANK_DEPTH``; 0 when none does (mean reciprocal rank)
+``flip_mark``        a top-``FLIP_TOP_K`` candidate covers the producer's timestamp,
+                     widened by the pair's tolerance: the roughest bar, and the one a
+                     pair with only "around 1:04" can still score
+``tempo_ratio``      the stretch our alignment would compute is within
+                     ``TEMPO_RATIO_TOLERANCE`` of the ratio the producer used
+``pitch_shift``      the shift our alignment would compute is within
+                     ``PITCH_TOLERANCE_ST`` of the one the producer used, modulo an
+                     octave (a key-derived shift only ever claims a pitch class)
 ===================  =====================================================================
 
 Scoring rules shared by every metric:
@@ -46,6 +74,42 @@ STRUCTURE_TOLERANCE_BARS = 1.0
 DEFAULT_BEATS_PER_BAR = 4
 
 METRICS: tuple[str, ...] = ("bpm_exact", "bpm_octave", "key_exact", "key_relative", "downbeat", "structure_f")
+
+# --- sample pairs (an original record and the song that flipped it) ---------------------------
+
+FLIP_IOU_THRESHOLD = 0.5
+"""Intersection over union at or above this means a candidate *is* the used section.
+
+Justified by the two ways a finder is right without being exact: a candidate
+that contains the whole flip but runs twice as long scores exactly 0.5, and so
+does a candidate half the length sitting inside it -- both are the right part
+of the record with an edge to drag (principle 4). A candidate the same length
+but offset by half of itself scores 0.33 and is a miss, which is the
+distinction the threshold exists to draw.
+"""
+
+FLIP_TOP_K = 10
+"""The rack a producer actually scrolls (PRODUCT_DIRECTION, surface 1)."""
+
+FLIP_RANK_DEPTH = 50
+"""How deep the ranking is scored: past this, "we did not find it" is the honest summary."""
+
+MARK_TOLERANCE_S = 1.0
+"""Default slack on a hand-written timestamp; roughly a beat and a half at 90 BPM.
+
+A pair may override it (``tolerance_s``) when the owner is less sure than that.
+"""
+
+TEMPO_RATIO_TOLERANCE = 0.02
+"""2 % -- ``BPM_TOLERANCE`` (2 BPM) expressed as a ratio at the ~95 BPM this product centres on."""
+
+PITCH_TOLERANCE_ST = 0.5
+"""Half a semitone: our alignment claims whole semitones, so this asks only that it lands on the right one."""
+
+PAIR_METRICS: tuple[str, ...] = ("flip_top1", "flip_topk", "flip_mrr", "flip_mark",
+                                 "tempo_ratio", "pitch_shift")
+ALL_METRICS: tuple[str, ...] = (*METRICS, *PAIR_METRICS)
+"""Both families. The report prints them as two tables; gates may name any of them."""
 
 PITCH_CLASSES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 _ENHARMONIC = {
@@ -314,6 +378,222 @@ def boundary_f_measure(pred_boundaries_s: Sequence[float], true_boundaries_s: Se
 
 
 # --------------------------------------------------------------------------
+# sample pairs: spans, ranking, transform
+# --------------------------------------------------------------------------
+
+PAIR_TRUTH_FIELDS: tuple[str, ...] = ("flip_span_s", "flip_mark_s", "tempo_ratio", "pitch_semitones")
+"""Any of these in an item's truth makes it a sample pair, ``kind`` or no ``kind``."""
+
+
+def is_pair_truth(truth: Mapping[str, Any]) -> bool:
+    """True when this item's truth is about a sample pair rather than an annotation."""
+    if truth.get("kind") == "sample_pair":
+        return True
+    return any(truth.get(f) is not None for f in PAIR_TRUTH_FIELDS)
+
+
+def as_span(value: Any) -> tuple[float, float] | None:
+    """``(start_s, end_s)`` from a pair/list of two finite numbers, ordered; else ``None``."""
+    if value is None:
+        return None
+    if isinstance(value, Mapping):
+        value = (value.get("start_s"), value.get("end_s"))
+    if not isinstance(value, (tuple, list)) or len(value) != 2:
+        return None
+    try:
+        a, b = float(value[0]), float(value[1])
+    except (TypeError, ValueError):
+        return None
+    if not (math.isfinite(a) and math.isfinite(b)) or b <= a:
+        return None
+    return a, b
+
+
+def as_spans(loops: Iterable[Any] | None) -> list[tuple[float, float]]:
+    """Candidate spans in rank order; accepts pairs, or objects/dicts with ``start_s``/``end_s``."""
+    out: list[tuple[float, float]] = []
+    for loop in loops or ():
+        span = as_span(loop)
+        if span is None and not isinstance(loop, (tuple, list, Mapping)):
+            span = as_span((getattr(loop, "start_s", None), getattr(loop, "end_s", None)))
+        if span is not None:
+            out.append(span)
+    return out
+
+
+def span_iou(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Intersection over union of two spans in seconds; 0.0 when they do not overlap."""
+    inter = min(a[1], b[1]) - max(a[0], b[0])
+    if inter <= 0:
+        return 0.0
+    union = (a[1] - a[0]) + (b[1] - b[0]) - inter
+    return float(inter / union) if union > 0 else 0.0
+
+
+def flip_ranks(loops: Sequence[tuple[float, float]], span: tuple[float, float],
+               threshold: float = FLIP_IOU_THRESHOLD) -> list[int]:
+    """1-based ranks of the candidates that overlap ``span`` at or above ``threshold``."""
+    return [i + 1 for i, c in enumerate(loops) if span_iou(c, span) >= threshold - 1e-9]
+
+
+def best_overlap(loops: Sequence[tuple[float, float]], span: tuple[float, float]) -> tuple[float, int | None]:
+    """The best IoU any candidate reaches, and its 1-based rank (``(0.0, None)`` with no candidates)."""
+    best, best_rank = 0.0, None
+    for i, c in enumerate(loops):
+        iou = span_iou(c, span)
+        if iou > best:
+            best, best_rank = iou, i + 1
+    return best, best_rank
+
+
+def mark_rank(loops: Sequence[tuple[float, float]], mark_s: float,
+              tolerance_s: float = MARK_TOLERANCE_S) -> int | None:
+    """1-based rank of the first candidate covering ``mark_s``, its span widened by the tolerance."""
+    for i, (start, end) in enumerate(loops):
+        if start - tolerance_s <= mark_s <= end + tolerance_s:
+            return i + 1
+    return None
+
+
+def covered_seconds(loops: Sequence[tuple[float, float]]) -> float:
+    """Seconds of the record the candidates cover between them (overlaps counted once).
+
+    ``flip_mark`` has to be read against this: a rack that covers half the
+    record covers the producer's timestamp half the time by luck.
+    """
+    total, end = 0.0, None
+    for start, stop in sorted(loops):
+        if end is None or start > end:
+            total += stop - start
+            end = stop
+        elif stop > end:
+            total += stop - end
+            end = stop
+    return float(total)
+
+
+def tempo_ratio_ok(measured: float | None, true_ratio: float | None,
+                   tol: float = TEMPO_RATIO_TOLERANCE) -> bool:
+    if not measured or not true_ratio:
+        return False
+    return abs(measured / true_ratio - 1.0) <= tol
+
+
+def semitone_error(measured: float | None, true_semitones: float | None) -> float | None:
+    """Smallest signed difference in semitones, modulo an octave, in ``[-6, 6)``.
+
+    Our alignment derives the shift from two keys, so it can only ever claim a
+    pitch class: scoring modulo 12 measures what we assert rather than
+    punishing us for an octave we never claimed.
+    """
+    if measured is None or true_semitones is None:
+        return None
+    return float(((float(measured) - float(true_semitones) + 6.0) % 12.0) - 6.0)
+
+
+def score_pair(pred: "Prediction", truth: Mapping[str, Any]) -> dict[str, MetricResult]:
+    """The six sample-pair metrics for one pair. Missing truth skips; missing prediction misses."""
+    out: dict[str, MetricResult] = {}
+    loops = as_spans(pred.loops)
+    span = as_span(truth.get("flip_span_s"))
+    mark = truth.get("flip_mark_s")
+    if mark is None and span is not None:
+        mark = span[0]
+    tolerance = float(truth.get("mark_tolerance_s") or MARK_TOLERANCE_S)
+
+    # --- did we find the flip: strict, lenient, and how well ranked
+    rank_metrics = ("flip_top1", "flip_topk", "flip_mrr")
+    if span is None:
+        for m in rank_metrics:
+            out[m] = _skip(m, "truth has no flip span" if mark is None else
+                              "truth has a timestamp but no span")
+    elif not loops:
+        reason = _stage_reason(pred, "loops", "no loop candidates")
+        for m in rank_metrics:
+            out[m] = _miss(m, reason)
+    else:
+        ranks = flip_ranks(loops, span)
+        first = ranks[0] if ranks else None
+        best_iou, best_rank = best_overlap(loops, span)
+        top1_iou = span_iou(loops[0], span)
+        detail = {
+            "span_s": [round(span[0], 3), round(span[1], 3)],
+            "iou_threshold": FLIP_IOU_THRESHOLD,
+            "top_k": FLIP_TOP_K,
+            "n_candidates": len(loops),
+            "first_match_rank": first,
+            "top1_span_s": [round(loops[0][0], 3), round(loops[0][1], 3)],
+            "top1_iou": round(top1_iou, 3),
+            "best_iou": round(best_iou, 3),
+            "best_iou_rank": best_rank,
+        }
+        deep = f"not in the top {len(loops)}"
+        out["flip_top1"] = MetricResult(
+            "flip_top1", True, 1.0 if first == 1 else 0.0,
+            None if first == 1 else (f"the flip is rank {first}" if first else deep), dict(detail))
+        in_k = first is not None and first <= FLIP_TOP_K
+        out["flip_topk"] = MetricResult(
+            "flip_topk", True, 1.0 if in_k else 0.0,
+            None if in_k else (f"the flip is rank {first}" if first else deep), dict(detail))
+        rr = 1.0 / first if first else 0.0
+        out["flip_mrr"] = MetricResult(
+            "flip_mrr", True, rr, None if first == 1 else (f"rank {first}" if first else deep), dict(detail))
+
+    # --- the roughest bar: did the rack include the moment they used
+    if mark is None:
+        out["flip_mark"] = _skip("flip_mark", "truth has no timestamp")
+    elif not loops:
+        out["flip_mark"] = _miss("flip_mark", _stage_reason(pred, "loops", "no loop candidates"))
+    else:
+        rank = mark_rank(loops[:FLIP_TOP_K], float(mark), tolerance)
+        deep_rank = mark_rank(loops, float(mark), tolerance)
+        ok = rank is not None
+        out["flip_mark"] = MetricResult(
+            "flip_mark", True, 1.0 if ok else 0.0,
+            None if ok else (f"covered only at rank {deep_rank}" if deep_rank else
+                             "no candidate covers the timestamp"),
+            {"mark_s": round(float(mark), 3), "tolerance_s": tolerance, "rank": rank,
+             "rank_any_depth": deep_rank, "top_k": FLIP_TOP_K,
+             "covered_s": round(covered_seconds(loops[:FLIP_TOP_K]), 3)})
+
+    # --- did we measure the transform right
+    true_ratio = truth.get("tempo_ratio")
+    if true_ratio is None:
+        out["tempo_ratio"] = _skip("tempo_ratio", "truth has no tempo ratio")
+    elif not pred.tempo_ratio:
+        out["tempo_ratio"] = _miss("tempo_ratio", _stage_reason(pred, "transform", "no tempo ratio measured"))
+    else:
+        ok = tempo_ratio_ok(pred.tempo_ratio, float(true_ratio))
+        rel = pred.tempo_ratio / float(true_ratio)
+        if ok:
+            reason = None
+        elif abs(rel - 2.0) <= 4 * TEMPO_RATIO_TOLERANCE or abs(rel - 0.5) <= TEMPO_RATIO_TOLERANCE:
+            reason = "tempo octave"
+        else:
+            reason = f"off by {(rel - 1.0) * 100:+.0f} %"
+        out["tempo_ratio"] = MetricResult(
+            "tempo_ratio", True, 1.0 if ok else 0.0, reason,
+            {"measured": round(float(pred.tempo_ratio), 4), "true": round(float(true_ratio), 4),
+             "tolerance": TEMPO_RATIO_TOLERANCE, **dict(pred.transform)})
+
+    true_pitch = truth.get("pitch_semitones")
+    if true_pitch is None:
+        out["pitch_shift"] = _skip("pitch_shift", "truth has no pitch shift")
+    elif pred.pitch_semitones is None:
+        out["pitch_shift"] = _miss("pitch_shift", _stage_reason(pred, "transform", "no pitch shift measured"))
+    else:
+        err = semitone_error(pred.pitch_semitones, float(true_pitch))
+        ok = err is not None and abs(err) <= PITCH_TOLERANCE_ST
+        out["pitch_shift"] = MetricResult(
+            "pitch_shift", True, 1.0 if ok else 0.0,
+            None if ok else f"{pred.pitch_semitones:+.0f} st, not {float(true_pitch):+.0f} st",
+            {"measured": float(pred.pitch_semitones), "true": float(true_pitch),
+             "error_st": None if err is None else round(err, 3),
+             "tolerance_st": PITCH_TOLERANCE_ST, **dict(pred.transform)})
+    return out
+
+
+# --------------------------------------------------------------------------
 # report -> prediction, and per-item scoring
 # --------------------------------------------------------------------------
 
@@ -331,6 +611,16 @@ class Prediction:
     has_structure: bool = False
     errors: dict[str, str] = field(default_factory=dict)
     """stage -> failure reason, from ``Context.errors`` or an analysis-level error."""
+
+    # sample pairs only (empty everywhere else)
+    loops: list[tuple[float, float]] = field(default_factory=list)
+    """ranked loop-candidate spans from ``find_loops`` on the original record."""
+    tempo_ratio: float | None = None
+    """what our alignment would stretch the original by to sit in the song."""
+    pitch_semitones: float | None = None
+    """what our alignment would pitch the original by, in semitones."""
+    transform: dict[str, Any] = field(default_factory=dict)
+    """the measurements the two above came from (both BPMs, both keys), for the report."""
 
 
 def _as_dict(report: Any) -> Mapping[str, Any]:
@@ -494,6 +784,10 @@ def score_item(pred: Prediction, truth: Mapping[str, Any]) -> dict[str, MetricRe
             {"precision": bs.precision, "recall": bs.recall, "matched": bs.matched,
              "n_pred": bs.n_pred, "n_true": bs.n_true, "tol_s": STRUCTURE_TOLERANCE_BARS * bar_s},
         )
+
+    # sample pairs score six more; every other dataset never sees them
+    if is_pair_truth(truth):
+        out.update(score_pair(pred, truth))
     return out
 
 
@@ -587,11 +881,15 @@ def check_gates(summaries: Mapping[str, Mapping[str, MetricSummary]],
 
 
 __all__ = [
-    "BPM_TOLERANCE", "DEFAULT_BEATS_PER_BAR", "DOWNBEAT_TOLERANCE_S", "METRICS", "PITCH_CLASSES",
-    "STRUCTURE_TOLERANCE_BARS", "BoundaryScore", "GateResult", "MetricResult", "MetricSummary",
-    "Prediction", "bar_length_s", "boundary_f_measure", "bpm_exact", "bpm_octave", "check_gates",
-    "downbeat_median_offset_s", "downbeat_offsets_s", "downbeat_ok", "key_exact", "key_relative",
-    "key_tuple", "merge_summaries", "normalize_mode", "normalize_tonic", "parse_key",
-    "prediction_from_report", "relative_key", "score_item", "section_boundaries_s", "summarize",
-    "truth_bar_length_s",
+    "ALL_METRICS", "BPM_TOLERANCE", "DEFAULT_BEATS_PER_BAR", "DOWNBEAT_TOLERANCE_S",
+    "FLIP_IOU_THRESHOLD", "FLIP_RANK_DEPTH", "FLIP_TOP_K", "MARK_TOLERANCE_S", "METRICS",
+    "PAIR_METRICS", "PAIR_TRUTH_FIELDS", "PITCH_CLASSES", "PITCH_TOLERANCE_ST",
+    "STRUCTURE_TOLERANCE_BARS", "TEMPO_RATIO_TOLERANCE", "BoundaryScore", "GateResult",
+    "MetricResult", "MetricSummary", "Prediction", "as_span", "as_spans", "bar_length_s",
+    "best_overlap", "boundary_f_measure", "bpm_exact", "bpm_octave", "check_gates", "covered_seconds",
+    "downbeat_median_offset_s", "downbeat_offsets_s", "downbeat_ok", "flip_ranks", "is_pair_truth",
+    "key_exact", "key_relative", "key_tuple", "mark_rank", "merge_summaries", "normalize_mode",
+    "normalize_tonic", "parse_key", "prediction_from_report", "relative_key", "score_item",
+    "score_pair", "section_boundaries_s", "semitone_error", "span_iou", "summarize",
+    "tempo_ratio_ok", "truth_bar_length_s",
 ]

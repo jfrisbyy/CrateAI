@@ -18,6 +18,7 @@ Dataset layouts under ``data/`` (all produced by ``scripts/``):
                    annotations/key/<name>.key
     ballroom/annotations/<name>.beats
              BallroomData/<Genre>/<name>.wav
+    sample_pairs/pairs.json + audio/<name>.<ext>      hand-written by the owner
     corrections/<file_id>.<ext>                       pulled from Supabase at run time
 """
 
@@ -35,19 +36,24 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
 
 from .metrics import (
+    ALL_METRICS,
+    FLIP_IOU_THRESHOLD,
+    FLIP_TOP_K,
     METRICS,
+    PAIR_METRICS,
     GateResult,
     MetricResult,
     MetricSummary,
     Prediction,
     check_gates,
+    is_pair_truth,
     merge_summaries,
     parse_key,
     prediction_from_report,
@@ -56,7 +62,7 @@ from .metrics import (
 )
 
 PUBLIC_DATASETS: tuple[str, ...] = ("giantsteps_tempo", "giantsteps_key", "ballroom", "harmonix")
-DATASETS: tuple[str, ...] = ("synthetic", *PUBLIC_DATASETS, "corrections")
+DATASETS: tuple[str, ...] = ("synthetic", *PUBLIC_DATASETS, "sample_pairs", "corrections")
 RESULTS_SCHEMA = 1
 CORRECTION_FIELDS = ("tempo_bpm", "downbeat_phase", "first_downbeat_s", "key", "meter", "section_labels")
 CORRECTIONS_ENV = ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "EVAL_CORRECTIONS_USER_ID")
@@ -118,6 +124,11 @@ class ItemResult:
                 "n_beats": len(p.beats_s), "n_downbeats": len(p.downbeats_s),
                 "first_downbeat_s": p.downbeats_s[0] if p.downbeats_s else None,
                 "n_sections": len(p.sections) if p.has_structure else None,
+                **({"n_loops": len(p.loops),
+                    "loops_s": [[round(a, 3), round(b, 3)] for a, b in p.loops[:20]]} if p.loops else {}),
+                **({"tempo_ratio": p.tempo_ratio} if p.tempo_ratio is not None else {}),
+                **({"pitch_semitones": p.pitch_semitones} if p.pitch_semitones is not None else {}),
+                **({"transform": p.transform} if p.transform else {}),
             },
             "errors": p.errors,
             "elapsed_s": round(self.elapsed_s, 3),
@@ -462,6 +473,90 @@ def load_harmonix(data_dir: pathlib.Path, limit: int | None = None,
 
 
 # --------------------------------------------------------------------------
+# sample pairs (an original record and the song that flipped it)
+# --------------------------------------------------------------------------
+
+def sample_pairs_example_path() -> pathlib.Path:
+    """The template that ships with the repo, for the "no manifest yet" message."""
+    return pathlib.Path(__file__).resolve().parents[3] / "scripts" / "datasets" / "sample_pairs.example.json"
+
+
+def load_sample_pairs(data_dir: pathlib.Path, limit: int | None = None,
+                      manifest_path: pathlib.Path | None = None) -> Dataset:
+    """The owner's sample-to-song pairs (OPEN_QUESTIONS 42). Audio and manifest stay local.
+
+    Reads ``data/sample_pairs/pairs.json`` (or ``scripts/datasets/sample_pairs.json``
+    if the manifest is kept in the repo instead, which only makes sense when the
+    ids are codenames). Every field of a pair is optional except the original
+    and one timestamp: a pair that carries less scores fewer metrics, never an
+    error. The item's audio is the **original record** -- that is what the loop
+    finder is pointed at; the finished song is analysed separately, by
+    ``pairs.measure_pair``, only when the pair claims a tempo or pitch change.
+    """
+    from . import pairs as P
+
+    d = data_dir / "sample_pairs"
+    ds = Dataset("sample_pairs")
+    repo_scripts = pathlib.Path(__file__).resolve().parents[3] / "scripts"
+    manifest = pathlib.Path(manifest_path) if manifest_path else P.find_manifest(d, repo_scripts)
+    if manifest is None or not manifest.is_file():
+        ds.note = (f"not found: {d / 'pairs.json'}. Put an original record and the song that "
+                   f"sampled it in {d / 'audio'} and list the pair in {d / 'pairs.json'}; "
+                   f"copy {sample_pairs_example_path()} to start. See scripts/README.md.")
+        return ds
+    try:
+        doc = json.loads(manifest.read_text())
+    except ValueError as exc:
+        ds.note = f"{manifest} is not valid JSON: {exc}"
+        return ds
+    entries = doc.get("items") if isinstance(doc, Mapping) else doc
+    if not isinstance(entries, list):
+        ds.note = f"{manifest} has no 'items' list"
+        return ds
+    audio_dir = str(doc.get("audio_dir") or "audio") if isinstance(doc, Mapping) else "audio"
+    audio_dirs = [d / audio_dir, d, manifest.parent]
+    for i, entry in enumerate(entries):
+        if not isinstance(entry, Mapping):
+            ds.skipped.append({"id": f"item{i + 1}", "reason": "entry is not an object"})
+            continue
+        name = entry.get("original") or entry.get("record") or entry.get("source")
+        item_id = str(entry.get("id") or (pathlib.PurePath(str(name)).stem if name else f"item{i + 1}"))
+        if not name:
+            ds.skipped.append({"id": item_id, "reason": "no 'original' file named"})
+            continue
+        original = P.resolve_audio(name, *audio_dirs)
+        if original is None:
+            ds.skipped.append({"id": item_id, "reason": "the original is not in the audio folder"})
+            continue
+        truth, notes = P.pair_truth(entry)
+        if not P.scorable(truth):
+            ds.skipped.append({"id": item_id, "reason": "; ".join(notes) or
+                               "nothing to score: no timestamp, tempo ratio or pitch shift"})
+            continue
+        song = P.resolve_audio(entry.get("song") or entry.get("flip_file") or entry.get("track"), *audio_dirs)
+        if song is not None:
+            truth["song_path"] = str(song)
+        elif entry.get("song"):
+            notes.append("the song is not in the audio folder")
+        # meta reaches the shared results document: numbers, the owner's id, and notes
+        # that name a field without quoting it (scripts/README.md section 6)
+        meta: dict[str, Any] = {
+            "flip_span_s": truth.get("flip_span_s"),
+            "flip_mark_s": truth.get("flip_mark_s"),
+            "tempo_ratio_truth": truth.get("tempo_ratio"),
+            "pitch_semitones_truth": truth.get("pitch_semitones"),
+            "has_song": song is not None,
+            "notes": notes,
+        }
+        ds.items.append(Item(id=item_id, truth=truth, path=str(original), meta=meta))
+    ds.items = _limit(ds.items, limit)
+    if not ds.items and not ds.note:
+        ds.note = (f"{manifest} lists {len(entries)} pair(s) but none could be scored "
+                   f"({len(ds.skipped)} skipped)")
+    return ds
+
+
+# --------------------------------------------------------------------------
 # corrections (Supabase, service role, one account only)
 # --------------------------------------------------------------------------
 
@@ -627,6 +722,7 @@ LOADERS: dict[str, Callable[..., Dataset]] = {
     "giantsteps_key": load_giantsteps_key,
     "ballroom": load_ballroom,
     "harmonix": load_harmonix,
+    "sample_pairs": load_sample_pairs,
     "corrections": load_corrections,
 }
 
@@ -650,9 +746,15 @@ def _worker_init(log_level: int | None = None) -> None:
 
 
 def analyze_item(item: Item, stages: list[str] | None = None) -> ItemRun:
-    """Load, analyze, resolve user edits, and read the prediction. Never raises."""
+    """Load, analyze, resolve user edits, and read the prediction. Never raises.
+
+    A sample-pair item is analysed the same way and then measured further: the
+    loop finder runs on the record, and the finished song is read for the
+    transform (see :func:`lockedgroove.eval.pairs.measure_pair`).
+    """
     t0 = time.perf_counter()
     duration_s: float | None = None
+    pair = is_pair_truth(item.truth)
     try:
         from lockedgroove.pipeline import analyze_array
         from lockedgroove.report import effective
@@ -664,9 +766,17 @@ def analyze_item(item: Item, stages: list[str] | None = None) -> ItemRun:
 
             y, sr = load_audio(item.path, mono=False)
         duration_s = float(np.asarray(y).shape[-1] / sr) if sr else None
+        if pair and stages is None:
+            from .pairs import PAIR_STAGES
+
+            stages = list(PAIR_STAGES)
         report, ctx = analyze_array(y, sr, stages=stages, return_context=True)
         pred = prediction_from_report(effective(report), ctx.errors)
         timings = dict(ctx.timings_s)
+        if pair:
+            from .pairs import measure_pair
+
+            timings.update(measure_pair(pred, item.truth, y, sr, report))
     except Exception as exc:
         pred = Prediction(errors={"analysis": f"{type(exc).__name__}: {exc}"})
         timings = {}
@@ -865,6 +975,25 @@ def _fmt_metric(m: Mapping[str, Any]) -> str:
     return f"{m['score']:.3f} ({m['n']})"
 
 
+def _scored(dataset_doc: Mapping[str, Any], metrics: Iterable[str]) -> bool:
+    """True when at least one of ``metrics`` applied to an item of this dataset."""
+    return any((dataset_doc.get("metrics", {}).get(m) or {}).get("n") for m in metrics)
+
+
+def _text_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
+    widths = [max(len(h), *(len(r[i]) for r in rows)) if rows else len(h) for i, h in enumerate(headers)]
+    out = ["  ".join(h.ljust(widths[i]) for i, h in enumerate(headers)),
+           "  ".join("-" * w for w in widths)]
+    out += ["  ".join(str(c).ljust(widths[i]) for i, c in enumerate(r)) for r in rows]
+    return out
+
+
+PAIR_LEGEND = ("flip_top1 / flip_topk = the used section is the top candidate / in the top "
+               f"{FLIP_TOP_K}, at IoU >= {FLIP_IOU_THRESHOLD:g}; flip_mrr = mean 1/rank of the first "
+               "candidate that is; flip_mark = a top candidate covers the producer's timestamp; "
+               "tempo_ratio / pitch_shift = the transform our alignment would compute")
+
+
 def render_table(doc: Mapping[str, Any]) -> str:
     """Plain-text table plus gate lines and the top miss reasons."""
     headers = ["dataset", "items", *METRICS]
@@ -877,11 +1006,17 @@ def render_table(doc: Mapping[str, Any]) -> str:
     if sum(1 for d in doc["datasets"].values() if d["n_items"]) > 1:
         rows.append(["overall", str(sum(d["n_items"] for d in doc["datasets"].values())),
                      *[_fmt_metric(doc["overall"].get(m, {})) for m in METRICS]])
-    widths = [max(len(h), *(len(r[i]) for r in rows)) if rows else len(h) for i, h in enumerate(headers)]
-    lines = ["  ".join(h.ljust(widths[i]) for i, h in enumerate(headers)),
-             "  ".join("-" * w for w in widths)]
-    lines += ["  ".join(c.ljust(widths[i]) for i, c in enumerate(r)) for r in rows]
+    lines = _text_table(headers, rows)
     lines.append("score = hits/n for the boolean metrics, mean F for structure_f; (n) = items the metric applied to")
+    pair_names = [n for n, d in doc["datasets"].items() if _scored(d, PAIR_METRICS)]
+    if pair_names:
+        lines.append("")
+        lines.append("sample pairs: did the finder surface the section the producer used?")
+        lines += _text_table(["dataset", "items", *PAIR_METRICS],
+                             [[n, str(doc["datasets"][n]["n_items"]),
+                               *[_fmt_metric(doc["datasets"][n]["metrics"].get(m, {})) for m in PAIR_METRICS]]
+                              for n in pair_names])
+        lines.append(PAIR_LEGEND)
     for name, d in doc["datasets"].items():
         if not d["n_items"]:
             lines.append(f"{name}: {d.get('note') or 'no items'}")
@@ -893,7 +1028,7 @@ def render_table(doc: Mapping[str, Any]) -> str:
             lines.append(f"{name}: {d['n_skipped']} item(s) not evaluated ({top})")
     reason_lines = []
     for name, d in doc["datasets"].items():
-        for m in METRICS:
+        for m in ALL_METRICS:
             ms = d["metrics"].get(m) or {}
             if ms.get("n") and ms.get("reasons"):
                 top = list(ms["reasons"].items())[:3]
@@ -902,7 +1037,9 @@ def render_table(doc: Mapping[str, Any]) -> str:
         lines.append("misses by reason:")
         lines.extend(reason_lines)
     g = doc["gates"]
-    if g["results"]:
+    # with gates enforced, a verdict is always printed: a run can fail because no gate
+    # applied at all (an ungated dataset on its own), and that must not be silent
+    if g["results"] or (g["enforced"] and g["passed"] is not None):
         lines.append("gates" + ("" if g["enforced"] else " (not enforced)") + ":")
         for r in g["results"]:
             if r["passed"] is None:
@@ -934,6 +1071,17 @@ def render_markdown(doc: Mapping[str, Any]) -> str:
     out.append("")
     out.append("Score = hits/n for the boolean metrics, mean F for `structure_f`; (n) = items the metric applied to.")
     out.append("")
+    pair_names = [n for n, d in doc["datasets"].items() if _scored(d, PAIR_METRICS)]
+    if pair_names:
+        out += ["## Sample pairs", "",
+                "Did the finder surface the section the producer used?", "",
+                "| dataset | items | " + " | ".join(PAIR_METRICS) + " |",
+                "|---|---:|" + "|".join(["---:"] * len(PAIR_METRICS)) + "|"]
+        for name in pair_names:
+            d = doc["datasets"][name]
+            out.append(f"| {name} | {d['n_items']} | "
+                       + " | ".join(_fmt_metric(d["metrics"].get(m, {})) for m in PAIR_METRICS) + " |")
+        out += ["", PAIR_LEGEND + ".", ""]
     for name, d in doc["datasets"].items():
         if not d["n_items"]:
             out.append(f"- **{name}**: {d.get('note') or 'no items'}")
@@ -941,7 +1089,7 @@ def render_markdown(doc: Mapping[str, Any]) -> str:
             out.append(f"- **{name}**: {d['n_skipped']} item(s) not evaluated (no audio or bad annotation)")
     reason_lines = []
     for name, d in doc["datasets"].items():
-        for m in METRICS:
+        for m in ALL_METRICS:
             ms = d["metrics"].get(m) or {}
             if ms.get("n") and ms.get("reasons"):
                 top = list(ms["reasons"].items())[:3]
@@ -949,9 +1097,10 @@ def render_markdown(doc: Mapping[str, Any]) -> str:
     if reason_lines:
         out += ["", "## Misses by reason", "", *reason_lines]
     g = doc["gates"]
-    if g["results"]:
-        out += ["", "## Gates" + ("" if g["enforced"] else " (not enforced)"), "",
-                "| gate | score | threshold | n | result |", "|---|---:|---:|---:|---|"]
+    if g["results"] or (g["enforced"] and g["passed"] is not None):
+        out += ["", "## Gates" + ("" if g["enforced"] else " (not enforced)"), ""]
+        if g["results"]:
+            out += ["| gate | score | threshold | n | result |", "|---|---:|---:|---:|---|"]
         for r in g["results"]:
             status = "n/a" if r["passed"] is None else ("PASS" if r["passed"] else "FAIL")
             score = f"{r['score']:.3f}" if r["score"] is not None else "-"
@@ -977,9 +1126,10 @@ def save_results(doc: Mapping[str, Any], eval_dir: pathlib.Path) -> tuple[pathli
 
 
 __all__ = [
-    "CORRECTIONS_ENV", "DATASETS", "HARMONIX_GENRES_HIPHOP", "PUBLIC_DATASETS",
+    "CORRECTIONS_ENV", "DATASETS", "HARMONIX_GENRES_HIPHOP", "PAIR_LEGEND", "PUBLIC_DATASETS",
     "Dataset", "DatasetOutcome", "Item", "ItemResult", "ItemRun",
     "analyze_item", "evaluate", "load_ballroom", "load_corrections", "load_dataset", "load_giantsteps_key",
-    "load_giantsteps_tempo", "load_synthetic", "parse_beats_file", "render_markdown", "render_table",
-    "run_dataset", "save_results", "truth_from_corrections",
+    "load_giantsteps_tempo", "load_harmonix", "load_sample_pairs", "load_synthetic", "parse_beats_file",
+    "render_markdown", "render_table", "run_dataset", "sample_pairs_example_path", "save_results",
+    "truth_from_corrections",
 ]

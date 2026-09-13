@@ -1,0 +1,58 @@
+{
+  "dataset": "sample_pairs",
+  "_what_this_is": [
+    "A template. Copy it to data/sample_pairs/pairs.json, put your audio in",
+    "data/sample_pairs/audio/, and fill in one entry per pair: an original record, the",
+    "song that sampled it, and what you know about the flip. Everything under data/ is",
+    "gitignored, so neither the audio nor this file leaves your machine.",
+    "Run it with: python scripts/eval_accuracy.py --dataset sample_pairs --no-gate"
+  ],
+  "_fields": {
+    "id": "your name for the pair. It DOES appear in the shared scores file, so use a codename if the title should stay private.",
+    "original": "required. The record that was sampled, as a filename in audio_dir (the suffix is optional).",
+    "song": "optional. The finished song that used it. Needed only for tempo_ratio and pitch_shift.",
+    "flip": "where in the ORIGINAL the loop came from. '1:04' | '1:04-1:12' | [64, 72] | {from, to} | {at, length_s} | {at, bars, source_bpm}. A bare timestamp is enough.",
+    "tolerance_s": "optional. How far off your timestamp might be (default 1 s). Widen it when you are guessing.",
+    "tempo_ratio": "optional. Song tempo / record tempo: 1.08 means sped up 8 %. Or give original_bpm and song_bpm and it is worked out.",
+    "pitch_semitones": "optional. How far the sample was pitched, in semitones: '+2', -5. pitch_cents works too.",
+    "original_bpm": "optional. The record's own BPM, as you know it. Also scores the ordinary tempo metrics.",
+    "original_key": "optional. The record's key ('Bbm', 'F minor'). Also scores the ordinary key metrics.",
+    "filtered": "optional, free text. What was removed or filtered: 'low-passed, drums gone'. Recorded, not scored (yet).",
+    "notes": "optional, free text. Stays on your machine; never written to the results file."
+  },
+  "_the_least_you_can_get_away_with": {
+    "id": "pair09",
+    "original": "some_record.wav",
+    "flip": "1:04"
+  },
+  "audio_dir": "audio",
+  "items": [
+    {
+      "id": "pair01",
+      "original": "original_01.wav",
+      "song": "song_01.wav",
+      "flip": {"from": "1:04", "to": "1:12"},
+      "tempo_ratio": 1.08,
+      "pitch_semitones": "+2",
+      "original_bpm": 86,
+      "original_key": "Bbm",
+      "filtered": "low-passed at 8 k, the drums on the record are gone",
+      "notes": "four bars of the horn line; he chops it on the 2"
+    },
+    {
+      "id": "pair02",
+      "original": "original_02.wav",
+      "song": "song_02.wav",
+      "flip": {"at": "0:47", "bars": 2, "source_bpm": 93},
+      "original_bpm": 93,
+      "notes": "two bars only; no idea what the pitch is"
+    },
+    {
+      "id": "pair03",
+      "original": "original_03.wav",
+      "flip": "2:31",
+      "tolerance_s": 5,
+      "notes": "somewhere around here, and I do not have the finished song as a file"
+    }
+  ]
+}
