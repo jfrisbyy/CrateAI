@@ -4,11 +4,14 @@
 // with their offsets, and Save as MIDI. The step view is one row per pad
 // that was hit, sixteen columns per bar; each hit shows its offset in ms,
 // positive when late.
+//
+// The length, the click and the save are controlled from the panel above
+// (KeyboardPanel), not held here, because a sentence has to move the same
+// control the mouse moves: "record four bars" and the 4 button are one thing.
 
 import { useEffect, useMemo, useState } from "react";
 import { btn, btnPrimary, btnQuiet, cx, label, segment, segmentItem } from "@/components/ui";
-import { errorMessage } from "@/lib/api/client";
-import { midiApi, type MidiWithUrl, type PadHitInput } from "@/lib/api/midi";
+import type { MidiWithUrl } from "@/lib/api/midi";
 import { fmtBpm } from "@/lib/format";
 import type { PadBindings } from "@/lib/pads/bindings";
 import { stepsPerBar } from "@/lib/pads/grid";
@@ -25,7 +28,6 @@ const LENGTHS: ReadonlyArray<{ bars: number | null; label: string }> = [
 ];
 
 export function RecordPanel({
-  fileId,
   bpm,
   bpmMeasured,
   beatsPerBar,
@@ -33,9 +35,16 @@ export function RecordPanel({
   recording,
   bindings,
   hasPads,
-  onSaved,
+  bars,
+  onBars,
+  click,
+  onClick,
+  onArm,
+  onSave,
+  saving,
+  saved,
+  error,
 }: {
-  fileId: string;
   bpm: number;
   /** false when the file has no tempo yet and the default is in use */
   bpmMeasured: boolean;
@@ -44,13 +53,17 @@ export function RecordPanel({
   recording: RecorderSnapshot;
   bindings: PadBindings;
   hasPads: boolean;
-  onSaved: (row: MidiWithUrl) => void;
+  /** null records until stop */
+  bars: number | null;
+  onBars: (bars: number | null) => void;
+  click: boolean;
+  onClick: (on: boolean) => void;
+  onArm: () => void;
+  onSave: () => void;
+  saving: boolean;
+  saved: MidiWithUrl | null;
+  error: string | null;
 }) {
-  const [bars, setBars] = useState<number | null>(2);
-  const [click, setClick] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState<MidiWithUrl | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const armed = recording.state === "count-in" || recording.state === "recording";
 
   // A moving readout while armed.
@@ -77,42 +90,19 @@ export function RecordPanel({
     return { bars: barsNow, hits: placeTake(recording.hits, recording.settings, barsNow) };
   }, [recording, position?.bar]);
 
-  const arm = () => {
-    setSaved(null);
-    setError(null);
-    recorder.arm({ bpm, beatsPerBar, bars, clickWhileRecording: click });
-  };
-
-  const save = async () => {
-    const take = recording.take;
-    if (!take || take.hits.length === 0) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const hits: PadHitInput[] = take.hits.map((h) => ({ time_s: h.time_s, pad: h.pad, chop_file_id: h.chop_file_id, velocity: h.velocity }));
-      const res = await midiApi.savePads({ file_id: fileId, bpm, bars: take.bars, beats_per_bar: beatsPerBar, hits });
-      setSaved(res.midi);
-      onSaved(res.midi);
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <section aria-label="Record" className="mt-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className={label}>Record</span>
         <div className={segment} role="group" aria-label="Length in bars">
           {LENGTHS.map((l) => (
-            <button key={l.label} type="button" data-active={bars === l.bars} disabled={armed} onClick={() => setBars(l.bars)} className={cx(segmentItem, l.bars !== null && "font-mono")}>
+            <button key={l.label} type="button" data-active={bars === l.bars} disabled={armed} onClick={() => onBars(l.bars)} className={cx(segmentItem, l.bars !== null && "font-mono")}>
               {l.label}
             </button>
           ))}
         </div>
         <label className="flex items-center gap-1.5 text-xs text-chalk-dim">
-          <input type="checkbox" checked={click} disabled={armed} onChange={(e) => setClick(e.target.checked)} className="accent-[#f0a63a]" />
+          <input type="checkbox" checked={click} disabled={armed} onChange={(e) => onClick(e.target.checked)} className="accent-[#f0a63a]" />
           click while recording
         </label>
         {armed ? (
@@ -120,13 +110,13 @@ export function RecordPanel({
             Stop
           </button>
         ) : (
-          <button type="button" className={btnPrimary} disabled={!hasPads} onClick={arm} title={hasPads ? "One bar of count-in, then tap the pads" : "Bind some chops or stems to the pads first"}>
+          <button type="button" className={btnPrimary} disabled={!hasPads} onClick={onArm} title={hasPads ? "One bar of count-in, then tap the pads" : "Bind some chops or stems to the pads first"}>
             Record
           </button>
         )}
         {recording.state === "done" && (
           <>
-            <button type="button" className={btn} disabled={saving || recording.hits.length === 0} onClick={() => void save()} title="One note per hit at its measured time, pitch 36 + pad">
+            <button type="button" className={btn} disabled={saving || recording.hits.length === 0} onClick={onSave} title="One note per hit at its measured time, pitch 36 + pad">
               {saving ? "Saving" : "Save as MIDI"}
             </button>
             <button type="button" className={btnQuiet} onClick={() => recorder.clear()}>

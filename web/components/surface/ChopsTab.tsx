@@ -1,23 +1,24 @@
 "use client";
 
-// The Chops tab: chop three ways, audition on sixteen pads (1–8, Q–I), tap a
-// pattern against a count-in and keep the feel as MIDI, extract MIDI from
-// the audio, and download the kit.
+// The Chops tab: chop three ways, play the file on the keyboard as an
+// instrument (components/keyboard), tap a pattern against a count-in and keep
+// the feel as MIDI, extract MIDI from the audio, and download the kit.
 
 import { useMemo } from "react";
 import { ChopControls } from "@/components/chops/ChopControls";
 import { ChopList } from "@/components/chops/ChopList";
 import { MidiPanel } from "@/components/chops/MidiPanel";
-import { PadGrid } from "@/components/chops/PadGrid";
-import { RecordPanel } from "@/components/chops/RecordPanel";
 import { useChops } from "@/components/chops/useChops";
 import { useMidi } from "@/components/chops/useMidi";
 import { usePads } from "@/components/chops/usePads";
+import { KeyboardPanel } from "@/components/keyboard/KeyboardPanel";
+import { useKit } from "@/components/keyboard/useKit";
 import { jobToShow } from "@/components/stems/jobStatus";
 import { useStems } from "@/components/stems/useStems";
 import { btnQuiet } from "@/components/ui";
 import { errorMessage } from "@/lib/api/client";
-import { bindPads } from "@/lib/pads/bindings";
+import { applyOrder, bindPads } from "@/lib/pads/bindings";
+import { padCountOfKit } from "@/lib/pads/kit";
 import { useSurface } from "./surfaceState";
 
 /** OPEN_QUESTIONS B.8: the hip-hop prior, used only when the file has no tempo yet. */
@@ -29,9 +30,13 @@ export function ChopsTab() {
   const chops = useChops(file.id, jobs);
   const stems = useStems(file.id, jobs);
   const midi = useMidi(file.id, jobs);
-  const bindings = useMemo(() => bindPads(chops.chops, stems.stems), [chops.chops, stems.stems]);
-  const pads = usePads(bindings);
-  const hasPads = bindings.some((b) => b !== null);
+  const kitState = useKit();
+  // File order first, then the kit's own order over the top: the kit's order is
+  // always read against the file-order indices, so ordering twice cannot compose
+  // into something neither the producer nor the machine asked for.
+  const baseBindings = useMemo(() => bindPads(chops.chops, stems.stems, padCountOfKit(kitState.kit)), [chops.chops, stems.stems, kitState.kit]);
+  const bindings = useMemo(() => applyOrder(baseBindings, kitState.kit.order), [baseBindings, kitState.kit.order]);
+  const pads = usePads(bindings, kitState.kit);
   const bpm = report?.tempo?.bpm ?? DEFAULT_BPM;
   const chopJob = jobToShow(jobs, "chop");
   const canChop = file.status !== "uploading";
@@ -58,25 +63,23 @@ export function ChopsTab() {
       )}
 
       <div className="flex flex-wrap items-start">
-        <div className="px-4 py-3 w-[300px] shrink-0 border-r border-rule">
-          <PadGrid bindings={bindings} lit={pads.lit} statuses={pads.statuses} onTrigger={pads.trigger} />
-          <p className="mt-1.5 text-xs text-chalk-dim">
-            {hasPads
-              ? bindings[0]?.source === "chop"
-                ? "Pads play the first sixteen chops in order. Keys 1–8 and Q–I."
-                : "No chops yet, so the pads play the stems. Keys 1–8 and Q–I."
-              : "Pads fill with the file's chops, or its stems until there are chops."}
-          </p>
-          <RecordPanel
+        <div className="px-4 py-3 w-[420px] shrink-0 border-r border-rule">
+          <KeyboardPanel
             fileId={file.id}
+            fileName={file.original_filename}
+            report={report}
             bpm={bpm}
             bpmMeasured={report?.tempo !== null && report?.tempo !== undefined}
             beatsPerBar={grid.beatsPerBar}
-            recorder={pads.recorder}
-            recording={pads.recording}
+            cursor={cursor}
+            chops={chops.chops}
             bindings={bindings}
-            hasPads={hasPads}
-            onSaved={midi.add}
+            baseBindings={baseBindings}
+            kitState={kitState}
+            pads={pads}
+            canChop={canChop}
+            onChop={(body) => void chops.chop(body)}
+            onSavedMidi={midi.add}
           />
         </div>
 

@@ -1,23 +1,77 @@
-// Web Audio playback for the pads: every bound file is fetched and decoded
-// once into an AudioBuffer; a tap starts a fresh source with a 3 ms fade in
-// and out. Polyphonic, nothing chokes. Trigger times come from the audio
-// clock so the recorder and the click agree.
+// The pads as an instrument: what a key press starts, what a key release
+// cuts, and what each voice sounds like.
+//
+// Two axes, both the producer's choice (PRODUCT_DIRECTION, Surface 4):
+//
+//   trigger  one-shot  the whole slice plays out, holding changes nothing
+//            gate      sounds while the key is down, cut on release
+//   play     chop      each key a different slice
+//            note      the same slice transposed, rate = 2 ** (semitones / 12)
+//
+// A release is a 2 ms fade, never a hard stop: cutting a waveform at an
+// arbitrary sample is a click, and a producer hunting a chop by tapping
+// between two keys hears every one of them.
+//
+// The Web Audio nodes live behind PadBackend (backend.ts), so everything here
+// runs and is asserted in node.
 
-import { getAudioContext } from "@/lib/audio/decode";
+import type { PadBackend, PadLoadStatus, PadVoiceSpec } from "./backend";
+import { WebAudioPadBackend } from "./webAudioPads";
+import { rateForSemitones } from "./note";
 
+/** Fade in on every voice: a slice rarely starts on a zero crossing. */
 export const PAD_FADE_S = 0.003;
+/** The key-up fade. Short enough to feel like a cut, long enough not to click. */
+export const PAD_RELEASE_S = 0.002;
 
-export type BufferStatus = "loading" | "ready" | "error";
+export type BufferStatus = PadLoadStatus;
+
+export interface NoteOnOptions {
+  velocity?: number;
+  /** one-shot ignores the key release; gate is cut by it */
+  trigger?: "one-shot" | "gate";
+  /** note mode: semitones from the root. Ignored in chop mode (0). */
+  semitones?: number;
+}
+
+export interface StartedVoice {
+  /** the audio-clock time the voice started: what the recorder stamps the hit with */
+  at: number;
+  voiceId: number;
+  /** how long it will sound if nothing releases it */
+  durationS: number;
+}
 
 export class PadEngine {
-  private buffers = new Map<string, AudioBuffer>();
-  private pending = new Map<string, Promise<AudioBuffer>>();
+  private readonly backend: PadBackend;
+  private pending = new Map<string, Promise<number>>();
   private errors = new Map<string, string>();
-  private voices = new Map<number, Set<AudioBufferSourceNode>>();
+  private durations = new Map<string, number>();
+  private voicesByPad = new Map<number, Set<number>>();
+  private padOfVoice = new Map<number, number>();
   private listeners = new Set<() => void>();
+  private nextVoiceId = 1;
+  private offEnded: () => void;
 
+  constructor(backend?: PadBackend) {
+    this.backend = backend ?? new WebAudioPadBackend();
+    this.offEnded = this.backend.onEnded((voiceId) => this.forgetVoice(voiceId));
+  }
+
+  /** The audio clock the recorder and the click read. */
   get context(): AudioContext {
-    return getAudioContext();
+    const ctx = (this.backend as { context?: AudioContext }).context;
+    if (!ctx) throw new Error("This pad backend has no AudioContext.");
+    return ctx;
+  }
+
+  now(): number {
+    return this.backend.now();
+  }
+
+  /** What the output adds between a start and the sound, seconds; 0 when the browser will not say. */
+  outputLatencyS(): number {
+    return this.backend.outputLatencyS();
   }
 
   onChange(listener: () => void): () => void {
@@ -28,7 +82,7 @@ export class PadEngine {
   }
 
   status(fileId: string): BufferStatus | null {
-    if (this.buffers.has(fileId)) return "ready";
+    if (this.backend.isReady(fileId)) return "ready";
     if (this.pending.has(fileId)) return "loading";
     if (this.errors.has(fileId)) return "error";
     return null;
@@ -38,26 +92,23 @@ export class PadEngine {
     return this.errors.get(fileId) ?? null;
   }
 
+  durationOf(fileId: string): number | null {
+    return this.backend.durationOf(fileId) ?? this.durations.get(fileId) ?? null;
+  }
+
   /** Fetch (via `getUrl`, a signed URL) and decode once; concurrent calls share the promise. */
-  load(fileId: string, getUrl: () => Promise<string>): Promise<AudioBuffer> {
-    const ready = this.buffers.get(fileId);
-    if (ready) return Promise.resolve(ready);
+  load(fileId: string, getUrl: () => Promise<string>): Promise<number> {
+    const ready = this.backend.durationOf(fileId);
+    if (ready !== null && this.backend.isReady(fileId)) return Promise.resolve(ready);
     const inFlight = this.pending.get(fileId);
     if (inFlight) return inFlight;
-    const promise = (async () => {
-      const url = await getUrl();
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Could not fetch the audio (${res.status}).`);
-      const bytes = await res.arrayBuffer();
-      const buffer = await this.context.decodeAudioData(bytes);
-      this.buffers.set(fileId, buffer);
-      return buffer;
-    })();
+    const promise = this.backend.load(fileId, getUrl);
     this.pending.set(fileId, promise);
     this.errors.delete(fileId);
     this.emit();
     promise
-      .then(() => {
+      .then((duration) => {
+        this.durations.set(fileId, duration);
         this.pending.delete(fileId);
         this.emit();
       })
@@ -69,60 +120,105 @@ export class PadEngine {
     return promise;
   }
 
-  /** Play `fileId` on `pad` now. Returns the audio-clock time of the trigger, or null when the buffer is not ready. */
-  trigger(pad: number, fileId: string, velocity = 1): number | null {
-    const buffer = this.buffers.get(fileId);
-    if (!buffer) return null;
-    const ctx = this.context;
-    if (ctx.state === "suspended") void ctx.resume();
-    const now = ctx.currentTime;
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    const gain = ctx.createGain();
-    const level = Math.max(0, Math.min(1, velocity));
-    const end = now + buffer.duration;
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(level, now + PAD_FADE_S);
-    if (buffer.duration > PAD_FADE_S * 2) {
-      gain.gain.setValueAtTime(level, end - PAD_FADE_S);
-      gain.gain.linearRampToValueAtTime(0, end);
-    }
-    source.connect(gain).connect(ctx.destination);
-    let set = this.voices.get(pad);
+  /** Drop a failed decode so a retry really retries. */
+  forget(fileId: string): void {
+    this.errors.delete(fileId);
+    this.durations.delete(fileId);
+    this.backend.forget(fileId);
+    this.emit();
+  }
+
+  /**
+   * Start `fileId` on `pad`. In gate mode the voice waits for `noteOff`; in
+   * one-shot it plays out. Returns null when the samples are not in memory —
+   * a pad that has not decoded is silent, never late.
+   */
+  noteOn(pad: number, fileId: string, options: NoteOnOptions = {}): StartedVoice | null {
+    const sourceDurationS = this.backend.durationOf(fileId);
+    if (sourceDurationS === null || !this.backend.isReady(fileId)) return null;
+    this.backend.resume();
+    const rate = rateForSemitones(options.semitones ?? 0);
+    const gate = options.trigger === "gate";
+    const voiceId = this.nextVoiceId++;
+    const spec: PadVoiceSpec = {
+      voiceId,
+      pad,
+      fileId,
+      gain: Math.max(0, Math.min(1, options.velocity ?? 1)),
+      rate,
+      attackS: PAD_FADE_S,
+      releaseS: PAD_FADE_S,
+      sourceDurationS,
+      gate,
+    };
+    const at = this.backend.now();
+    if (!this.backend.start(spec)) return null;
+    let set = this.voicesByPad.get(pad);
     if (!set) {
       set = new Set();
-      this.voices.set(pad, set);
+      this.voicesByPad.set(pad, set);
     }
-    set.add(source);
-    source.onended = () => {
-      set.delete(source);
-      source.disconnect();
-      gain.disconnect();
-      this.emit();
-    };
-    source.start(now);
+    set.add(voiceId);
+    this.padOfVoice.set(voiceId, pad);
     this.emit();
-    return now;
+    return { at, voiceId, durationS: sourceDurationS / rate };
+  }
+
+  /**
+   * The key came up. Gate voices fade out over PAD_RELEASE_S; one-shot voices
+   * are left alone, which is the whole difference between the two modes.
+   * Returns how many voices were cut.
+   */
+  noteOff(pad: number, options: { trigger?: "one-shot" | "gate" } = {}): number {
+    if (options.trigger === "one-shot") return 0;
+    const set = this.voicesByPad.get(pad);
+    if (!set || set.size === 0) return 0;
+    let cut = 0;
+    for (const voiceId of [...set]) {
+      this.backend.release(voiceId, PAD_RELEASE_S);
+      cut++;
+    }
+    return cut;
+  }
+
+  /**
+   * Release every sounding voice with the same short fade: the window lost
+   * focus, the tab went to the background, the producer pressed stop. Without
+   * this a gate note hangs the moment someone alt-tabs mid-hold.
+   */
+  releaseAll(): number {
+    let cut = 0;
+    for (const set of this.voicesByPad.values()) {
+      for (const voiceId of [...set]) {
+        this.backend.release(voiceId, PAD_RELEASE_S);
+        cut++;
+      }
+    }
+    return cut;
+  }
+
+  /** Phase 3's one-shot tap, unchanged: the audio-clock time, or null when the buffer is not ready. */
+  trigger(pad: number, fileId: string, velocity = 1): number | null {
+    return this.noteOn(pad, fileId, { velocity, trigger: "one-shot" })?.at ?? null;
   }
 
   isLit(pad: number): boolean {
-    return (this.voices.get(pad)?.size ?? 0) > 0;
+    return (this.voicesByPad.get(pad)?.size ?? 0) > 0;
   }
 
   litPads(): number[] {
-    return [...this.voices.entries()].filter(([, set]) => set.size > 0).map(([pad]) => pad);
+    return [...this.voicesByPad.entries()].filter(([, set]) => set.size > 0).map(([pad]) => pad);
+  }
+
+  voiceCount(): number {
+    return this.padOfVoice.size;
   }
 
   stopAll(): void {
-    for (const set of this.voices.values()) {
-      for (const source of set) {
-        try {
-          source.stop();
-        } catch {
-          // already stopped
-        }
-      }
-    }
+    this.backend.stopAll();
+    this.voicesByPad.clear();
+    this.padOfVoice.clear();
+    this.emit();
   }
 
   /**
@@ -132,8 +228,20 @@ export class PadEngine {
    */
   dispose(): void {
     this.stopAll();
-    this.buffers.clear();
     this.errors.clear();
+    this.durations.clear();
+    this.offEnded();
+    this.backend.dispose();
+    this.offEnded = this.backend.onEnded((voiceId) => this.forgetVoice(voiceId));
+  }
+
+  private forgetVoice(voiceId: number): void {
+    const pad = this.padOfVoice.get(voiceId);
+    if (pad === undefined) return;
+    this.padOfVoice.delete(voiceId);
+    const set = this.voicesByPad.get(pad);
+    set?.delete(voiceId);
+    this.emit();
   }
 
   private emit(): void {

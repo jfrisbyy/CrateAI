@@ -1,29 +1,34 @@
-// The pad keyboard map (OPEN_QUESTIONS K.34): 1–8 are pads 1–8, Q–I are
-// pads 9–16. Mirrors PAD_KEYS in lib/keys/commands.ts, which owns the window
-// listener and emits `crateai:pad` events with the same 1-based pad numbers.
+// The default pad keyboard map (OPEN_QUESTIONS K.34): 1–8 are pads 1–8, Q–I
+// are pads 9–16. This is the `16` preset in layouts.ts, which is now the one
+// mapping function; everything here reads it so the two can never drift.
 //
 // Grid layout, four rows of four, reading like the keyboard:
 //   1 2 3 4      pads 1–4
 //   5 6 7 8      pads 5–8
 //   Q W E R      pads 9–12
 //   T Y U I      pads 13–16
+//
+// A layout other than `16` is addressed through layouts.ts directly
+// (`padForKeyIn`, `keyForPadIn`); these helpers keep the Phase 3 callers and
+// their tests working unchanged.
 
-export const PAD_COUNT = 16;
-export const PAD_COLUMNS = 4;
+import { keyForPadIn, keyLabel, layoutOr, padCountOf, padForKeyIn } from "./layouts";
 
-export const PAD_KEYS: readonly string[] = ["1", "2", "3", "4", "5", "6", "7", "8", "q", "w", "e", "r", "t", "y", "u", "i"];
+const DEFAULT_LAYOUT = layoutOr("16");
+
+export const PAD_COUNT = padCountOf(DEFAULT_LAYOUT);
+export const PAD_COLUMNS = DEFAULT_LAYOUT.columns;
+
+export const PAD_KEYS: readonly string[] = DEFAULT_LAYOUT.keys;
 
 /** 1-based pad for a key (either case), or null when the key is not a pad key. */
 export function padForKey(key: string): number | null {
-  const i = PAD_KEYS.indexOf(key.toLowerCase());
-  return i < 0 ? null : i + 1;
+  return padForKeyIn(DEFAULT_LAYOUT, key);
 }
 
 /** The key label shown on a pad (uppercase for letters). */
 export function keyForPad(pad: number): string {
-  const key = PAD_KEYS[pad - 1];
-  if (key === undefined) throw new RangeError(`pad ${pad} is out of range 1..${PAD_COUNT}`);
-  return key.toUpperCase();
+  return keyLabel(keyForPadIn(DEFAULT_LAYOUT, pad));
 }
 
 export function isPadNumber(pad: number): boolean {
