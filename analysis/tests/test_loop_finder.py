@@ -96,7 +96,7 @@ def test_sorted_descending_without_duplicates(ranked_all):
     assert len(keys) == len(ranked_all)
     for c in ranked_all:
         assert 0.0 <= c.score <= 1.0
-        for k in ("seam", "stability", "novelty", "onset_lock"):
+        for k in ("seam", "phrase", "stability", "novelty", "onset_lock", "recurrence"):
             assert 0.0 <= c.components[k] <= 1.0
     assert len(ranked_all) > 12
 
@@ -168,9 +168,12 @@ def test_to_row_matches_loops_table_columns(ranked):
     assert isinstance(row["bars"], int) and isinstance(row["score"], float)
     json.dumps(row)  # components must be JSON-serializable for the jsonb column
     comp = row["components"]
-    for k in ("seam", "stability", "novelty", "onset_lock", "reasons", "repeats", "grid", "weights"):
+    for k in ("seam", "phrase", "stability", "novelty", "onset_lock", "recurrence", "reasons",
+              "repeats", "recurs_elsewhere", "grid", "weights"):
         assert k in comp
-    assert comp["weights"] == {"seam": 0.40, "stability": 0.25, "novelty": 0.25, "onset_lock": 0.10}
+    assert comp["weights"] == {"seam": 0.30, "phrase": 0.22, "stability": 0.15, "novelty": 0.15,
+                               "onset_lock": 0.10, "recurrence": 0.08}
+    assert sum(comp["weights"].values()) == pytest.approx(1.0)
     assert all(isinstance(r, str) and r for r in comp["reasons"])
 
 
