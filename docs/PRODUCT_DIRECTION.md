@@ -57,6 +57,45 @@ shown — but ranking is a suggestion, and the producer's ear is the decision.
 When they pick third instead of first, that is a `corrections` row
 (principle 7) and the ranking learns.
 
+## Audio quality is a first-class requirement
+
+The second session produced three melodic layers and the owner's verdict was
+that they sounded muddy and muffled. Measured, the loss has three sources and
+they are not equally excusable.
+
+| Stage | 8-20 kHz, relative | Verdict |
+|---|---:|---|
+| Moonlight Highlife, as uploaded | -19.5 dB | the material |
+| after `kuielab_a_other` separation | **-37.1 dB** | **our tooling** |
+| after a 0.83 stretch and +6 semitones | -23.3 dB | our tooling |
+| BS-Roformer on the same source | **-19.5 dB** | identical to the source |
+
+**Separation quality is not a detail, it is the product.** A weak model
+(`kuielab`, SDR ~7-10) threw away 17.6 dB of air that a strong one
+(BS-Roformer, SDR 11.8) preserves exactly. Everything downstream — layering,
+EQ, the producer's opinion of the whole system — inherits that loss and cannot
+recover it. The rule:
+
+> Never separate with a fast model to save compute. The separation is the
+> irreversible step; spend the GPU there.
+
+BS-Roformer took 4:15 for a 17-second clip on a CPU and would be seconds on
+the A10G the product already plans for. This is a hosting decision, not a
+research problem.
+
+Two other quality rules that follow:
+
+- **Source fidelity is worth surfacing.** The uploads in the test sessions were
+  lossy: 12.0 kHz ceiling on the Masquerade record, 13.5-15.7 kHz on the rest.
+  Nothing recovers content that was never in the file. The library should
+  measure and display each file's real bandwidth, and say plainly when a flip
+  is limited by its source rather than by the processing.
+- **The phase vocoder is not good enough for the stretches this product asks
+  for.** Ratios of 0.73 to 0.85 are routine when fitting one record to
+  another, and librosa's vocoder smears them audibly. A real stretcher
+  (Signalsmith, or Rubber Band under licence) is not optional polish; it is on
+  the critical path. See OPEN_QUESTIONS 27.
+
 ## Surface 2: the song
 
 The owner is right that this becomes a DAW to a degree, and right to be wary
@@ -67,13 +106,43 @@ as it is being built: tracks stacked, regions on a timeline, transport with
 loop and locators, drag to move, trim edges, mute, solo, gain, a tempo and key
 header the whole session obeys. Play the whole thing. Edit inside that window.
 
-**Out of scope — production processing.** No EQ curves, no compressors, no
-automation lanes, no plugin hosting, no mixing console. Not because they are
-hard, but because that is where FL Studio, Ableton and Logic already live and
-where this product has nothing to add. The export goes there.
+**Also in scope — corrective processing. (Revised 2026-09-13.)** The earlier
+draft of this document put all processing out of scope. The owner pushed back
+and was right, and the second session proved it: a separated trumpet came back
+dull, and with no way to open it up the only available verdict was "all three
+of these suck". A producer with an EQ would have fixed it in ten seconds. If
+the answer to every blemish is "bounce it and open Ableton", the loop that
+makes this product worth using is broken every time something needs a touch.
 
-The test for any control: *does it help the producer decide what the song is?*
-Arrangement does. A compressor does not.
+So: per-track EQ, filters, gain staging, tuning, transient shaping, and a
+bus that can be levelled and gently limited. Heard in isolation, soloed, or
+in context.
+
+**Still out of scope — being a better DAW than the DAWs.** No plugin hosting,
+no third-party format support, no deep automation, no attempt to win a feature
+comparison against Ableton or FL Studio. We are not competing on the console.
+
+The line is now drawn differently, and more usefully:
+
+> **In: anything that answers "does this fit, and can I make it fit?"**
+> **Out: anything that is production for its own sake.**
+
+An EQ that rescues a muddy horn so it can sit under a loop answers the first
+question. A mastering chain for release does not. The difference is not the
+tool, it is what the producer is deciding when they reach for it.
+
+**The differentiator is that the AI drives these tools.** "This trumpet sounds
+awful, clean it up" should produce a real, visible, editable EQ curve — not a
+black box, and not a menu the user has to learn. Every processor the product
+offers must be equally reachable by sentence and by mouse, and whatever the
+sentence does must show up on the control the mouse would have used. That is
+the thing FL Studio cannot do, and it only works if the tools are in the room.
+
+**Rough, then refine.** The owner's phrasing, and it is the product thesis:
+slice something to an approximation, drag it roughly into place, then say
+"tighten that up" or "make this sit under the horns". The working window
+exists so the rough pass is possible; the AI exists so the refinement is one
+sentence. Neither half works alone.
 
 Everything on the timeline stays traceable to the audio it came from. A region
 knows it is bars 9-16 of a record, pitched +62 cents, stretched to 0.964. That
@@ -127,6 +196,8 @@ Two known consequences:
 | Candidate rack, with solo-against-the-song | Phase 11 |
 | Song timeline: arrange, trim, mute, solo, gain | Phase 12 |
 | Adaptive chat/panel layout | Phase 12, with both surfaces as its first tenants |
+| Per-track corrective processing (EQ, filter, gain, tune) driven by chat | Phase 12 |
+| External input: MIDI controllers and keyboards via Web MIDI, audio in | Phase 13 |
 | Export to stems and a DAW-importable session | Phase 13 |
 | Rename to Cratebox across the UI and docs | any time; mechanical |
 

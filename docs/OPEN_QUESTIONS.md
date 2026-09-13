@@ -200,3 +200,20 @@ assumption gets replaced. Numbered so they can be referenced from PRs.
     region in detail.
 40. **Export target.** *Assumption:* stems plus a tempo map and a readme
     first; native DAW session formats on request.
+41. **Separation model, and where the GPU goes.** BS-Roformer preserves the
+    source's top end exactly where `kuielab` loses 17.6 dB of it, at roughly
+    15x the compute. *Assumption:* separation always uses the best available
+    model on GPU, and no "fast mode" is offered, because the loss is
+    irreversible and poisons everything downstream.
+42. **Reference dataset of sample-to-song pairs.** The owner offered to supply
+    original records alongside the professionally produced tracks that
+    sampled them. *Assumption:* this becomes an evaluation set, not training
+    data: for each pair we record which section was taken, the tempo ratio,
+    the pitch shift and what was filtered, and the harness scores whether our
+    finder locates the same section the producer chose. Twenty documented
+    pairs beat two hundred undocumented ones.
+43. **How much processing is too much.** EQ, filters, tuning and gain are in
+    (see PRODUCT_DIRECTION); plugin hosting and mastering chains are out.
+    *Assumption:* the boundary is "does this answer whether the piece fits",
+    and it is re-examined the first time a user asks for something on the far
+    side of it.
