@@ -12,8 +12,8 @@ import { useSearch } from "@/components/shell/searchState";
 import { btnQuiet, cx, input } from "@/components/ui";
 import { queueEmbeddings, searchLibrary, type LibrarySearchResponse } from "@/lib/api/search";
 import { errorMessage } from "@/lib/api/client";
-import { fmtBpm, fmtNumber } from "@/lib/format";
-import type { Matched } from "@/lib/search/merge";
+import { fmtNumber } from "@/lib/format";
+import { matchedParts } from "@/lib/search/merge";
 import type { ParsedQuery } from "@/lib/search/parse";
 
 function chips(p: ParsedQuery): string[] {
@@ -27,19 +27,6 @@ function chips(p: ParsedQuery): string[] {
   if (p.similar) out.push(p.similar_to_file_id ? "like the open file" : "like this (open a file)");
   for (const t of p.tags) out.push(`#${t}`);
   if (p.text_query) out.push(`"${p.text_query}"`);
-  return out;
-}
-
-function matchedParts(m: Matched): string[] {
-  const out: string[] = [];
-  if (m.bpm !== undefined) out.push(`${fmtBpm(m.bpm)} BPM`);
-  if (m.key) out.push(m.key);
-  if (m.kind) out.push(m.kind);
-  if (m.tags && m.tags.length > 0) out.push(m.tags.join(", "));
-  if (m.has_drums === false) out.push("no drums");
-  if (m.has_drums === true) out.push("drums");
-  if (m.is_loop_based) out.push("loop-based");
-  if (m.name) out.push("name");
   return out;
 }
 

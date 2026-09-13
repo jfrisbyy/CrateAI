@@ -1,6 +1,9 @@
 // Request and response shapes shared by the route handlers and the browser
 // client. Keep this the single place both sides import from.
 
+import type { ChatSendBody } from "@/lib/api/chat";
+import type { SearchMode } from "@/lib/search/hybrid";
+import type { SearchHit } from "@/lib/search/merge";
 import type { ParsedQuery } from "@/lib/search/parse";
 import type { ConversationRow, FileKind, FileRow, JobKind, JobRow, Json, LoopRow, MessageRow, CorrectionRow } from "@/lib/types/db";
 
@@ -93,8 +96,15 @@ export interface SearchRequest {
   kind?: FileKind;
 }
 export interface SearchResponse {
+  /** ranked hits with the report fields that matched (BUILD_PACKET section 12) */
+  results: SearchHit[];
+  /** results[].file, for the shell's search state */
   files: FileRow[];
   parsed: ParsedQuery;
+  /** "vector" when the text went through the CLAP embedding, "filters" when it fell back */
+  mode: SearchMode;
+  /** why a text query could not use vectors, or null */
+  note: string | null;
 }
 
 export interface ConversationsListResponse {
@@ -109,8 +119,5 @@ export interface ConversationResponse {
   messages: MessageRow[];
 }
 
-export interface ChatRequest {
-  conversation_id?: string | null;
-  content: string;
-  file_ids?: string[];
-}
+/** POST /api/chat body; the route also accepts `content` as an alias of `message`. */
+export type ChatRequest = ChatSendBody;

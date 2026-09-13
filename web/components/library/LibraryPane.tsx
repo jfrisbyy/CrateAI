@@ -9,6 +9,7 @@ import { useSearch } from "@/components/shell/searchState";
 import { describeParsed } from "@/lib/search/parse";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 import type { FileKind, FileRow as FileRowType } from "@/lib/types/db";
+import { matchedParts } from "@/lib/search/merge";
 import { FileRow } from "./FileRow";
 import { UploadQueue } from "./UploadQueue";
 import { UploadZone } from "./UploadZone";
@@ -50,9 +51,19 @@ export function LibraryPane() {
     return GROUPS.map((g) => ({ ...g, files: byKind.get(g.kind) ?? [] })).filter((g) => g.files.length > 0);
   }, [files]);
 
+  // Search results show why each row matched (BUILD_PACKET section 12).
+  const matchedById = useMemo(() => new Map(search.hits.map((h) => [h.file.id, matchedParts(h.matched)])), [search.hits]);
+
   const open = (id: string) => router.push(`/f/${id}`);
   const row = (f: FileRowType) => (
-    <FileRow key={f.id} file={f} jobs={jobsByFile.get(f.id) ?? []} selected={f.id === selectedId} onOpen={() => open(f.id)} />
+    <FileRow
+      key={f.id}
+      file={f}
+      jobs={jobsByFile.get(f.id) ?? []}
+      selected={f.id === selectedId}
+      onOpen={() => open(f.id)}
+      matched={search.active ? matchedById.get(f.id) : undefined}
+    />
   );
 
   return (

@@ -234,6 +234,34 @@ function LoadedSurface({ fileId }: { fileId: string }) {
     [loops, ensureDecoded, previewMode, loopPlayer, crossfadeMs, zeroCrossing],
   );
 
+  // The chat's loop cards dispatch "crateai:select-loop" with a loop id (see
+  // components/chat/ChatPane.tsx). The loop may have been written by the finder
+  // a moment ago, so an unknown id refetches first and plays once it appears.
+  const pendingSelect = useRef<string | null>(null);
+  useEffect(() => {
+    const onSelect = (e: Event) => {
+      const id = (e as CustomEvent<unknown>).detail;
+      if (typeof id !== "string") return;
+      window.dispatchEvent(new CustomEvent("crateai:tab", { detail: "loops" }));
+      if (loops.some((l) => l.id === id)) {
+        pendingSelect.current = null;
+        void playLoop(id);
+      } else {
+        pendingSelect.current = id;
+        void refetchLoops();
+      }
+    };
+    window.addEventListener("crateai:select-loop", onSelect);
+    return () => window.removeEventListener("crateai:select-loop", onSelect);
+  }, [loops, playLoop, refetchLoops]);
+  useEffect(() => {
+    const id = pendingSelect.current;
+    if (id && loops.some((l) => l.id === id)) {
+      pendingSelect.current = null;
+      void playLoop(id);
+    }
+  }, [loops, playLoop]);
+
   // ---- loop actions ----------------------------------------------------------
   const updateLoop = useCallback(
     async (id: string, patch: LoopPatch) => {

@@ -2,6 +2,7 @@
 // matched so the UI can show them on the row (BUILD_PACKET section 12:
 // "Results show the report fields that matched").
 
+import { fmtBpm } from "@/lib/format";
 import { displayKey } from "@/lib/music/keys";
 import { effective } from "@/lib/report/effective";
 import type { FileKind, FileRow, TagRow, VectorMatch } from "@/lib/types/db";
@@ -130,5 +131,20 @@ export function mergeHits(input: MergeInput): SearchHit[] {
     out.push({ file, matched: matchedFor(file, input.parsed, tags, { nameMatch }) });
     if (out.length >= input.limit) break;
   }
+  return out;
+}
+
+/** The matched fields as short display parts, e.g. ["92 BPM", "F minor", "dusty"]. */
+export function matchedParts(m: Matched): string[] {
+  const out: string[] = [];
+  if (m.bpm !== undefined) out.push(`${fmtBpm(m.bpm)} BPM`);
+  if (m.key) out.push(m.key);
+  if (m.kind) out.push(m.kind);
+  if (m.tags && m.tags.length > 0) out.push(m.tags.join(", "));
+  if (m.has_drums === false) out.push("no drums");
+  if (m.has_drums === true) out.push("drums");
+  if (m.is_loop_based) out.push("loop-based");
+  if (m.similarity !== undefined) out.push(`${Math.round(m.similarity * 100)}% similar`);
+  if (m.name) out.push("name");
   return out;
 }

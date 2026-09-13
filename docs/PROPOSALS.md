@@ -195,3 +195,131 @@ Template:
 **What it takes:** A per-hit feature set (already computed), a labeled set from synthetic stacks plus corrected patterns, a scikit-learn model shipped in the package. Two days.
 **Where it belongs:** Phase 4 polish.
 **Status:** proposed.
+
+## Velocity from touch or MIDI input on the pads
+**What it does for a producer:** Tap harder, get a louder chop, and have that land in the MIDI: pads read pointer pressure where the device reports it and note-on velocity from a USB pad controller (Web MIDI), instead of a flat 1.0 from the keyboard.
+**Principle it serves:** 4, every output is editable; 2, the measured feel includes dynamics.
+**Principle it risks:** None.
+**What it takes:** `PointerEvent.pressure` on the pad buttons; a Web MIDI listener mapping notes 36–51 to pads; the engine and recorder already take a velocity. Half a day.
+**Where it belongs:** Phase 3.
+**Status:** proposed (from the stems/chops seam).
+
+## Markers on the waveform for manual chops
+**What it does for a producer:** Place and drag chop markers on the waveform itself, snapped to the grid like loop edges, instead of adding them at the playhead one by one.
+**Principle it serves:** 4.
+**Principle it risks:** None.
+**What it takes:** wavesurfer markers (zero-length regions) driven from `ChopControls`' marker list; the snap helper exists (`snapTime`). A day.
+**Where it belongs:** Phase 3.
+**Status:** proposed.
+
+## Quantize toggle on the pads take
+**What it does for a producer:** Hear the tapped pattern back on the grid or with its feel, and choose which one the .mid keeps (the offsets are stored either way).
+**Principle it serves:** 4; 7, the correction is explicit.
+**Principle it risks:** 1, only if a "humanize" generator were added; keeping it to the measured offsets or zero avoids that.
+**What it takes:** a `quantize` flag in `POST /api/midi/pads` (compute's `drum_midi` has the same flag), playback of the take through the engine at the placed or measured times. Half a day.
+**Where it belongs:** Phase 3.
+**Status:** proposed.
+
+## Derived tables in the Realtime publication
+**What it does for a producer:** Stems, chops, MIDI, breakdowns and comparisons appear on the surface the moment compute writes them, including the ones the chat asked for, without a tab watching job status.
+**Principle it serves:** 5, the library is the product.
+**Principle it risks:** None; RLS applies to Realtime.
+**What it takes:** `alter publication supabase_realtime add table public.stems, public.chops, public.midi, public.breakdowns, public.comparisons` with `replica identity full`; small subscriptions replacing `useJobDone` and the job-transition refetches in the tabs.
+**Where it belongs:** Phase 2/3/4 hardening (proposed separately by the stems/chops and breakdown seams; merged here).
+**Status:** proposed.
+
+## Streamed bundle for large kits
+**What it does for a producer:** A 40-chop kit from a 24-bit stem set downloads as it is built instead of waiting for the whole zip in memory, and the 200 MB cap can go.
+**Principle it serves:** Handoff to the DAW.
+**Principle it risks:** None.
+**What it takes:** fflate's streaming `Zip` with `ZipPassThrough` piped into a `ReadableStream` response; objects fetched one at a time. Half a day.
+**Where it belongs:** Phase 3 hardening or Phase 10.
+**Status:** proposed.
+
+## Audition a fact's span
+**What it does for a producer:** Next to "Bars 9 to 24: verse" or "In verse: kick on the one and the and of three", a play button that loops just that span, so the line can be heard while it is read.
+**Principle it serves:** 2 and 4; the breakdown links to the audio it came from.
+**Principle it risks:** None.
+**What it takes:** The surface already decodes the file and has `LoopPlayer.playRaw(buffer, start, end)`; expose `ensureDecoded` and a `playSpan(start, end)` on `SurfaceState`, and a small button on fact lines with `end_s`.
+**Where it belongs:** Phase 4.
+**Status:** proposed.
+
+## Ask the mentor about this line
+**What it does for a producer:** A "?" on any fact line opens the chat with that fact and its report source in context: "why do you say the drums are a break?" gets the timing-drift and hit-spectrum numbers, not a guess.
+**Principle it serves:** 2, measure don't guess; the learning goal.
+**Principle it risks:** None; the chat still answers only from the report.
+**What it takes:** A `crateai:chat-prefill` event carrying `{ file_id, source, text }`, the chat composer listening for it, and `get_report` narrowed to a path (the chat's `sections` argument already exists).
+**Where it belongs:** Phase 8.
+**Status:** proposed.
+
+## Corrections retrain the beatbox profile
+**What it does for a producer:** Fixing a mis-heard hit in the step view makes the next enrollment better without recording anything new: the hits you corrected become examples of what you meant.
+**Principle it serves:** 7, user corrections are ground truth; 2.
+**Principle it risks:** None; the corrections stay with the user's own profile.
+**What it takes:** In `jobs/beatbox_train.py`, read the user's `midi` rows of kind `beatbox` with `notes.corrections`, cut the corrected hits from the recording named in the transcribe job's `params.recording_path`, and append them as `Example`s before `train()`. Half a day plus a test with a synthetic correction.
+**Where it belongs:** Phase 9.
+**Status:** proposed.
+
+## Audition the edited MIDI in the browser
+**What it does for a producer:** Hear the fixed notes at once, with a plain tone, before spending a render on them.
+**Principle it serves:** 4, every output is editable.
+**Principle it risks:** None; it is a preview of the user's own notes.
+**What it takes:** A small Web Audio synth (oscillator plus envelope, the shape of `render_simple` in `symbolic.py`) scheduled from `toNotesJson`, a play button and a playhead line on the roll. A day.
+**Where it belongs:** Phase 7 hardening.
+**Status:** proposed.
+
+## Preview mix of a layer before rendering
+**What it does for a producer:** Drag a lane and hear the result now: the lanes summed in the browser at their offsets and gains (unstretched, or stretched with the loop preview's engine when the ratio is near 1), before the compute renders the real thing.
+**Principle it serves:** 4.
+**Principle it risks:** None.
+**What it takes:** `decodeFromUrl` per lane, a scheduler over `AudioBufferSourceNode`s with `playbackRate` for small ratios, mute and gain live. Two days; the honest preview for large ratios needs a client stretch.
+**Where it belongs:** Phase 7 hardening.
+**Status:** proposed.
+
+## A loop region as a lane
+**What it does for a producer:** "The drums from this" is usually two bars, not the whole record. Pick a loop from the Loops tab as the lane instead of the file.
+**Principle it serves:** 5, the library is the product; 4.
+**Principle it risks:** None.
+**What it takes:** Today: export the loop (a `loop_render` file) and add it as a lane, which works. Direct: `layer_items.start_s` / `end_s` (one migration), the compute slicing before `apply_plan`, a loop picker next to the file picker. A day.
+**Where it belongs:** Phase 7 hardening.
+**Status:** proposed.
+
+## More beatbox classes
+**What it does for a producer:** Open hat, clap, rim, tom as extra sounds to enroll; the class list already lives on the profile.
+**Principle it serves:** 2.
+**Principle it risks:** Accuracy drops with more classes; mitigated by the 85 % gate and per-class counts in the result.
+**What it takes:** An "add a sound" control on the enrollment (a name, lowercase), `GM_DRUMS` already maps the names. Hours.
+**Where it belongs:** Phase 9+ (OPEN_QUESTIONS I.30).
+**Status:** proposed.
+
+## Usage events behind every quota
+**What it does for a producer:** The free tier's counts stay right no matter which surface spent them (chat, the search box, the breakdown's context section), and the usage page shows them.
+**Principle it serves:** 5 and the Phase 10 acceptance line.
+**Principle it risks:** None; the table is per user under RLS.
+**What it takes:** The `usage_events` table and `usage_summary` function exist (20260913000400_billing.sql) and every compute job meters into them. Left: the chat's turn and web-search caps still count from `messages` and recorded tool calls (`web/lib/chat/limits.ts`), and `/api/web/search` called directly is not counted. Move both onto `usage_events` and read the caps from `usage_summary`. Half a day.
+**Where it belongs:** Phase 10.
+**Status:** accepted; partly done (table and job metering), the chat side is in BACKLOG.
+
+## Loop selection from the chat
+**What it does for a producer:** "Show on surface" on a loop card selects and plays that loop on the waveform, even when the finder wrote it a second ago.
+**Principle it serves:** 4; every result is an object on the surface.
+**Principle it risks:** None.
+**What it takes:** A `crateai:select-loop` listener in `Surface.tsx` that refetches loops when the id is unknown, then selects and plays.
+**Where it belongs:** Phase 8 wiring.
+**Status:** done in the integration pass (`components/surface/Surface.tsx`).
+
+## Matched fields on the library rows
+**What it does for a producer:** Search results in the library pane show why each file matched (92 BPM, F minor, dusty, 87 % similar), not only the name.
+**Principle it serves:** 2 and 5.
+**Principle it risks:** None.
+**What it takes:** The search state carries the hits; `FileRow` takes a `matched` line.
+**Where it belongs:** Phase 6.
+**Status:** done in the integration pass.
+
+## Compact the chat transcript server-side
+**What it does for a producer:** Long conversations about a whole crate keep working instead of stopping with "start a new one".
+**Principle it serves:** 5.
+**Principle it risks:** 2, if a summary drops a hedge; mitigated because facts are re-read from the report by tools, never from the summary.
+**What it takes:** The API's compaction on the chat call, storing the compaction block with the assistant message and replaying it; or a local summary of rows older than the last 40.
+**Where it belongs:** Phase 8 hardening.
+**Status:** proposed.

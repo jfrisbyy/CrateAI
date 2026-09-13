@@ -361,7 +361,28 @@ export type LibraryFilterArgs = {
   p_mode?: string | null;
   p_kind?: string | null;
   p_limit?: number | null;
+  // added by 20260913000200_search.sql
+  p_has_drums?: boolean | null;
+  p_is_loop_based?: boolean | null;
+  p_tags?: string[] | null;
+  p_text?: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// web_cache (Phase 5): search and fetch responses keyed by a hash. No RLS
+// policies; only the service role reads or writes it (lib/webinfo/supabaseCache.ts).
+// ---------------------------------------------------------------------------
+
+export type WebCacheRow = {
+  key: string;
+  provider: string;
+  kind: "search" | "fetch";
+  query: string;
+  response: Json;
+  created_at: string;
+};
+export type WebCacheInsert = Omit<WebCacheRow, "created_at"> & { created_at?: string };
+export type WebCacheUpdate = Partial<WebCacheInsert>;
 
 
 // ---------------------------------------------------------------------------
@@ -777,6 +798,7 @@ export type Database = {
       profiles: { Row: ProfileRow; Insert: ProfileInsert; Update: ProfileUpdate; Relationships: [] };
       usage_events: { Row: UsageEventRow; Insert: UsageEventInsert; Update: UsageEventUpdate; Relationships: [] };
       takedowns: { Row: TakedownRow; Insert: TakedownInsert; Update: TakedownUpdate; Relationships: [] };
+      web_cache: { Row: WebCacheRow; Insert: WebCacheInsert; Update: WebCacheUpdate; Relationships: [] };
     };
     Views: Record<string, never>;
     Functions: {

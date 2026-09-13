@@ -127,31 +127,125 @@ entries each (short files are padded with zeros).
 
 ## 7. Web API routes
 
+Every route reads the caller from the Supabase session cookie and uses the
+anon client under RLS. The service role (`web/lib/supabase/admin.ts`,
+server-only) is used only where the contract says so: job dispatch, the
+`web_cache` table, derived-object writes (`derived/`), the takedown form,
+the Stripe webhook, and the health probe. Request and response shapes live
+in `web/lib/api/types.ts` and the per-seam `web/lib/api/*.ts` modules.
+
+### Files, jobs, loops (Phases 0 and 1)
+
 | Route | Method | Does |
 |---|---|---|
-| `/api/files/prepare` | POST | dedupe check, storage path |
+| `/api/files/prepare` | POST | dedupe check by SHA-256, storage path, storage quota |
 | `/api/files/complete` | POST | insert file + analyze job, dispatch |
 | `/api/files` | GET | list the caller's files (`?kind=&parent=`) |
 | `/api/files/[id]` | GET, PATCH, DELETE | one file; PATCH edits `title`, `artist` |
 | `/api/files/[id]/url` | GET | signed playback URL (10 min) |
 | `/api/files/[id]/edits` | POST | apply a `user_edits` field; logs a `corrections` row |
 | `/api/files/[id]/reanalyze` | POST | queue `analyze` with a newer version |
-| `/api/jobs` | POST | create + dispatch any job kind (body `{ kind, file_id?, params }`) |
+| `/api/jobs` | POST | create + dispatch any job kind (body `{ kind, file_id?, params }`); quota check |
 | `/api/jobs/[id]` | GET | job row |
 | `/api/jobs/[id]/retry` | POST | requeue a failed job |
 | `/api/loops` | GET, POST | list loops for a file; create a user loop |
 | `/api/loops/[id]` | PATCH, DELETE | edit edges, name |
 | `/api/loops/[id]/render` | POST | queue `render_loop` |
-| `/api/search` | POST | hybrid library search |
-| `/api/chat` | POST | streaming chat with tools |
-| `/api/breakdowns/[fileId]` | GET, POST | latest breakdown; queue a new one |
-| `/api/breakdowns/[fileId]/narrate` | POST | stream narration under the grounding contract |
-| `/api/compare` | POST | queue a comparison |
-| `/api/web/search`, `/api/web/fetch` | POST | web information tools (server only) |
+| `/api/loops/find` | POST | queue the loop finder (`analyze` with `task: find_loops`) |
 
-All routes read the caller from the Supabase session cookie and use the
-anon client under RLS, except the dispatch step and result reads that need
-the service role (kept in `web/lib/supabase/admin.ts`, server-only).
+### Stems, chops, MIDI (Phases 2 and 3)
+
+| Route | Method | Does |
+|---|---|---|
+| `/api/files/[id]/stems` | GET, POST | stems of a file; queue `stems` (GPU) |
+| `/api/files/[id]/chops` | GET, POST | chops of a file; queue `chop` with a mode and its params |
+| `/api/files/[id]/chops/[chopId]` | PATCH | move a chop's edges or rename it (logs a correction) |
+| `/api/files/[id]/midi` | GET, POST | MIDI rows for a file; queue `midi` (drums, or Basic Pitch on a stem) |
+| `/api/files/[id]/bundle` | GET | zip of chops + .mid + a readme, streamed to the creating user |
+| `/api/midi/pads` | POST | a pads recording as a `.mid` under `derived/`; inserts a `midi` row |
+| `/api/midi/[id]/download` | GET | signed URL for one MIDI file |
+
+### Breakdown and compare (Phase 4)
+
+| Route | Method | Does |
+|---|---|---|
+| `/api/breakdowns/[fileId]` | GET, POST | latest breakdown; queue a new version |
+| `/api/breakdowns/[fileId]/narrate` | POST | stream narration under the grounding contract (NDJSON) |
+| `/api/compare` | GET, POST | latest comparison for a pair (`?a=&b=`; `a` alone gives its latest); queue `compare` |
+
+### Web information (Phase 5)
+
+| Route | Method | Does |
+|---|---|---|
+| `/api/web/search` | POST | `{ query, count? }` → results with citations; cached in `web_cache` |
+| `/api/web/fetch` | POST | `{ url }` → extracted page text; the URL guard runs before, the content-type check after; media is refused |
+
+Both are server-side tools of the chat as well; the guard (`web/lib/webinfo/guard.ts`)
+refuses media hosts, download and stream paths, media extensions, private
+addresses and credentials, and every redirect hop is re-checked. There is no
+route anywhere that turns a URL into a `files` row.
+
+### Search (Phase 6)
+
+| Route | Method | Does |
+|---|---|---|
+| `/api/search` | POST | `{ query, limit?, kind?, current_file_id? }` → `{ results: [{ file, matched, similarity? }], files, parsed, mode, note }` |
+| `/api/embeddings` | GET, POST | which ready files carry a CLAP embedding; queue `embed` for the ones that don't |
+
+`mode` is `vector` when the text went through `/embed_text` (section 10) and
+`filters` when it fell back to the structured filters plus a name match;
+`note` says why. Rules parse BPM, key, kind, tags and negations first; the
+model parser only sees what is left, and rules win on merge.
+
+### Layers and re-voice (Phase 7)
+
+| Route | Method | Does |
+|---|---|---|
+| `/api/layers` | GET, POST | the caller's layers; create one |
+| `/api/layers/[id]` | GET, PATCH, DELETE | one layer with its items; rename; delete |
+| `/api/layers/[id]/items` | POST | add a lane (a file, with offset, gain, stretch policy) |
+| `/api/layers/[id]/items/[itemId]` | PATCH, DELETE | offset, gain, mute; remove |
+| `/api/layers/[id]/render` | POST | queue `layer` |
+| `/api/revoices` | POST | queue `revoice` (symbolic or neural) for a MIDI row |
+| `/api/revoices/[id]` | GET | one re-voice with its audio and MIDI |
+| `/api/files/[id]/revoices` | GET | re-voices derived from a file |
+
+### Chat (Phase 8)
+
+| Route | Method | Does |
+|---|---|---|
+| `/api/chat` | POST | `{ conversation_id, message, file_ids, open_file_id, batch? }` → NDJSON events `text`, `tool_call`, `tool_result` (with a card), `citations`, `done`, `error` |
+| `/api/conversations` | GET, POST | the caller's conversations; start one |
+| `/api/conversations/[id]` | GET, DELETE | a conversation with its messages; delete |
+
+The chat runs a manual tool loop over nineteen strict tools (`web/lib/chat/tools.ts`).
+Musical facts come only from `get_report` and `explain`; world facts only from
+`web_search`, `fetch_page` and `identify_context`; every operation tool queues
+the same job kinds as the tabs. Batches over five GPU operations return a
+`confirm` card first. Free-tier turn and web-search caps answer 429.
+
+### Beatbox (Phase 9)
+
+| Route | Method | Does |
+|---|---|---|
+| `/api/beatbox/upload-url` | POST | signed upload URL for one enrollment or pattern recording under `library/{uid}/beatbox/` |
+| `/api/beatbox/train` | POST | queue `beatbox_train` on the enrollment recordings |
+| `/api/beatbox/profile` | GET | the caller's classifier profile (classes, per-class counts, accuracy) |
+| `/api/beatbox/transcribe` | POST | queue `beatbox_transcribe` on a pattern recording |
+| `/api/beatbox/transcriptions` | GET | the caller's beatbox MIDI rows |
+| `/api/beatbox/transcriptions/[midiId]` | PATCH | correct a hit's class or time (logs a correction) |
+
+### Account and product (Phase 10)
+
+| Route | Method | Does |
+|---|---|---|
+| `/api/profile` | GET, PATCH | plan, display name |
+| `/api/usage` | GET | this period's metered usage against the plan's limits |
+| `/api/billing/checkout` | POST | Stripe Checkout session for the paid plan |
+| `/api/billing/portal` | POST | Stripe customer portal session |
+| `/api/billing/webhook` | POST | Stripe events → `profiles.plan` (signature verified, service role) |
+| `/api/takedown` | POST, GET | the public DMCA notice form (rate limited, honeypot); GET is the owner's review list |
+| `/api/health` | GET | database, storage and compute reachability for uptime checks |
 
 ## 8. Analysis pipeline interface (python)
 

@@ -43,11 +43,14 @@ export function FileRow({
   jobs,
   selected,
   onOpen,
+  matched,
 }: {
   file: FileRowType;
   jobs: JobRow[];
   selected: boolean;
   onOpen: () => void;
+  /** search results: the report fields that matched, shown under the status line */
+  matched?: string[];
 }) {
   const report = file.report ? effective(file.report) : null;
   const tempo = report?.tempo ?? null;
@@ -95,6 +98,11 @@ export function FileRow({
             )}
           </span>
         </div>
+        {matched && matched.length > 0 && (
+          <div className="mt-0.5 truncate font-mono text-xs text-chalk-dim" title="What matched">
+            {matched.join(" · ")}
+          </div>
+        )}
       </button>
       {retryJob && (status.failed || status.queued) && (
         <div className="px-4 pb-1.5 -mt-0.5 flex justify-end">

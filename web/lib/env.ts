@@ -23,7 +23,20 @@ export function hasPublicEnv(): boolean {
 }
 
 /** Server-only optional variables. Never call from client code. */
-export function serverEnv(name: "SUPABASE_SERVICE_ROLE_KEY" | "COMPUTE_DISPATCH_URL" | "COMPUTE_DISPATCH_SECRET" | "ANTHROPIC_API_KEY"): string | undefined {
+export type ServerEnvName =
+  | "SUPABASE_SERVICE_ROLE_KEY"
+  | "COMPUTE_DISPATCH_URL"
+  | "COMPUTE_DISPATCH_SECRET"
+  | "ANTHROPIC_API_KEY"
+  | "WEB_SEARCH_PROVIDER"
+  | "BRAVE_SEARCH_API_KEY"
+  | "TAVILY_API_KEY"
+  | "STRIPE_SECRET_KEY"
+  | "STRIPE_WEBHOOK_SECRET"
+  | "STRIPE_PRICE_ID"
+  | "NEXT_PUBLIC_APP_URL";
+
+export function serverEnv(name: ServerEnvName): string | undefined {
   const value = process.env[name];
   return value && value.length > 0 ? value : undefined;
 }
