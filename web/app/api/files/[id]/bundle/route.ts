@@ -1,15 +1,15 @@
 // GET /api/files/[id]/bundle — the kit: every chop WAV, every .mid for the
 // file, and manifest.json, zipped in memory (fflate) and sent as one body.
-// Objects are fetched with the admin storage client (the caller's client is
-// the fallback: RLS lets a user read derived/{their id}/...). Over
-// BUNDLE_CAP_BYTES of audio answers 413.
+// Objects are fetched with the caller's own client: RLS lets a user read
+// library/{their id}/ and derived/{their id}/, and the storage policy is what
+// keeps a row whose storage_path was written by hand from reaching another
+// user's audio. Over BUNDLE_CAP_BYTES of audio answers 413.
 
 import { dbError, handle, HttpError, requireUser, requireUuid } from "@/lib/http";
 import { assertUnderCap, buildBundleZip, BundleTooLargeError, type BundleInputFile } from "@/lib/midi/bundle";
 import { bundleFilename, planBundle, type BundleChopInput } from "@/lib/midi/manifest";
 import { vitalsOf } from "@/lib/api/stems";
 import { AUDIO_BUCKET } from "@/lib/storage/paths";
-import { tryAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   return handle(async () => {
@@ -56,7 +56,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       throw err;
     }
 
-    const storage = (tryAdminClient() ?? supabase).storage.from(AUDIO_BUCKET);
+    const storage = supabase.storage.from(AUDIO_BUCKET);
     const files: BundleInputFile[] = [];
     let total = 0;
     for (const entry of plan.entries) {
