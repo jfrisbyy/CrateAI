@@ -13,6 +13,7 @@
 // exists on screen, and the caller moves that control, so the two halves can
 // never disagree about what happened.
 
+import type { EqPhrase, SpectralRegion } from "@/lib/processing/types";
 import { snapUnitFrom, type SnapUnit } from "./snap";
 import type { SessionTrack } from "./types";
 
@@ -46,7 +47,17 @@ export type SessionCommand =
   | { kind: "duplicate-region"; target: string }
   | { kind: "split-region"; target: string; atBar: number | null }
   | { kind: "delete-region"; target: string }
-  | { kind: "remove-track"; target: string };
+  | { kind: "remove-track"; target: string }
+  // --- corrective processing: everything the EQ panel does ---
+  | { kind: "processing"; target: string }
+  /** the A/B. `on` null means toggle, which is what "a/b the drums" means. */
+  | { kind: "processing-bypass"; target: string; on: boolean | null }
+  | { kind: "processing-reset"; target: string }
+  /** a complaint in the producer's own words; the curve is decided in lib/processing */
+  | { kind: "fix"; target: string; complaint: string }
+  | { kind: "eq"; target: string; phrase: EqPhrase }
+  | { kind: "tune"; target: string; cents: number }
+  | { kind: "limiter"; on: boolean };
 
 /** Every lane, rather than one: "unmute everything", "drop all the levels". */
 export const ALL_TRACKS = "*";
@@ -56,6 +67,10 @@ export const ALL_TRACKS = "*";
  * by a lane. "move it to bar 17" moves what is selected; "move the drums to
  * bar 17" names a lane and only works when that lane has one region or the
  * selection is already on it. The shell resolves it and says which it used.
+ *
+ * The processing verbs use the same constant for the same reason, one level up:
+ * "bypass the eq" with no lane named means the lane the producer is working on
+ * — the one open in the processing dock, or the lane of the selected region.
  */
 export const SELECTION = "~selection";
 
@@ -73,6 +88,44 @@ function indexFrom(word: string): number | null {
   if (Number.isInteger(asNumber) && asNumber >= 1 && asNumber <= 99) return asNumber;
   const named = ORDINALS[word];
   return named ?? null;
+}
+
+/** The words a producer uses for a region of the spectrum, and which one they mean. */
+const REGION_WORDS: ReadonlyArray<readonly [RegExp, SpectralRegion]> = [
+  [/^(low mids?|lower mids?|low[- ]mid)$/, "low mids"],
+  [/^(high mids?|upper mids?|presence)$/, "high mids"],
+  [/^(lows?|low end|bottom|bass)$/, "lows"],
+  [/^(mids?|middle|midrange)$/, "mids"],
+  [/^(highs?|top|top end|treble)$/, "highs"],
+  [/^(air|sparkle)$/, "air"],
+];
+
+/** "300", "300hz", "4k", "1.2khz" -> Hz. Null when it is not a frequency at all. */
+function hzFrom(token: string): number | null {
+  const match = /^(\d{1,5}(?:\.\d+)?) ?(k|khz|hz)?$/.exec(token.trim());
+  if (!match) return null;
+  const value = Number(match[1]);
+  if (!Number.isFinite(value)) return null;
+  const unit = match[2];
+  const hz = unit === "k" || unit === "khz" ? value * 1000 : value;
+  return hz >= 20 && hz <= 20000 ? hz : null;
+}
+
+/**
+ * "cut 300", "boost the highs", "dip 1.2k by 3db" as a phrase. Null when the
+ * thing being cut is not a frequency or a part of the spectrum — "cut the drums
+ * to 4 bars" is an arrangement trim and has to fall through to it.
+ */
+function phraseFor(verb: string, what: string, db: string | undefined): EqPhrase | null {
+  const move = verb === "cut" || verb === "dip" ? "cut" : "boost";
+  const amount = db === undefined ? null : Number(db);
+  const hz = hzFrom(what);
+  if (hz !== null) return { move, atHz: hz, region: null, db: amount };
+  const name = what.trim();
+  for (const [pattern, region] of REGION_WORDS) {
+    if (pattern.test(name)) return { move, atHz: null, region, db: amount };
+  }
+  return null;
 }
 
 /**
@@ -128,6 +181,94 @@ export function parseSessionCommand(text: string): SessionCommand | null {
       const step = level[3] === undefined ? 3 : Number(level[3]);
       return { kind: "gain", target, db: level[2] === "up" ? step : -step };
     }
+  }
+
+  // --- corrective processing (lib/processing) ---
+  // The same rule as everything else here: a sentence only becomes a command
+  // when it is unmistakably one. "the horns are too harsh" is; "why do these
+  // drums sound muddy" is a question and reaches the model untouched. Nothing
+  // in this block decides what a complaint means — that is complaints.ts — and
+  // nothing here decides a frequency; the command names the control and the
+  // shell moves it.
+  const showChain = /^(?:show|open) (?:the )?(?:eq|processing|chain|filters?)(?: on (?:the )?(.+))?$/.exec(s);
+  if (showChain) {
+    const target = showChain[1] === undefined ? SELECTION : targetOf(showChain[1]);
+    if (target) return { kind: "processing", target };
+  }
+  const resetChain = /^(?:reset|clear|remove|take off) (?:the )?(?:eq|processing|chain|filters?)(?: on (?:the )?(.+))?$/.exec(s);
+  if (resetChain) {
+    const target = resetChain[1] === undefined ? SELECTION : targetOf(resetChain[1]);
+    if (target) return { kind: "processing-reset", target };
+  }
+  const compare = /^(?:a\/b|ab|compare)(?: the (?:eq|processing|chain))?(?: on)? (?:the )?(.+)$/.exec(s);
+  if (compare) {
+    const target = targetOf(compare[1] as string);
+    if (target) return { kind: "processing-bypass", target, on: null };
+  }
+  if (/^(?:a\/b|ab|compare)(?: the (?:eq|processing|chain))?$/.test(s)) return { kind: "processing-bypass", target: SELECTION, on: null };
+  const bypass = /^(bypass|un-?bypass|engage) (?:the (?:eq|processing|chain) on )?(?:the )?(.+)$/.exec(s);
+  if (bypass) {
+    const target = targetOf(bypass[2] as string);
+    if (target) return { kind: "processing-bypass", target, on: bypass[1] === "bypass" };
+  }
+  const bypassHere = /^(bypass|un-?bypass|engage)(?: the (?:eq|processing|chain))$/.exec(s);
+  if (bypassHere) return { kind: "processing-bypass", target: SELECTION, on: bypassHere[1] === "bypass" };
+
+  if (/^(limit(?:er)? (?:the )?(?:master|mix|bus)|limiter on|turn the limiter on)$/.test(s)) return { kind: "limiter", on: true };
+  if (/^(limiter off|turn the limiter off|stop limiting|no limiter)$/.test(s)) return { kind: "limiter", on: false };
+
+  const eq = /^(cut|dip|boost|lift) (?:the )?([a-z0-9.+ ]+?)(?: by (\d{1,2}(?:\.\d+)?) ?db)?(?: on (?:the )?(.+))?$/.exec(s);
+  if (eq) {
+    const phrase = phraseFor(eq[1] as string, eq[2] as string, eq[3]);
+    if (phrase) {
+      const target = eq[4] === undefined ? SELECTION : targetOf(eq[4]);
+      if (target) return { kind: "eq", target, phrase };
+    }
+  }
+  const passFilter = /^(?:(high|low)[- ]?pass|(hpf|lpf)) (?:the )?(.+?) (?:at|to) ([a-z0-9.]+)$/.exec(s);
+  if (passFilter) {
+    const hz = hzFrom(passFilter[4] as string);
+    const high = passFilter[1] === "high" || passFilter[2] === "hpf";
+    if (hz !== null) {
+      const target = targetOf(passFilter[3] as string);
+      if (target) return { kind: "eq", target, phrase: { move: high ? "highpass" : "lowpass", atHz: hz, region: null, db: null } };
+    }
+  }
+
+  const tune = /^tune (?:the )?(.+?) (up|down) (\d{1,4}(?:\.\d+)?) ?(cents?|semitones?|st)$/.exec(s);
+  if (tune) {
+    const target = targetOf(tune[1] as string);
+    const amount = Number(tune[3]);
+    const cents = (tune[4] as string).startsWith("cent") ? amount : amount * 100;
+    if (target && Number.isFinite(cents)) return { kind: "tune", target, cents: tune[2] === "down" ? -cents : cents };
+  }
+
+  // A complaint. The target is a lane; the complaint is the whole sentence, so
+  // "a bit" and "way too" survive into the decision.
+  const cleanUp = /^(?:clean|tidy) (?:up )?(?:the )?(.+?)(?: up)?$/.exec(s) ?? /^sort (?:out )?(?:the )?(.+?)(?: out)?$/.exec(s);
+  if (cleanUp) {
+    const target = targetOf(cleanUp[1] as string);
+    if (target) return { kind: "fix", target, complaint: s };
+  }
+  // "this trumpet sounds awful, clean it up" — the owner's own sentence, and the
+  // one the rest of this parser would refuse on principle because it has two
+  // clauses in it. It is allowed through because a trailing "clean it up" is an
+  // instruction however the sentence starts, but only when there is no question
+  // word and no conjunction anywhere in it: "why does this sound bad, clean it
+  // up" is still a question and still reaches the model whole.
+  const trailing = /^.*\S,? (?:clean|sort) (?:it|this|that) (?:up|out)$/.exec(s);
+  if (trailing && !/\b(what|why|how|who|when|which|and|because|but)\b/.test(s)) return { kind: "fix", target: SELECTION, complaint: s };
+  if (/^fix (?:it|this|that)$/.test(s)) return { kind: "fix", target: SELECTION, complaint: "clean it up" };
+
+  const makeIt = /^(?:make|get) (?:the )?(.+?) (less [a-z]+|more [a-z]+|[a-z]+er)$/.exec(s);
+  if (makeIt) {
+    const target = targetOf(makeIt[1] as string);
+    if (target) return { kind: "fix", target, complaint: `make it ${makeIt[2]}` };
+  }
+  const tooMuch = /^(?:the )?(.+?) (?:sounds?|is|are) (too [a-z]+|muddy|boomy|harsh|dull|muffled|sibilant|boxy|honky|thin)$/.exec(s);
+  if (tooMuch) {
+    const target = targetOf(tooMuch[1] as string);
+    if (target) return { kind: "fix", target, complaint: `${tooMuch[1]} is ${tooMuch[2]}` };
   }
 
   // --- the rack ---
@@ -362,6 +503,20 @@ export function describeCommand(command: SessionCommand): string {
       return "region deleted";
     case "remove-track":
       return `took ${name(command.target)} out of the session`;
+    case "processing":
+      return `the chain on ${name(command.target)}`;
+    case "processing-bypass":
+      return command.on === null ? `A/B on ${name(command.target)}` : `${command.on ? "bypassed" : "engaged"} the chain on ${name(command.target)}`;
+    case "processing-reset":
+      return `cleared the chain on ${name(command.target)}`;
+    case "fix":
+      return `working on ${name(command.target)}`;
+    case "eq":
+      return `${command.phrase.move === "cut" ? "cut" : "boost"} on ${name(command.target)}`;
+    case "tune":
+      return `tuned ${name(command.target)} ${command.cents > 0 ? "up" : "down"} ${Math.abs(Math.round(command.cents))} cents`;
+    case "limiter":
+      return command.on ? "limiter on the master" : "limiter off";
   }
 }
 
