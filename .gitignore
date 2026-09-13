@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+.pnpm-store/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# builds
+web/.next/
+web/out/
+dist/
+build/
+*.egg-info/
+
+# env and secrets
+.env
+.env.*
+!.env.example
+supabase/.temp/
+
+# datasets and model caches (fetched by scripts, never committed)
+data/
+analysis/tests/fixtures/generated/
+.cache/
+
+# editor and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
