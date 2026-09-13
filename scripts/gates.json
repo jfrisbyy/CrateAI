@@ -9,7 +9,8 @@
     "with hats on every eighth, so the exact octave is a convention the hip-hop prior (95 BPM,",
     "OPEN_QUESTIONS 14 and 37) decides against on the fast and slow items by design; the set",
     "scored 0.562 exact and 1.000 octave-tolerant on 2026-09-13. The 0.80 stays for the public",
-    "sets and the corrections set, where the material sets the octave."
+    "sets and the corrections set, where the material sets the octave.",
+    "harmonix carries the packet's numbers: it is real popular music with human beat, downbeat and segment annotations, so unlike the synthetic set its tempo octave is a fact about the record, not a convention. It has no key truth, so its key gates report n/a."
   ],
   "synthetic": {
     "bpm_exact": 0.5,
@@ -44,6 +45,14 @@
     "structure_f": 0.6
   },
   "corrections": {
+    "bpm_exact": 0.8,
+    "bpm_octave": 0.95,
+    "key_exact": 0.65,
+    "key_relative": 0.85,
+    "downbeat": 0.75,
+    "structure_f": 0.6
+  },
+  "harmonix": {
     "bpm_exact": 0.8,
     "bpm_octave": 0.95,
     "key_exact": 0.65,

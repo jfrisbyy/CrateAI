@@ -61,6 +61,32 @@ The audio is used locally for evaluation only. This script is the one place
 in the repository that turns a URL into audio bytes, and it lives outside the
 package on purpose (principle 3 concerns the app; see OPEN_QUESTIONS L.35).
 
+### The Harmonix Set (the hip-hop one)
+
+912 tracks of Western popular music with human beat, downbeat, functional
+segment and tempo annotations, of which **140 are Hip-Hop, 25 R&B and 14
+Funk/Disco**. It is the closest thing to a hip-hop evaluation set that exists,
+and its annotations are exactly the four things the harness scores.
+
+The set distributes **no audio**. The fetcher pulls the annotations and then
+tells you where to drop your own copies of the tracks you already hold:
+
+```
+python scripts/fetch_public_datasets.py --dataset harmonix       # annotations only
+# put your files in data/harmonix/audio/<track>.mp3  (or .wav/.m4a/.flac)
+python scripts/eval_accuracy.py --dataset harmonix --genres hiphop
+```
+
+`scripts/datasets/harmonix.json` maps every track id to its artist, title,
+BPM and genre, so you can see what to look for. A partial set works: the
+loader scores what it finds and lists the rest as skipped. `--genres` takes
+`hiphop` for the Hip-Hop, R&B and Funk/Disco subset, or a comma-separated
+list of genre names.
+
+Harmonix has no key annotations, so its key gates report `n/a`. Its tempo
+gates carry the packet's numbers, because unlike the synthetic set the octave
+is a fact about the record rather than a convention.
+
 ## 3. Run the eval
 
 ```

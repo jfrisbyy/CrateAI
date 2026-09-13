@@ -23,9 +23,11 @@ Dataset layouts under ``data/`` (all produced by ``scripts/``):
 
 from __future__ import annotations
 
+import collections
 import functools
 import json
 import logging
+import math
 import multiprocessing
 import os
 import pathlib
@@ -33,7 +35,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -53,7 +55,7 @@ from .metrics import (
     summarize,
 )
 
-PUBLIC_DATASETS: tuple[str, ...] = ("giantsteps_tempo", "giantsteps_key", "ballroom")
+PUBLIC_DATASETS: tuple[str, ...] = ("giantsteps_tempo", "giantsteps_key", "ballroom", "harmonix")
 DATASETS: tuple[str, ...] = ("synthetic", *PUBLIC_DATASETS, "corrections")
 RESULTS_SCHEMA = 1
 CORRECTION_FIELDS = ("tempo_bpm", "downbeat_phase", "first_downbeat_s", "key", "meter", "section_labels")
@@ -291,6 +293,175 @@ def load_ballroom(data_dir: pathlib.Path, limit: int | None = None) -> Dataset:
 
 
 # --------------------------------------------------------------------------
+# harmonix (beats, downbeats and functional segments for popular music)
+# --------------------------------------------------------------------------
+
+HARMONIX_GENRES_HIPHOP: tuple[str, ...] = ("Hip-Hop", "R&B", "Funk/Disco")
+"""The subset this product is actually for; pass as ``genres`` to load only those."""
+
+
+def parse_harmonix_beats(text: str) -> tuple[list[float], list[float], int]:
+    """``time  beat-in-bar  bar`` per line -> (beats, downbeats, beats_per_bar).
+
+    A downbeat is a line whose beat-in-bar is 1. ``beats_per_bar`` is the most
+    common count between consecutive downbeats, so a track with a pickup or an
+    odd bar still reports its prevailing meter.
+    """
+    beats: list[float] = []
+    downbeats: list[float] = []
+    positions: list[int] = []
+    for line in text.splitlines():
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        try:
+            t = float(parts[0])
+            pos = int(float(parts[1]))
+        except ValueError:
+            continue
+        if not math.isfinite(t):
+            continue
+        beats.append(t)
+        positions.append(pos)
+        if pos == 1:
+            downbeats.append(t)
+    if len(downbeats) >= 2:
+        counts = collections.Counter()
+        idx = [i for i, pos in enumerate(positions) if pos == 1]
+        for a, b in zip(idx, idx[1:]):
+            counts[b - a] += 1
+        beats_per_bar = counts.most_common(1)[0][0] if counts else 4
+    else:
+        beats_per_bar = max(positions) if positions else 4
+    return beats, downbeats, int(beats_per_bar) if beats_per_bar else 4
+
+
+def parse_harmonix_segments(text: str, end_s: float | None = None) -> list[dict[str, Any]]:
+    """``time  label`` per line -> sections with ``start_s``/``end_s``/``label``.
+
+    The last line of a Harmonix segment file is the end of the piece (label
+    ``end`` or ``silence``), so it closes the final section rather than opening
+    a new one.
+    """
+    marks: list[tuple[float, str]] = []
+    for line in text.splitlines():
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        try:
+            t = float(parts[0])
+        except ValueError:
+            continue
+        if math.isfinite(t):
+            marks.append((t, parts[1]))
+    marks.sort(key=lambda m: m[0])
+    sections: list[dict[str, Any]] = []
+    for i, (t, label) in enumerate(marks):
+        if i + 1 < len(marks):
+            stop = marks[i + 1][0]
+        elif end_s is not None and end_s > t:
+            stop = end_s
+        else:
+            break
+        if label.lower() in ("end", "silence") and i + 1 >= len(marks):
+            break
+        if stop > t:
+            sections.append({"label": label, "start_s": t, "end_s": stop})
+    return sections
+
+
+def harmonix_spec_path(data_dir: pathlib.Path | None = None) -> pathlib.Path:
+    """Where the track list lives: beside the dataset first, else in the repo's scripts/."""
+    if data_dir is not None:
+        local = data_dir / "harmonix" / "harmonix.json"
+        if local.exists():
+            return local
+    return pathlib.Path(__file__).resolve().parents[3] / "scripts" / "datasets" / "harmonix.json"
+
+
+def load_harmonix(data_dir: pathlib.Path, limit: int | None = None,
+                  genres: Iterable[str] | None = None,
+                  spec_path: pathlib.Path | None = None) -> Dataset:
+    """The Harmonix Set. Annotations ship with the repo; audio is user-supplied.
+
+    ``genres`` filters on the metadata's genre column;
+    ``HARMONIX_GENRES_HIPHOP`` is the hip-hop, R&B and funk subset.
+    ``spec_path`` overrides where the track list (name, BPM, genre) is read from.
+    """
+    d = data_dir / "harmonix"
+    ds = Dataset("harmonix")
+    # the fetcher mirrors the repository layout (dataset/...); a hand-copied
+    # checkout may be flat. Accept either.
+    beats_dir = next((c for c in (d / "dataset" / "beats_and_downbeats", d / "beats_and_downbeats")
+                      if c.is_dir()), None)
+    if beats_dir is None:
+        ds.note = (f"not found: {d / 'dataset' / 'beats_and_downbeats'} "
+                   f"(run scripts/fetch_public_datasets.py --dataset harmonix)")
+        return ds
+    seg_dir = beats_dir.parent / "segments"
+    spec_path = spec_path or harmonix_spec_path(data_dir)
+    meta_by_name: dict[str, dict[str, Any]] = {}
+    if spec_path.exists():
+        try:
+            for entry in json.loads(spec_path.read_text()).get("items", []):
+                meta_by_name[entry["name"]] = entry
+        except (ValueError, KeyError):
+            pass
+    wanted = {g.casefold() for g in genres} if genres is not None else None
+    audio_by_name: dict[str, pathlib.Path] = {}
+    for p in (d / "audio").rglob("*") if (d / "audio").is_dir() else ():
+        if p.is_file() and p.suffix.lower() in (".mp3", ".wav", ".m4a", ".flac", ".aiff", ".aif", ".ogg"):
+            audio_by_name.setdefault(p.stem, p)
+    n_filtered = 0
+    for beats_file in sorted(beats_dir.glob("*.txt")):
+        name = beats_file.stem
+        entry = meta_by_name.get(name, {})
+        genre = (entry.get("genre") or "").strip()
+        if wanted is not None and genre.casefold() not in wanted:
+            n_filtered += 1
+            continue
+        beats, downbeats, beats_per_bar = parse_harmonix_beats(beats_file.read_text())
+        if len(beats) < 2:
+            ds.skipped.append({"id": name, "reason": "fewer than two annotated beats"})
+            continue
+        audio = audio_by_name.get(name)
+        if audio is None:
+            ds.skipped.append({"id": name, "reason": "missing audio (the Harmonix Set ships no audio)"})
+            continue
+        duration_s = entry.get("duration_s")
+        sections: list[dict[str, Any]] = []
+        seg_file = seg_dir / f"{name}.txt"
+        if seg_file.exists():
+            sections = parse_harmonix_segments(seg_file.read_text(), end_s=duration_s or beats[-1])
+        bpm = entry.get("bpm")
+        if bpm is None:
+            ibi = np.diff(np.asarray(beats))
+            bpm = float(60.0 / np.median(ibi)) if ibi.size else None
+        truth: dict[str, Any] = {
+            "bpm": float(bpm) if bpm else None,
+            "beats_s": beats,
+            "downbeats_s": downbeats,
+            "meter": f"{beats_per_bar}/4",
+            "beats_per_bar": beats_per_bar,
+        }
+        if sections:
+            truth["sections"] = sections
+        ds.items.append(Item(id=name, truth=truth, path=str(audio), meta={
+            "genre": genre, "title": entry.get("title", ""), "artist": entry.get("artist", ""),
+            "bpm_source": "annotation metadata" if entry.get("bpm") else "median inter-beat interval",
+        }))
+    ds.items = _limit(ds.items, limit)
+    if not ds.items and not ds.note:
+        missing = sum(1 for s in ds.skipped if "missing audio" in s["reason"])
+        ds.note = (f"annotations present under {d} but no audio matched "
+                   f"({missing} tracks); put your own copies in {d / 'audio'} named <track>.<ext>, "
+                   f"e.g. {d / 'audio' / '0001_12step.mp3'}")
+    elif n_filtered:
+        ds.note = f"{len(ds.items)} of {len(ds.items) + n_filtered} tracks after the genre filter"
+    return ds
+
+
+# --------------------------------------------------------------------------
 # corrections (Supabase, service role, one account only)
 # --------------------------------------------------------------------------
 
@@ -455,6 +626,7 @@ LOADERS: dict[str, Callable[..., Dataset]] = {
     "giantsteps_tempo": load_giantsteps_tempo,
     "giantsteps_key": load_giantsteps_key,
     "ballroom": load_ballroom,
+    "harmonix": load_harmonix,
     "corrections": load_corrections,
 }
 
@@ -805,7 +977,8 @@ def save_results(doc: Mapping[str, Any], eval_dir: pathlib.Path) -> tuple[pathli
 
 
 __all__ = [
-    "CORRECTIONS_ENV", "DATASETS", "PUBLIC_DATASETS", "Dataset", "DatasetOutcome", "Item", "ItemResult", "ItemRun",
+    "CORRECTIONS_ENV", "DATASETS", "HARMONIX_GENRES_HIPHOP", "PUBLIC_DATASETS",
+    "Dataset", "DatasetOutcome", "Item", "ItemResult", "ItemRun",
     "analyze_item", "evaluate", "load_ballroom", "load_corrections", "load_dataset", "load_giantsteps_key",
     "load_giantsteps_tempo", "load_synthetic", "parse_beats_file", "render_markdown", "render_table",
     "run_dataset", "save_results", "truth_from_corrections",

@@ -173,6 +173,13 @@ assumption gets replaced. Numbered so they can be referenced from PRs.
     only for the harness. *Assumption:* the harness reads them with the
     service role in CI against your own account only, and never for other
     users without a written opt-in.
+38. **Harmonix audio.** The Harmonix Set gives 179 hip-hop, R&B and funk
+    tracks with human beat, downbeat, segment and tempo annotations, but
+    distributes no audio. *Assumption:* you hold many of these records
+    already and will drop the ones you have into `data/harmonix/audio/`;
+    the loader scores whatever it finds, so even 30 of the 179 is a far
+    better read on real accuracy than the synthetic set gives. The track
+    list with artist and title is `scripts/datasets/harmonix.json`.
 37. **The exact-tempo gate on the synthetic set.** The synthetic tempos are
     uniform over 65–175 BPM with hats on every eighth, so the exact octave
     is a convention; the hip-hop prior (question 14) halves the items above

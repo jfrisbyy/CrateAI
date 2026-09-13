@@ -55,6 +55,13 @@ GIANTSTEPS_LICENSE = (
     "file; cite the papers. Audio: 2-minute Beatport 'LOFI' preview clips, copyright their labels, "
     "fetched exactly as the dataset's own audio_dl.sh does; local evaluation only, never redistributed."
 )
+HARMONIX_LICENSE = (
+    "Annotations: The Harmonix Set, Nieto et al., ISMIR 2019, 'The Harmonix Set: Beats, Downbeats, and "
+    "Functional Segment Annotations of Western Popular Music'; released under the repository's license "
+    "agreement, cite the paper. Audio: NOT distributed by the dataset and not downloaded by this script. "
+    "Supply your own copies of the tracks you already hold, named <track>.<ext> under data/harmonix/audio/."
+)
+
 BALLROOM_LICENSE = (
     "Audio: the Ballroom dataset of the ISMIR 2004 tempo induction contest (Gouyon et al., IEEE TASLP "
     "2006), 698 thirty-second excerpts distributed by MTG/UPF for research use. Beat and bar "
@@ -79,6 +86,8 @@ class Spec:
     """URL patterns with {name}, tried in order (GiantSteps)"""
     audio_tarball: dict[str, str] | None = None
     """{url, md5} for a single archive holding all audio (Ballroom)"""
+    audio_user_supplied: bool = False
+    """the set distributes no audio; the user drops their own copies in data/<name>/audio/ (Harmonix)"""
 
     @property
     def repo(self) -> str:
@@ -128,6 +137,9 @@ def load_specs() -> dict[str, Spec]:
                                ["annotations/key"], [".key"], ".mp3", audio_sources=gs_sources),
         "ballroom": Spec("ballroom", index("ballroom"), BALLROOM_LICENSE, ["."], [".beats"], ".wav",
                          audio_tarball=index("ballroom")["audio_tarball"]),
+        "harmonix": Spec("harmonix", index("harmonix"), HARMONIX_LICENSE,
+                         ["dataset/beats_and_downbeats", "dataset/segments"], [".txt", ".txt"], ".mp3",
+                         audio_user_supplied=True),
     }
 
 
@@ -480,6 +492,13 @@ def fetch_dataset(spec: Spec, data_dir: pathlib.Path, limit: int | None, jobs: i
     audio_records: list[dict[str, Any]] = []
     if no_audio:
         log("  audio: skipped (--no-audio)")
+    elif spec.audio_user_supplied:
+        audio_dir = data_dir / spec.name / "audio"
+        audio_dir.mkdir(parents=True, exist_ok=True)
+        have = {p.stem for p in audio_dir.rglob("*") if p.is_file()}
+        n_have = sum(1 for n in names if n in have)
+        log(f"  audio: not distributed by this dataset; {n_have}/{len(names)} of your own copies found "
+            f"in {audio_dir}. Name them <track>.mp3 (or .wav/.m4a/.flac); the harness skips the rest.")
     elif spec.audio_tarball:
         audio_records = fetch_audio_tarball(spec, data_dir, names, log)
     else:
@@ -498,9 +517,14 @@ def fetch_dataset(spec: Spec, data_dir: pathlib.Path, limit: int | None, jobs: i
 def print_listing(specs: list[Spec], limit: int | None, data_dir: pathlib.Path) -> None:
     for spec in specs:
         names = spec.names[:limit] if limit is not None else spec.names
-        present = sum(1 for n in names if audio_local(spec, data_dir, n).exists()) if not spec.audio_tarball else \
-            sum(1 for p in (data_dir / spec.name).rglob(f"*{spec.audio_suffix}") if p.stem in set(names)) \
-            if (data_dir / spec.name).exists() else 0
+        if spec.audio_user_supplied:
+            audio_dir = data_dir / spec.name / "audio"
+            have = {p.stem for p in audio_dir.rglob("*") if p.is_file()} if audio_dir.is_dir() else set()
+            present = sum(1 for n in names if n in have)
+        else:
+            present = sum(1 for n in names if audio_local(spec, data_dir, n).exists()) if not spec.audio_tarball else \
+                sum(1 for p in (data_dir / spec.name).rglob(f"*{spec.audio_suffix}") if p.stem in set(names)) \
+                if (data_dir / spec.name).exists() else 0
         print(f"== {spec.name}: {len(names)} of {len(spec.names)} items ({present} audio files already present)")
         print(f"   annotations: https://github.com/{spec.repo} @ {spec.commit}")
         print(f"     tarball  {spec.tarball_url()}")
@@ -511,11 +535,17 @@ def print_listing(specs: list[Spec], limit: int | None, data_dir: pathlib.Path) 
                 print(f"   audio source {i + 1}: {pattern}" + ("  (md5-verified against scripts/datasets)" if i == 0 else ""))
         if spec.audio_tarball:
             print(f"   audio archive: {spec.audio_tarball['url']} (md5 {spec.audio_tarball.get('md5')}, ~1.5 GB)")
+        if spec.audio_user_supplied:
+            print(f"   audio: not distributed by this dataset and not downloaded. Put your own copies in "
+                  f"{data_dir / spec.name / 'audio'}/<track>{spec.audio_suffix}; a partial set works.")
         print(f"   license: {spec.license_note}")
         shown = names if limit is not None else names[:3]
         for n in shown:
             if spec.audio_sources:
                 print(f"     {n}: {spec.audio_sources[0].format(name=n)}")
+            elif spec.audio_user_supplied:
+                print(f"     {n}: your own copy at {data_dir / spec.name / 'audio' / (n + spec.audio_suffix)}; "
+                      f"{spec.raw_url(spec.annotation_rel(n, spec.annotation_dirs[0], spec.annotation_suffixes[0]))}")
             else:
                 print(f"     {n}: BallroomData/<Genre>/{n}{spec.audio_suffix} from the archive; "
                       f"{spec.raw_url(spec.annotation_rel(n, spec.annotation_dirs[0], spec.annotation_suffixes[0]))}")

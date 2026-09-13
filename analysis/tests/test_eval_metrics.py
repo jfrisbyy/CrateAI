@@ -448,3 +448,82 @@ def test_parallel_run_records_a_crashed_worker_instead_of_hanging(tmp_path):
     for r in results:
         assert "lost" in r.prediction.errors["analysis"]
         assert r.scores["bpm_exact"].value == 0.0
+
+
+# --- harmonix ---------------------------------------------------------------
+
+HARMONIX_BEATS = "\n".join(
+    f"{i * 0.5:.6f}\t{i % 4 + 1}\t{i // 4 + 1}" for i in range(32)
+)
+HARMONIX_SEGMENTS = "0.0 intro\n4.0 verse\n12.0 chorus\n16.0 end\n"
+
+
+def test_parse_harmonix_beats_reads_downbeats_and_meter():
+    beats, downbeats, per_bar = H.parse_harmonix_beats(HARMONIX_BEATS)
+    assert len(beats) == 32
+    assert downbeats == [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0]
+    assert per_bar == 4
+
+
+def test_parse_harmonix_beats_tolerates_junk_and_a_three_four_meter():
+    text = "bad line\n0.0\t1\t1\n0.4\t2\t1\n0.8\t3\t1\n1.2\t1\t2\n1.6\t2\t2\n\n2.0\t3\t2\n2.4\t1\t3\n"
+    beats, downbeats, per_bar = H.parse_harmonix_beats(text)
+    assert len(beats) == 7
+    assert downbeats == [0.0, 1.2, 2.4]
+    assert per_bar == 3
+
+
+def test_parse_harmonix_segments_closes_sections_and_drops_the_end_marker():
+    sections = H.parse_harmonix_segments(HARMONIX_SEGMENTS)
+    assert [s["label"] for s in sections] == ["intro", "verse", "chorus"]
+    assert sections[0] == {"label": "intro", "start_s": 0.0, "end_s": 4.0}
+    assert sections[-1]["end_s"] == 16.0
+
+
+def test_load_harmonix_builds_truth_and_filters_by_genre(tmp_path):
+    import json as _json
+
+    import soundfile as sf
+
+    data = tmp_path / "data"
+    ann = data / "harmonix" / "dataset"
+    (ann / "beats_and_downbeats").mkdir(parents=True)
+    (ann / "segments").mkdir(parents=True)
+    audio_dir = data / "harmonix" / "audio"
+    audio_dir.mkdir(parents=True)
+    sr = 22050
+    for name in ("0001_rap", "0002_rock"):
+        (ann / "beats_and_downbeats" / f"{name}.txt").write_text(HARMONIX_BEATS)
+        (ann / "segments" / f"{name}.txt").write_text(HARMONIX_SEGMENTS)
+        sf.write(audio_dir / f"{name}.wav", click_track(120.0, 16.0, sr), sr)
+
+    spec = {"items": [
+        {"name": "0001_rap", "bpm": 120.0, "genre": "Hip-Hop", "duration_s": 16.0,
+         "title": "T", "artist": "A"},
+        {"name": "0002_rock", "bpm": 120.0, "genre": "Rock", "duration_s": 16.0,
+         "title": "T2", "artist": "A2"},
+    ]}
+    # the loader prefers a track list sitting beside the dataset
+    (data / "harmonix" / "harmonix.json").write_text(_json.dumps(spec))
+
+    ds = H.load_harmonix(data)
+    assert {i.id for i in ds.items} == {"0001_rap", "0002_rock"}
+    truth = next(i for i in ds.items if i.id == "0001_rap").truth
+    assert truth["meter"] == "4/4"
+    assert len(truth["downbeats_s"]) == 8
+    assert [s["label"] for s in truth["sections"]] == ["intro", "verse", "chorus"]
+
+    only_hh = H.load_harmonix(data, genres=H.HARMONIX_GENRES_HIPHOP)
+    assert [i.id for i in only_hh.items] == ["0001_rap"]
+    assert only_hh.items[0].meta["genre"] == "Hip-Hop"
+
+
+def test_load_harmonix_without_audio_says_where_to_put_it(tmp_path):
+    data = tmp_path / "data"
+    ann = data / "harmonix" / "dataset" / "beats_and_downbeats"
+    ann.mkdir(parents=True)
+    (ann / "0001_rap.txt").write_text(HARMONIX_BEATS)
+    ds = H.load_harmonix(data)
+    assert not ds.items
+    assert "audio" in (ds.note or "")
+    assert ds.skipped and "missing audio" in ds.skipped[0]["reason"]

@@ -32,9 +32,10 @@ no model or search keys, no egress to Beatport or the ISMIR mirror):
 - A live model turn (`/api/chat`, breakdown narration, the search parser)
   and a live web search. The tool schemas are strict and tested against
   fakes; the grounding validator is tested on fixtures.
-- The public datasets. `scripts/fetch_public_datasets.py` fetched the
-  GiantSteps annotations, but audio downloads answered 403 through the
-  sandbox proxy. Run it once on a machine with normal egress.
+- The public datasets. The sandbox's egress allowlist reaches GitHub and the
+  package registries only, so every annotation set downloads and no audio
+  does. The Harmonix hip-hop annotations are fetched and parsing; GiantSteps
+  and Ballroom audio need a machine with normal egress.
 
 ## Accuracy harness (synthetic set, 48 items, `scripts/gates.json`)
 

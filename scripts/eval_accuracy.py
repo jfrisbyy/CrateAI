@@ -5,7 +5,7 @@
     python scripts/eval_accuracy.py --dataset all --gates scripts/gates.json --workers 4
     python scripts/eval_accuracy.py --dataset giantsteps_key,ballroom --limit 50 --json out.json --markdown out.md
 
-Datasets: synthetic | giantsteps_tempo | giantsteps_key | ballroom | corrections | all
+Datasets: synthetic | giantsteps_tempo | giantsteps_key | ballroom | harmonix | corrections | all
 (``all`` runs whatever is present under data/ and skips the rest with a message;
 naming a dataset that is missing fails the run when gates are on).
 
@@ -86,10 +86,16 @@ def resolve_datasets(spec: list[str]) -> tuple[list[str], bool]:
 
 def score_datasets(names: list[str], data_dir: pathlib.Path, *, limit: int | None, workers: int,
                    stages: list[str] | None, explicit: bool, verbose: bool,
-                   env: Mapping[str, str] | None = None, log=print) -> dict[str, H.DatasetOutcome]:
+                   env: Mapping[str, str] | None = None, genres: list[str] | None = None,
+                   log=print) -> dict[str, H.DatasetOutcome]:
     outcomes: dict[str, H.DatasetOutcome] = {}
     for name in names:
-        ds = H.load_dataset(name, data_dir, limit=limit, **({"env": env} if name == "corrections" else {}))
+        kwargs: dict = {}
+        if name == "corrections":
+            kwargs["env"] = env
+        if name == "harmonix" and genres:
+            kwargs["genres"] = genres
+        ds = H.load_dataset(name, data_dir, limit=limit, **kwargs)
         if not ds.items:
             log(f"[{name}] {ds.note or 'no items'}")
             outcomes[name] = H.DatasetOutcome(ds, [], 0.0, requested=explicit)
@@ -123,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter,
                                  epilog=__doc__.split("\n\n", 1)[1])
     ap.add_argument("--dataset", action="append", default=None,
-                    help="synthetic|giantsteps_tempo|giantsteps_key|ballroom|corrections|all (repeat or comma-separate)")
+                    help="synthetic|giantsteps_tempo|giantsteps_key|ballroom|harmonix|corrections|all (repeat or comma-separate)")
     ap.add_argument("--limit", type=int, default=None, help="first N items of each dataset")
     ap.add_argument("--workers", type=int, default=max(1, min(4, os.cpu_count() or 1)),
                     help="multiprocessing workers (default: min(4, cpus))")
@@ -132,6 +138,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", type=pathlib.Path, default=None, help="also write the results JSON here")
     ap.add_argument("--markdown", type=pathlib.Path, default=None, help="also write the markdown report here")
     ap.add_argument("--gates", type=pathlib.Path, default=DEFAULT_GATES)
+    ap.add_argument("--genres", default=None,
+                    help="harmonix only: comma-separated genres to keep, or 'hiphop' for "
+                         "Hip-Hop, R&B and Funk/Disco (the subset this product is for)")
     ap.add_argument("--no-gate", action="store_true", help="report gates but never fail on them")
     ap.add_argument("--no-save", action="store_true", help="do not write data/eval/<timestamp>.json and latest.json")
     ap.add_argument("--verbose", "-v", action="store_true", help="one line per item")
@@ -148,8 +157,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"gates file not found: {args.gates}", file=sys.stderr)
         return 2
 
+    genres: list[str] | None = None
+    if args.genres:
+        genres = (list(H.HARMONIX_GENRES_HIPHOP) if args.genres.strip().casefold() in ("hiphop", "hip-hop")
+                  else [g.strip() for g in args.genres.split(",") if g.strip()])
     outcomes = score_datasets(names, args.data_dir, limit=args.limit, workers=args.workers, stages=stages,
-                              explicit=explicit, verbose=args.verbose)
+                              explicit=explicit, verbose=args.verbose, genres=genres)
     meta: dict[str, Any] = {
         "datasets": names, "limit": args.limit, "workers": args.workers,
         "git_sha": os.environ.get("GITHUB_SHA"), "ci": bool(os.environ.get("CI")),
