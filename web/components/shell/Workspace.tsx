@@ -25,6 +25,8 @@
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChatPane } from "@/components/chat/ChatPane";
+import { ProcessingDock } from "@/components/processing/ProcessingDock";
+import { ProcessingProvider } from "@/components/processing/ProcessingProvider";
 import { LibraryPane } from "@/components/library/LibraryPane";
 import { FirstRun } from "@/components/onboarding/FirstRun";
 import { RackPanel } from "@/components/rack/RackPanel";
@@ -68,7 +70,11 @@ export function Workspace({ children }: { children: ReactNode }) {
   return (
     <SearchProvider>
       <SessionProvider>
-        <Shell>{children}</Shell>
+        {/* The chain lives beside the transport, not on the panel: an EQ is a
+            control you use while listening to an object, not an object. */}
+        <ProcessingProvider>
+          <Shell>{children}</Shell>
+        </ProcessingProvider>
       </SessionProvider>
     </SearchProvider>
   );
@@ -319,6 +325,7 @@ function Shell({ children }: { children: ReactNode }) {
           </div>
         </div>
 
+        <ProcessingDock />
         <TransportBar onOpenSession={showSession} />
       </div>
       <KeymapSheet open={keymapOpen} onClose={() => setKeymapOpen(false)} />
