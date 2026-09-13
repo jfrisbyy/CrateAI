@@ -4,7 +4,7 @@
 
 import { NextResponse } from "next/server";
 import { stripeEnv, subscriptionPatch, verifyWebhookSignature, type StripeEvent } from "@/lib/billing/stripe";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { tryAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
   const env = stripeEnv();
@@ -22,7 +22,11 @@ export async function POST(req: Request) {
   const patch = subscriptionPatch(event);
   if (!patch) return NextResponse.json({ received: true, ignored: event.type });
 
-  const admin = createAdminClient();
+  // Writing a plan needs the service role (a user's own policy freezes
+  // profiles.plan). Missing configuration is 503, like the missing webhook
+  // secret above, not an exception Stripe would see as a 500.
+  const admin = tryAdminClient();
+  if (!admin) return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is not set" }, { status: 503 });
   let userId = patch.user_id;
   if (!userId && patch.customer_id) {
     const { data } = await admin.from("profiles").select("id").eq("stripe_customer_id", patch.customer_id).maybeSingle();

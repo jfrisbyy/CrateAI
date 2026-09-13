@@ -14,7 +14,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
     const signed = await supabase.storage.from(AUDIO_BUCKET).createSignedUrl(file.storage_path, SIGNED_URL_TTL_S);
     if (signed.error || !signed.data) {
-      throw new HttpError(500, `Could not sign the playback URL: ${signed.error?.message ?? "unknown error"}`);
+      // A row whose object is not there (an upload that never finished, or
+      // audio removed underneath the row) is a missing resource, not a server
+      // fault. Anything else storage says stays a 500 so an outage still shows.
+      const message = signed.error?.message ?? "unknown error";
+      if (/not found/i.test(message)) throw new HttpError(404, "The audio for this file is not in storage.");
+      throw new HttpError(500, `Could not sign the playback URL: ${message}`);
     }
     const response: SignedUrlResponse = { url: signed.data.signedUrl, expires_in: SIGNED_URL_TTL_S };
     return json(response, { headers: { "cache-control": "private, no-store" } });

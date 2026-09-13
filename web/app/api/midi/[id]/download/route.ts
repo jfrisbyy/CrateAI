@@ -17,7 +17,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       download: basenameOf(row.storage_path),
     });
     if (signed.error || !signed.data) {
-      throw new HttpError(500, `Could not sign the download URL: ${signed.error?.message ?? "unknown error"}`);
+      // As in /api/files/[id]/url: a missing object is a 404, a broken storage
+      // call is still a 500.
+      const message = signed.error?.message ?? "unknown error";
+      if (/not found/i.test(message)) throw new HttpError(404, "That MIDI file is not in storage.");
+      throw new HttpError(500, `Could not sign the download URL: ${message}`);
     }
     const response: MidiDownloadResponse = { url: signed.data.signedUrl, expires_in: SIGNED_URL_TTL_S, filename: basenameOf(row.storage_path) };
     return json(response, { headers: { "cache-control": "private, no-store" } });

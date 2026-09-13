@@ -6,18 +6,33 @@
 import { z } from "zod";
 import type { JobResponse } from "@/lib/api/types";
 import { dispatchJob } from "@/lib/compute/dispatch";
-import { dbError, handle, HttpError, json, parseBody, requireUser, requireUuid } from "@/lib/http";
+import { dbError, handle, HttpError, json, requireUser, requireUuid } from "@/lib/http";
 import { REPORT_SECTIONS } from "@/lib/types/report";
 
 const schema = z.object({
   stages: z.array(z.enum([...REPORT_SECTIONS, "tags"])).min(1).max(20).optional(),
 });
 
+/** The body is optional; an empty one means "every stage". Anything present must validate. */
+async function parseOptionalBody(req: Request): Promise<z.infer<typeof schema>> {
+  const text = await req.text();
+  if (!text.trim()) return {};
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    throw new HttpError(400, "Body must be JSON.");
+  }
+  const parsed = schema.safeParse(raw);
+  if (!parsed.success) throw new HttpError(400, "Invalid request body.", parsed.error.issues);
+  return parsed.data;
+}
+
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     const { supabase, user } = await requireUser();
     const id = requireUuid((await ctx.params).id, "file id");
-    const body = req.headers.get("content-length") === "0" ? {} : await parseBody(req, schema).catch(() => ({}) as z.infer<typeof schema>);
+    const body = await parseOptionalBody(req);
 
     const { data: file, error } = await supabase.from("files").select("id, analysis_version, status").eq("id", id).maybeSingle();
     if (error) throw dbError(error, "Loading the file");
