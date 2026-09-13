@@ -1,0 +1,49 @@
+{
+  "_notes": [
+    "Initial gates from BUILD_PACKET section 16, keyed per dataset. scripts/eval_accuracy.py",
+    "checks a gate only for datasets it actually scored, and only for metrics that applied to",
+    "at least one item of that dataset (GiantSteps Tempo has no key truth, so its key gates",
+    "are reported as n/a). Raise a number here only after data/eval/latest.json shows the",
+    "pipeline clearing it with margin; see scripts/README.md."
+  ],
+  "synthetic": {
+    "bpm_exact": 0.80,
+    "bpm_octave": 0.95,
+    "key_exact": 0.65,
+    "key_relative": 0.85,
+    "downbeat": 0.75,
+    "structure_f": 0.6
+  },
+  "giantsteps_tempo": {
+    "bpm_exact": 0.80,
+    "bpm_octave": 0.95,
+    "key_exact": 0.65,
+    "key_relative": 0.85,
+    "downbeat": 0.75,
+    "structure_f": 0.6
+  },
+  "giantsteps_key": {
+    "bpm_exact": 0.80,
+    "bpm_octave": 0.95,
+    "key_exact": 0.65,
+    "key_relative": 0.85,
+    "downbeat": 0.75,
+    "structure_f": 0.6
+  },
+  "ballroom": {
+    "bpm_exact": 0.80,
+    "bpm_octave": 0.95,
+    "key_exact": 0.65,
+    "key_relative": 0.85,
+    "downbeat": 0.75,
+    "structure_f": 0.6
+  },
+  "corrections": {
+    "bpm_exact": 0.80,
+    "bpm_octave": 0.95,
+    "key_exact": 0.65,
+    "key_relative": 0.85,
+    "downbeat": 0.75,
+    "structure_f": 0.6
+  }
+}

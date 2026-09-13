@@ -1,0 +1,168 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "22"
+
+jobs:
+  python:
+    name: python (pytest, ruff)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: analysis/pyproject.toml
+      - name: Install analysis with dev extras
+        run: |
+          uv venv --python "$PYTHON_VERSION" .venv
+          uv pip install --python .venv/bin/python -e "./analysis[dev]"
+      - name: pytest
+        working-directory: analysis
+        run: ../.venv/bin/pytest -q
+      - name: ruff
+        run: .venv/bin/ruff check --config analysis/pyproject.toml analysis scripts
+
+  web:
+    name: web (typecheck, lint, test, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect the web app
+        id: web
+        run: |
+          if [ -f web/package.json ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else
+            echo "present=false" >> "$GITHUB_OUTPUT"; echo "web/package.json not present yet; nothing to build"; fi
+      - uses: actions/setup-node@v4
+        if: steps.web.outputs.present == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install pnpm
+        if: steps.web.outputs.present == 'true'
+        run: npm install --global pnpm@10
+      - name: pnpm install
+        if: steps.web.outputs.present == 'true'
+        working-directory: web
+        run: |
+          if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install --no-frozen-lockfile; fi
+      - name: typecheck
+        if: steps.web.outputs.present == 'true'
+        working-directory: web
+        run: pnpm run --if-present typecheck
+      - name: lint
+        if: steps.web.outputs.present == 'true'
+        working-directory: web
+        run: pnpm run --if-present lint
+      - name: test
+        if: steps.web.outputs.present == 'true'
+        working-directory: web
+        run: pnpm run --if-present test
+      - name: build
+        if: steps.web.outputs.present == 'true'
+        working-directory: web
+        run: pnpm run build
+
+  schema:
+    name: schema (report types in sync)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: analysis/pyproject.toml
+      - name: Install analysis
+        run: |
+          uv venv --python "$PYTHON_VERSION" .venv
+          uv pip install --python .venv/bin/python -e "./analysis[dev]"
+      - name: gen_report_types --check
+        run: .venv/bin/python scripts/gen_report_types.py --check
+
+  changes:
+    name: changed paths
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch'
+    outputs:
+      analysis: ${{ steps.filter.outputs.analysis }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            analysis:
+              - 'analysis/**'
+              - 'scripts/**'
+              - '.github/workflows/ci.yml'
+
+  harness:
+    name: accuracy harness (gates)
+    needs: changes
+    # principle 9: the harness gates merges for anything touching analysis
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.analysis == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: analysis/pyproject.toml
+      - name: Install analysis with dev extras
+        run: |
+          uv venv --python "$PYTHON_VERSION" .venv
+          uv pip install --python .venv/bin/python -e "./analysis[dev]"
+      - name: Restore public datasets
+        id: datasets
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/giantsteps_tempo
+            data/giantsteps_key
+            data/ballroom
+            data/SOURCES.md
+          key: public-datasets-${{ hashFiles('scripts/fetch_public_datasets.py', 'scripts/datasets/*.json') }}
+      - name: Fetch public datasets (opt-in via repository variable, cache miss only)
+        if: steps.datasets.outputs.cache-hit != 'true' && vars.HARNESS_FETCH_PUBLIC_DATASETS == 'true'
+        run: .venv/bin/python scripts/fetch_public_datasets.py --dataset all
+      - name: Build the synthetic set
+        run: .venv/bin/python scripts/build_synthetic_dataset.py --quiet
+      - name: Run the accuracy harness
+        run: >
+          .venv/bin/python scripts/eval_accuracy.py --dataset all --gates scripts/gates.json --workers 2
+          --json data/eval/latest.json --markdown data/eval/latest.md
+      - name: Publish the report to the job summary
+        if: always()
+        run: |
+          if [ -f data/eval/latest.md ]; then cat data/eval/latest.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accuracy-eval-${{ github.run_id }}
+          path: |
+            data/eval/latest.json
+            data/eval/latest.md
+          if-no-files-found: warn
+          retention-days: 30

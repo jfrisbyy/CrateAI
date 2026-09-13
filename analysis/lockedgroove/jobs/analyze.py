@@ -34,6 +34,7 @@ from ..pipeline import DEFAULT_STAGES, analyze_array, to_mono
 from ..report import AnalysisReport, effective
 from ..storage import Storage
 from .common import JobContext, JobError, params_of
+from .derived import STEM_AWARE_STAGES, load_stem_arrays
 
 log = logging.getLogger(__name__)
 
@@ -128,12 +129,20 @@ def analyze_task(job: dict, db: Database, storage: Storage, ctx: JobContext, fil
     # An explicit stage list adds to what is already there; a default run starts fresh.
     base_report = prior if (prior is not None and stages is not None) else None
 
+    # Stem-aware stages (drums, chords, sample use, instrumentation, effects) read the file's stems
+    # when separation has run; without stems they measure the mix and say so in ``method``.
+    stems_arrays = None
+    wanted_now = list(stages) if stages is not None else list(DEFAULT_STAGES)
+    if any(s in wanted_now for s in STEM_AWARE_STAGES):
+        ctx.progress(0.08, "stems")
+        stems_arrays = load_stem_arrays(db, ctx, file, sr_target=int(sr))
+
     def on_progress(stage: str, fraction: float) -> None:
         ctx.progress(0.1 + 0.8 * fraction, stage)
 
     report, actx = analyze_array(
         y, sr, file_info=info, stages=stages, analysis_version=requested,
-        on_progress=on_progress, return_context=True, base_report=base_report,
+        on_progress=on_progress, return_context=True, base_report=base_report, stems=stems_arrays,
     )
     if prior is not None:
         report.user_edits = prior.user_edits  # corrections survive re-analysis (principle 7)
@@ -169,6 +178,7 @@ def analyze_task(job: dict, db: Database, storage: Storage, ctx: JobContext, fil
         "tag_ids": tag_ids,
         "duration_s": full_duration_s,
         "skipped": False,
+        "stems_used": sorted(stems_arrays) if stems_arrays else [],
     }
     if truncated_to_s is not None:
         result["truncated_to_s"] = truncated_to_s
