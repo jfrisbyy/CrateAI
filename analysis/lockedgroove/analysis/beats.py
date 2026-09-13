@@ -182,6 +182,10 @@ def _phase_scores(values: np.ndarray, beats_per_bar: int) -> np.ndarray:
     return np.array([v[p::beats_per_bar].mean() if v[p::beats_per_bar].size else 0.0 for p in range(beats_per_bar)])
 
 
+HARMONIC_SPREAD_MIN = 5.0
+HARMONIC_MARGIN_MIN = 0.3
+
+
 def _margin(scores: np.ndarray) -> float:
     if scores.size < 2 or scores.max() <= 0:
         return 0.0
@@ -199,15 +203,24 @@ def downbeat_phase(y: np.ndarray, sr: int, beats: np.ndarray, beats_per_bar: int
     if beats.size < beats_per_bar or beats_per_bar < 2:
         return 0, 0.0
     low = _phase_scores(low_band_onset_at_beats(y, sr, beats), beats_per_bar)
+    w_harmonic = 0.0
+    harmonic = np.zeros(beats_per_bar)
     try:
-        harmonic = _phase_scores(chroma_change_at_beats(y, sr, beats), beats_per_bar)
+        change = chroma_change_at_beats(y, sr, beats)
+        inner = change[1:-1]
+        # real chord changes are sparse, sharp events: the top of the distribution sits far above the
+        # median. Drums-only material gives a flat spread (~2-4x), and then the cue is ignored.
+        spread = float(np.percentile(inner, 95) / (np.median(inner) + 1e-9)) if inner.size >= 4 else 0.0
+        harmonic = _phase_scores(change, beats_per_bar)
+        if spread >= HARMONIC_SPREAD_MIN and _margin(harmonic) >= HARMONIC_MARGIN_MIN:
+            w_harmonic = _margin(harmonic)
     except Exception:
-        harmonic = np.zeros(beats_per_bar)
+        pass
     # each cue is weighted by how decisive it is on its own, so drums-only material follows the
     # low band and drum-less material follows the harmony instead of mixing in the other's noise
-    scores = _margin(low) * low + _margin(harmonic) * harmonic
+    scores = _margin(low) * low + w_harmonic * harmonic
     if not np.any(scores > 0):
-        return 0, 0.0
+        return int(np.argmax(low)) if np.any(low > 0) else 0, 0.0
     order = np.argsort(scores)[::-1]
     best, second = float(scores[order[0]]), float(scores[order[1]])
     return int(order[0]), float(np.clip((best - second) / best, 0.0, 1.0))
