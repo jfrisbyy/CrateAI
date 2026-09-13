@@ -4,9 +4,18 @@
 // Supabase Realtime (postgres_changes on files and jobs filtered by user_id),
 // plus the upload queue. Reconnects and refetches when the tab becomes
 // visible again; polls while jobs are in flight as insurance.
+//
+// With no Supabase keys configured there is nothing to connect to, so the
+// store holds the rows it was handed and reports itself offline rather than
+// throwing out of an effect. The workspace already refuses to mount without
+// the keys (app/(app)/layout.tsx), but that guard is in another file, and a
+// provider whose only failure mode is "unconfigured" should say so instead of
+// taking the page down with it. It is also what lets /demo drive the real
+// panels with no environment at all.
 
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { hasPublicEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/client";
 import type { FileRow, JobRow } from "@/lib/types/db";
 import { UploadManager, type UploadItem } from "@/lib/upload/uploader";
@@ -81,6 +90,7 @@ export function LibraryProvider({
   }, [uploader, upsertFile, upsertJob]);
 
   const refresh = useCallback(async () => {
+    if (!hasPublicEnv()) return;
     const supabase = createClient();
     const [filesRes, jobsRes] = await Promise.all([
       supabase.from("files").select("*").order("created_at", { ascending: false }).limit(1000),
@@ -92,6 +102,10 @@ export function LibraryProvider({
 
   // Realtime subscription, re-established when the tab comes back.
   useEffect(() => {
+    if (!hasPublicEnv()) {
+      setRealtime("offline");
+      return;
+    }
     const supabase = createClient();
     let disposed = false;
 

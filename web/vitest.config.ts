@@ -5,7 +5,8 @@ import { defineConfig } from "vitest/config";
 // up tests written by other agents (for example lib/audio/renderLoop.test.ts);
 // component tests use `react-dom/server` so they run in node without a DOM.
 // `app/api/**/route.test.ts` runs the route handlers themselves against the
-// Supabase double in lib/testing.
+// Supabase double in lib/testing, and `app/**/*.test.tsx` covers the page
+// components that live next to a route (app/demo).
 export default defineConfig({
   esbuild: { jsx: "automatic" },
   resolve: {
@@ -18,7 +19,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts", "components/**/*.test.tsx", "app/**/*.test.ts"],
+    include: ["lib/**/*.test.ts", "components/**/*.test.tsx", "app/**/*.test.ts", "app/**/*.test.tsx"],
     exclude: ["node_modules/**", ".next/**"],
     setupFiles: ["./lib/testing/setup.ts"],
   },

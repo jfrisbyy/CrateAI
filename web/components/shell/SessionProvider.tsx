@@ -11,6 +11,13 @@
 // The engine is built lazily, on the first play or the first audition, because
 // an AudioContext created before a gesture starts suspended and because the
 // server render has no Web Audio at all.
+//
+// Where the samples come from is injected (`loadSource`), for the same reason
+// the engine injects its backend and its ticker: so the session can be driven
+// without a network. The default is the library — sign a URL for the file and
+// decode it — and `/demo` passes a loader that synthesises the material in the
+// browser. Nothing downstream can tell the difference: the cache, the
+// scheduler and the engine see one `DecodedSource` either way.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, errorMessage } from "@/lib/api/client";
@@ -141,6 +148,26 @@ export interface SessionState {
 
 export type DecodeState = "idle" | "decoding" | "ready" | "error";
 
+/** Fetch and decode one library file: the app's own source path. */
+export type SourceLoader = (fileId: string) => Promise<DecodedSource<AudioBuffer>>;
+
+export const libraryLoader: SourceLoader = async (fileId) => {
+  const { url } = await api.files.url(fileId);
+  const buffer = await fetchAndDecode(url);
+  return sourceOf(buffer);
+};
+
+/** An AudioBuffer as the decode cache accounts for it. */
+export function sourceOf(buffer: AudioBuffer): DecodedSource<AudioBuffer> {
+  return {
+    buffer,
+    bytes: decodedBytes(buffer.numberOfChannels, buffer.length),
+    durationS: buffer.duration,
+    sampleRate: buffer.sampleRate,
+    channels: buffer.numberOfChannels,
+  };
+}
+
 const EMPTY: EngineSnapshot = { tracks: [], regions: [], transport: { playing: false, anchorS: 0, anchorWall: 0, loop: null }, masterGain: 1, waiting: [] };
 
 const SessionContext = createContext<SessionState | null>(null);
@@ -151,7 +178,11 @@ export function useSession(): SessionState {
   return ctx;
 }
 
-export function SessionProvider({ children }: { children: ReactNode }) {
+export function SessionProvider({ children, loadSource = libraryLoader }: { children: ReactNode; loadSource?: SourceLoader }) {
+  // Read through a ref: the engine and its cache are built once, and a caller
+  // that rebuilds the loader on every render must not rebuild them with it.
+  const loadRef = useRef(loadSource);
+  loadRef.current = loadSource;
   const engineRef = useRef<SessionEngine | null>(null);
   const cacheRef = useRef<DecodeCache<AudioBuffer> | null>(null);
   const [snapshot, setSnapshot] = useState<EngineSnapshot>(EMPTY);
@@ -180,17 +211,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     try {
       const cache = new DecodeCache<AudioBuffer>({
         maxBytes: DEFAULT_BUDGET_BYTES,
-        load: async (fileId) => {
-          const { url } = await api.files.url(fileId);
-          const buffer = await fetchAndDecode(url);
-          return {
-            buffer,
-            bytes: decodedBytes(buffer.numberOfChannels, buffer.length),
-            durationS: buffer.duration,
-            sampleRate: buffer.sampleRate,
-            channels: buffer.numberOfChannels,
-          } satisfies DecodedSource<AudioBuffer>;
-        },
+        load: (fileId) => loadRef.current(fileId),
         onReady: (fileId) => {
           engineRef.current?.sourceReady(fileId);
           setDecodeStates((prev) => ({ ...prev, [fileId]: "ready" }));
