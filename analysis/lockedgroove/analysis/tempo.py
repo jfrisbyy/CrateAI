@@ -46,7 +46,7 @@ MAX_BPM = 200.0
 RELATED_TOL = 0.25
 STRENGTH_FULL = 0.3
 CROSS_CHECK_TOL = 0.08
-METHOD = "onset-strength autocorrelation tempogram, prior 95 BPM (50-200), parabolic peak; beat_track cross-check"
+METHOD = "autocorrelation tempogram with a Fourier-tempogram family check, prior 95 BPM (50-200), parabolic peak; beat_track cross-check"
 
 
 def _windowed_autocorrelation(oenv: np.ndarray, win: int, hop: int) -> np.ndarray:
@@ -64,6 +64,27 @@ def _windowed_autocorrelation(oenv: np.ndarray, win: int, hop: int) -> np.ndarra
     ac = librosa.autocorrelate(frames * w, axis=0)
     ac = librosa.util.normalize(ac, norm=np.inf, axis=0)
     return ac.mean(axis=1)
+
+
+def _fourier_strength(oenv: np.ndarray, sr: int, win: int, bpms: np.ndarray) -> np.ndarray:
+    """Time-averaged Fourier tempogram magnitude, resampled onto the autocorrelation's BPM axis, max 1.
+
+    The autocorrelation of a beat pattern peaks at every multiple of the beat period (the half
+    tempo is as strong as the tempo); the Fourier tempogram peaks at the pulse rate and its
+    harmonics (the double tempo). Their product keeps only what both agree on, which pins the
+    octave family so the truth is always the pick or an alternate.
+    """
+    import librosa
+
+    F = np.abs(librosa.feature.fourier_tempogram(onset_envelope=oenv, sr=sr, hop_length=HOP_LENGTH, win_length=win))
+    F = F.mean(axis=1)
+    fbpm = librosa.fourier_tempo_frequencies(sr=sr, hop_length=HOP_LENGTH, win_length=win)
+    finite = np.isfinite(bpms)
+    out = np.zeros_like(bpms, dtype=np.float64)
+    out[finite] = np.interp(bpms[finite], fbpm, F)
+    band = finite & (bpms >= MIN_BPM) & (bpms <= MAX_BPM)
+    peak = float(out[band].max()) if band.any() else 0.0
+    return out / peak if peak > 0 else np.ones_like(out)
 
 
 def _metrically_related(lag: float, lag_best: float, tol: float = RELATED_TOL) -> bool:
@@ -92,16 +113,31 @@ def estimate(y: np.ndarray, sr: int) -> Optional[tuple[float, float, float, Opti
     with np.errstate(divide="ignore", invalid="ignore"):
         log_ratio = np.log2(np.maximum(bpms, 1e-9) / PRIOR_BPM)
     prior = np.exp(-0.5 * (log_ratio / PRIOR_STD_OCTAVES) ** 2)
-    strength = np.where((bpms >= MIN_BPM) & (bpms <= MAX_BPM), np.maximum(ac, 0.0) * prior, 0.0)
-    strength = np.nan_to_num(strength)
+    ac_pos = np.maximum(ac, 0.0)
+    band = np.isfinite(bpms) & (bpms >= MIN_BPM) & (bpms <= MAX_BPM)
+    ac_peak = float(ac_pos[band].max()) if band.any() else 0.0
+    ac_norm = ac_pos / ac_peak if ac_peak > 0 else ac_pos
+    strength = np.nan_to_num(np.where(band, ac_norm * prior, 0.0))
     if not np.any(strength > 0):
         return None
-    peaks, props = scipy.signal.find_peaks(strength, height=0.0)
-    if peaks.size == 0:
-        return None
-    heights = props["peak_heights"]
-    order = np.argsort(heights)[::-1]
-    p = int(peaks[order[0]])
+    # 1. the tempo family: where the autocorrelation and the Fourier tempogram agree (no prior)
+    fourier = _fourier_strength(oenv, sr, win, bpms)
+    family = np.nan_to_num(np.where(band, ac_norm * fourier, 0.0))
+    fam_lag = float(np.argmax(family)) if np.any(family > 0) else float(np.argmax(strength))
+    # 2. the octave inside the family: the prior-weighted autocorrelation at half, same and double
+    candidates = [fam_lag * 2.0, fam_lag, fam_lag / 2.0]
+    best_idx, best_val = -1, -1.0
+    for cand in candidates:
+        c = int(round(cand))
+        if c < 1 or c >= strength.size - 1 or not band[c]:
+            continue
+        lo, hi = max(1, c - 2), min(strength.size - 1, c + 3)
+        local = lo + int(np.argmax(strength[lo:hi]))
+        if strength[local] > best_val:
+            best_idx, best_val = local, float(strength[local])
+    if best_idx < 0:
+        best_idx = int(np.argmax(strength))
+    p = best_idx
     best = float(strength[p])
     a, b, c = strength[p - 1], strength[p], strength[p + 1]
     denom = a - 2 * b + c
@@ -109,9 +145,12 @@ def estimate(y: np.ndarray, sr: int) -> Optional[tuple[float, float, float, Opti
     lag = p + float(np.clip(delta, -0.5, 0.5))
     bpm = 60.0 * sr / (HOP_LENGTH * lag)
     bpm = float(np.clip(bpm, MIN_BPM, MAX_BPM))
+    peaks, props = scipy.signal.find_peaks(strength, height=0.0)
+    heights = props["peak_heights"] if peaks.size else np.zeros(0)
+    order = np.argsort(heights)[::-1]
     runner_up = 0.0
-    for o in order[1:]:
-        if _metrically_related(float(peaks[o]), lag):
+    for o in order:
+        if abs(float(peaks[o]) - p) <= 2 or _metrically_related(float(peaks[o]), lag):
             continue
         runner_up = float(heights[o])
         break

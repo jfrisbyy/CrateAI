@@ -7,13 +7,13 @@ its report source and carries the lower of the two confidences.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..report import AnalysisReport, effective, hedge_word
-from .words import bpm_text, key_display, pct
+from .words import bpm_text, key_display
 
 PITCH = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -80,7 +80,7 @@ def compare(report_a: AnalysisReport, report_b: AnalysisReport,
     sa = {k: effective(v) for k, v in (stems_a or {}).items()}
     sb = {k: effective(v) for k, v in (stems_b or {}).items()}
     out = ComparisonContent(file_a_id=report_a.file.id, file_b_id=report_b.file.id, a_name=a_name, b_name=b_name,
-                            generated_at=datetime.now(timezone.utc).isoformat())
+                            generated_at=datetime.now(UTC).isoformat())
     A = a_name.capitalize() if a_name != "mine" else "Mine"
     B = b_name
 

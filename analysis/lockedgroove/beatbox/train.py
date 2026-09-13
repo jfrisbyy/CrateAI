@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import io
 from dataclasses import dataclass, field
-from typing import Optional
 
 import joblib
 import numpy as np

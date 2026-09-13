@@ -106,7 +106,7 @@ def resample(y: np.ndarray, sr: int, target_sr: int) -> np.ndarray:
 
 def _stage_fn(module_name: str) -> Callable:
     mod = importlib.import_module(f"lockedgroove.analysis.{module_name}")
-    return getattr(mod, "run")
+    return mod.run
 
 
 def analyze_array(

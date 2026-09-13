@@ -64,9 +64,8 @@ def _librosa(y: np.ndarray, sr: int, start_bpm: float, hop: int) -> BeatTrack:
 
 
 def _beatnet(y: np.ndarray, sr: int) -> BeatTrack:
-    from BeatNet.BeatNet import BeatNet  # type: ignore
-
     import soundfile as sf
+    from BeatNet.BeatNet import BeatNet  # type: ignore
 
     estimator = BeatNet(1, mode="offline", inference_model="DBN", plot=[], thread=False)
     fd, path = tempfile.mkstemp(suffix=".wav")

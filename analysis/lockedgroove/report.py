@@ -14,7 +14,7 @@ in ``[0, 1]``. A section that has not run is ``None``.
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -399,7 +399,7 @@ def _subdivide(times: list[float], factor: int) -> list[float]:
 
 
 def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def key_name(tonic: str, mode: Mode) -> str:
