@@ -19,7 +19,7 @@ Inputs:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Literal, Optional
 
 import numpy as np
@@ -228,7 +228,7 @@ def _sample(r: AnalysisReport) -> BreakdownSection:
                                su.confidence, None, hedged=False))
     elif su.is_loop_based:
         period = r.structure.loop_period_bars if r.structure and r.structure.loop_period_bars else None
-        base = f"It's loop-based" + (f", on a {period}-bar phrase." if period else ".")
+        base = "It's loop-based" + (f", on a {period}-bar phrase." if period else ".")
         sec.facts.append(_fact(base, "sample_use.is_loop_based", su.confidence, True))
         if su.chop_count_estimate:
             if su.chop_reordering_detected and su.chop_order:
@@ -412,7 +412,7 @@ def _harmony(r: AnalysisReport, stems: dict[str, AnalysisReport]) -> BreakdownSe
     else:
         conf = float(np.mean([s.confidence for s in segs]))
         if r.structure and r.structure.sections:
-            for i, section in enumerate(r.structure.sections):
+            for section in r.structure.sections:
                 labels = _dedupe_consecutive([s.label for s in segs if section.start_s <= s.start_s < section.end_s])
                 if labels:
                     sec.facts.append(_fact(f"{section.label}: {' – '.join(labels)}.", f"{prefix}chords.segments",
@@ -653,7 +653,7 @@ def compose(report: AnalysisReport, stem_reports: Optional[dict[str, AnalysisRep
     identified = bool(title or artist)
     content = BreakdownContent(
         file_id=report.file.id,
-        generated_at=datetime.now(timezone.utc).isoformat(),
+        generated_at=datetime.now(UTC).isoformat(),
         analysis_version=report.analysis_version,
         identified=identified,
         title=title,

@@ -173,3 +173,13 @@ stem arrays for the stem-aware stages. Every stage sets `method` and
 running jobs in a thread pool. Set `COMPUTE_DISPATCH_URL=http://127.0.0.1:8787`
 in `web/.env.local` to develop without Modal. GPU job kinds run on CPU
 there, slowly, or fail with a clear error if the model is not installed.
+
+## 10. Text embeddings for search (web → compute)
+
+`POST {COMPUTE_DISPATCH_URL}/embed_text` with the same bearer as `/dispatch`
+and body `{ "texts": ["dusty soul loop"] }` (at most 32 texts of 500
+characters) returns `{ "ok": true, "model": "<clap model name>", "dim": 512,
+"vectors": [[...], ...] }`. Vectors are L2-normalized and live in the same
+space as the `embeddings.vector` column written by the `embed` job, so the
+web passes them to the `search_embeddings` RPC with `p_model` set to the
+returned model name. 503 means no embedder is installed on that runner.

@@ -363,6 +363,288 @@ export type LibraryFilterArgs = {
   p_limit?: number | null;
 }
 
+
+// ---------------------------------------------------------------------------
+// layers, layer_items (combine)
+// ---------------------------------------------------------------------------
+
+export type LayerRow = {
+  id: string;
+  user_id: string;
+  name: string | null;
+  tempo_bpm: number | null;
+  key: { tonic: string; mode: "major" | "minor" } | null;
+  render_file_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LayerInsert = {
+  id?: string;
+  user_id: string;
+  name?: string | null;
+  tempo_bpm?: number | null;
+  key?: { tonic: string; mode: "major" | "minor" } | null;
+  render_file_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type LayerUpdate = Partial<LayerInsert>;
+
+export type LayerItemRow = {
+  id: string;
+  user_id: string;
+  layer_id: string;
+  file_id: string;
+  offset_s: number;
+  gain_db: number;
+  stretch_ratio: number;
+  pitch_semitones: number;
+  muted: boolean;
+  stretch_mode: "transient" | "smooth";
+  filter: { highpass_hz?: number | null; lowpass_hz?: number | null } | null;
+  position: number;
+  created_at: string;
+};
+
+export type LayerItemInsert = {
+  id?: string;
+  user_id: string;
+  layer_id: string;
+  file_id: string;
+  offset_s?: number;
+  gain_db?: number;
+  stretch_ratio?: number;
+  pitch_semitones?: number;
+  muted?: boolean;
+  stretch_mode?: "transient" | "smooth";
+  filter?: { highpass_hz?: number | null; lowpass_hz?: number | null } | null;
+  position?: number;
+  created_at?: string;
+};
+
+export type LayerItemUpdate = Partial<LayerItemInsert>;
+
+// ---------------------------------------------------------------------------
+// revoices
+// ---------------------------------------------------------------------------
+
+export type RevoicePath = "symbolic" | "neural";
+
+export type RevoiceRow = {
+  id: string;
+  user_id: string;
+  source_file_id: string;
+  instrument: string;
+  path: RevoicePath;
+  midi_id: string | null;
+  render_file_id: string | null;
+  params: Json | null;
+  created_at: string;
+};
+
+export type RevoiceInsert = {
+  id?: string;
+  user_id: string;
+  source_file_id: string;
+  instrument: string;
+  path: RevoicePath;
+  midi_id?: string | null;
+  render_file_id?: string | null;
+  params?: Json | null;
+  created_at?: string;
+};
+
+export type RevoiceUpdate = Partial<RevoiceInsert>;
+
+// ---------------------------------------------------------------------------
+// breakdowns, comparisons
+// ---------------------------------------------------------------------------
+
+/** analysis/lockedgroove/breakdown/compose.py: Fact */
+export type BreakdownFact = {
+  text: string;
+  source: string;
+  confidence: number | null;
+  hedge: string;
+  value: Json;
+  time_s: number | null;
+  end_s: number | null;
+  bar: number | null;
+  citation: { url: string; title?: string; [k: string]: Json | undefined } | null;
+}
+
+export type BreakdownMissing = {
+  field: string;
+  text: string;
+  job: string | null;
+}
+
+export type BreakdownSectionKey =
+  | "vitals" | "structure" | "sample" | "drums" | "bass" | "harmony" | "melodic" | "arrangement" | "mix"
+  | "context" | "recipe";
+
+export type BreakdownSection = {
+  key: BreakdownSectionKey;
+  title: string;
+  facts: BreakdownFact[];
+  missing: BreakdownMissing[];
+}
+
+export type BreakdownContent = {
+  schema_version: "1.0";
+  file_id: string | null;
+  generated_at: string;
+  analysis_version: number;
+  identified: boolean;
+  title: string | null;
+  artist: string | null;
+  sections: BreakdownSection[];
+  requires: string[];
+}
+
+export type BreakdownRow = {
+  id: string;
+  user_id: string;
+  file_id: string;
+  version: number;
+  content: BreakdownContent;
+  web_context: Json | null;
+  narration: string | null;
+  created_at: string;
+};
+
+export type BreakdownInsert = {
+  id?: string;
+  user_id: string;
+  file_id: string;
+  version?: number;
+  content: BreakdownContent;
+  web_context?: Json | null;
+  narration?: string | null;
+  created_at?: string;
+};
+
+export type BreakdownUpdate = Partial<BreakdownInsert>;
+
+/** analysis/lockedgroove/breakdown/compare.py: Delta */
+export type ComparisonDelta = {
+  section: "vitals" | "structure" | "sample" | "drums" | "bass" | "harmony" | "mix";
+  metric: string;
+  a: Json;
+  b: Json;
+  delta: number | null;
+  unit: string;
+  text: string;
+  confidence: number | null;
+  hedge: string;
+  source: string;
+}
+
+export type ComparisonContent = {
+  schema_version: "1.0";
+  file_a_id: string | null;
+  file_b_id: string | null;
+  a_name: string;
+  b_name: string;
+  generated_at: string;
+  deltas: ComparisonDelta[];
+  missing: string[];
+}
+
+export type ComparisonRow = {
+  id: string;
+  user_id: string;
+  file_a_id: string;
+  file_b_id: string;
+  content: ComparisonContent;
+  created_at: string;
+};
+
+export type ComparisonInsert = {
+  id?: string;
+  user_id: string;
+  file_a_id: string;
+  file_b_id: string;
+  content: ComparisonContent;
+  created_at?: string;
+};
+
+export type ComparisonUpdate = Partial<ComparisonInsert>;
+
+// ---------------------------------------------------------------------------
+// embeddings, beatbox_profiles
+// ---------------------------------------------------------------------------
+
+export type EmbeddingRow = {
+  id: string;
+  user_id: string;
+  file_id: string;
+  model: string;
+  vector: number[] | string;
+  created_at: string;
+};
+
+export type EmbeddingInsert = {
+  id?: string;
+  user_id: string;
+  file_id: string;
+  model: string;
+  vector: number[] | string;
+  created_at?: string;
+};
+
+export type EmbeddingUpdate = Partial<EmbeddingInsert>;
+
+export type BeatboxProfileRow = {
+  id: string;
+  user_id: string;
+  model_path: string;
+  classes: string[];
+  sample_count: number;
+  cv_accuracy: number | null;
+  enabled: boolean;
+  trained_at: string;
+};
+
+export type BeatboxProfileInsert = {
+  id?: string;
+  user_id: string;
+  model_path: string;
+  classes: string[];
+  sample_count?: number;
+  cv_accuracy?: number | null;
+  enabled?: boolean;
+  trained_at?: string;
+};
+
+export type BeatboxProfileUpdate = Partial<BeatboxProfileInsert>;
+
+export type SearchEmbeddingsArgs = {
+  p_query: number[] | string;
+  p_model: string;
+  p_limit?: number;
+  p_kind?: FileKind | null;
+  p_bpm_min?: number | null;
+  p_bpm_max?: number | null;
+  p_tonic?: string | null;
+  p_mode?: "major" | "minor" | null;
+  p_has_drums?: boolean | null;
+  p_is_loop_based?: boolean | null;
+  p_exclude_file_id?: string | null;
+}
+
+export type SimilarFilesArgs = {
+  p_file_id: string;
+  p_limit?: number;
+}
+
+export type VectorMatch = {
+  file_id: string;
+  similarity: number;
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -381,12 +663,32 @@ export type Database = {
       };
       messages: { Row: MessageRow; Insert: MessageInsert; Update: MessageUpdate; Relationships: [] };
       tags: { Row: TagRow; Insert: TagInsert; Update: TagUpdate; Relationships: [] };
+      layers: { Row: LayerRow; Insert: LayerInsert; Update: LayerUpdate; Relationships: [] };
+      layer_items: { Row: LayerItemRow; Insert: LayerItemInsert; Update: LayerItemUpdate; Relationships: [] };
+      revoices: { Row: RevoiceRow; Insert: RevoiceInsert; Update: RevoiceUpdate; Relationships: [] };
+      breakdowns: { Row: BreakdownRow; Insert: BreakdownInsert; Update: BreakdownUpdate; Relationships: [] };
+      comparisons: { Row: ComparisonRow; Insert: ComparisonInsert; Update: ComparisonUpdate; Relationships: [] };
+      embeddings: { Row: EmbeddingRow; Insert: EmbeddingInsert; Update: EmbeddingUpdate; Relationships: [] };
+      beatbox_profiles: {
+        Row: BeatboxProfileRow;
+        Insert: BeatboxProfileInsert;
+        Update: BeatboxProfileUpdate;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       library_filter: {
         Args: LibraryFilterArgs;
         Returns: FileRow[];
+      };
+      search_embeddings: {
+        Args: SearchEmbeddingsArgs;
+        Returns: VectorMatch[];
+      };
+      similar_files: {
+        Args: SimilarFilesArgs;
+        Returns: VectorMatch[];
       };
     };
     Enums: Record<string, never>;

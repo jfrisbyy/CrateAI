@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..report import ChordSegment, Chords
 from .. import pipeline as _p
+from ..report import Chords, ChordSegment
 
 PITCH = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 STAY_PROB = 0.85
@@ -58,7 +58,6 @@ def estimate_chords(y: np.ndarray, sr: int, beat_times: list[float] | None, hop:
         return []
     chroma = librosa.feature.chroma_cqt(y=y, sr=sr, hop_length=hop)
     energy = librosa.feature.rms(y=y, hop_length=hop)[0]
-    frame_times = librosa.frames_to_time(np.arange(chroma.shape[1]), sr=sr, hop_length=hop)
     duration = len(y) / sr
     if beat_times and len(beat_times) >= 2:
         edges = list(beat_times)

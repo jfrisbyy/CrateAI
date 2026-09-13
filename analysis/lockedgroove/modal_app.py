@@ -185,6 +185,12 @@ if modal is not None:
     def run_job_gpu(job_id: str) -> dict:
         return _run(job_id)
 
+    @app.function(image=gpu_image, secrets=[secret], volumes={CACHE_MOUNT: model_cache}, gpu=GPU_TYPE, timeout=120)
+    def embed_text_gpu(texts: list[str]) -> dict:
+        from lockedgroove.server import local_embed_text
+
+        return local_embed_text(texts)
+
     def submit_job(job_id: str, job: dict | None = None) -> str:
         """Spawn the right function for the job's kind and record the call id on the row."""
         db, _ = _clients()
@@ -212,6 +218,7 @@ if modal is not None:
             submit=submit_job,
             runner_name="modal",
             extra_health={"gpu": GPU_TYPE, "gpu_kinds": sorted(GPU_KINDS), "gpu_extras": gpu_extras_enabled()},
+            embed_text=lambda texts: embed_text_gpu.remote(texts),
         )
 
 

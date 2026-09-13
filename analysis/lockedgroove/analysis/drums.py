@@ -25,13 +25,12 @@ confidence is their normalized separation.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 import numpy as np
 
+from .. import pipeline as _p
 from ..beatbox.features import decay_ms_of, detect_onsets
 from ..report import DrumHit, DrumPattern, Drums
-from .. import pipeline as _p
 from ._beatgrid import section_bounds, sixteenth_grid
 
 MIN_GAP_MS = 30.0
@@ -171,6 +170,16 @@ def detect_hits(y: np.ndarray, sr: int) -> list[HitEvent]:
     return hits
 
 
+def _rows(per_class: dict[str, dict[int, list[tuple[float, float]]]], cls: str, bars_in_section: int) -> list[DrumHit]:
+    out = []
+    for step, vals in sorted(per_class.get(cls, {}).items()):
+        vel = float(np.mean([v for v, _ in vals]))
+        off = float(np.mean([o for _, o in vals]))
+        freq = float(min(1.0, len(vals) / bars_in_section))
+        out.append(DrumHit(step=step, velocity=round(vel, 3), frequency=round(freq, 3), offset_ms=round(off, 2)))
+    return out
+
+
 def patterns_for(hits: list[HitEvent], report, duration_s: float) -> list[DrumPattern]:
     grid, spb = sixteenth_grid(report, duration_s)
     if len(grid) == 0:
@@ -191,16 +200,7 @@ def patterns_for(hits: list[HitEvent], report, duration_s: float) -> list[DrumPa
             if h.cls == "hat" and h.decay_ms > OPEN_HAT_DECAY_MS:
                 hat_open += 1
 
-        def rows(cls: str) -> list[DrumHit]:
-            out = []
-            for step, vals in sorted(per_class.get(cls, {}).items()):
-                vel = float(np.mean([v for v, _ in vals]))
-                off = float(np.mean([o for _, o in vals]))
-                freq = float(min(1.0, len(vals) / bars_in_section))
-                out.append(DrumHit(step=step, velocity=round(vel, 3), frequency=round(freq, 3), offset_ms=round(off, 2)))
-            return out
-
-        kick, snare, hat, other = rows("kick"), rows("snare"), rows("hat"), rows("other")
+        kick, snare, hat, other = (_rows(per_class, cls, bars_in_section) for cls in ("kick", "snare", "hat", "other"))
         accents = sorted({h.step for h in kick + snare if h.velocity >= ACCENT_VELOCITY and h.frequency >= 0.5})
         ghosts = sorted({h.step for h in snare if h.velocity < GHOST_VELOCITY and h.frequency >= 0.5})
         n_hats = sum(len(v) for v in per_class.get("hat", {}).values())

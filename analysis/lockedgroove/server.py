@@ -108,13 +108,28 @@ class LocalRunner:
         self.executor.shutdown(wait=wait)
 
 
+EmbedText = Callable[[list[str]], dict]
+MAX_EMBED_TEXTS = 32
+MAX_EMBED_TEXT_CHARS = 500
+
+
+def local_embed_text(texts: list[str]) -> dict:
+    """Text embeddings in-process (CLAP when installed, the hash stand-in under LOCKEDGROOVE_FAKE_EMBEDDER=1)."""
+    from .embeddings.clap import get_embedder
+
+    embedder = get_embedder()
+    vectors = embedder.embed_text(texts)
+    return {"model": embedder.name, "dim": int(vectors.shape[1]), "vectors": [[float(x) for x in v] for v in vectors]}
+
+
 def create_app(db: Database, storage: Storage, *, secret: str, submit: Submit, runner_name: str = "local",
-               extra_health: dict[str, Any] | None = None) -> FastAPI:
+               extra_health: dict[str, Any] | None = None, embed_text: EmbedText | None = None) -> FastAPI:
     app = FastAPI(title="lockedgroove compute", version="0.1.0", docs_url=None, redoc_url=None)
     app.state.db = db
     app.state.storage = storage
     app.state.secret = secret
     app.state.submit = submit
+    app.state.embed_text = embed_text or local_embed_text
 
     def unauthorized():
         return JSONResponse({"ok": False, "error": "unauthorized"}, status_code=401,
@@ -155,6 +170,34 @@ def create_app(db: Database, storage: Storage, *, secret: str, submit: Submit, r
             log.exception("dispatch of job %s failed", job_id)
             return JSONResponse({"ok": False, "error": f"dispatch failed: {exc}"}, status_code=500)
         return {"ok": True, "call_id": call_id}
+
+    @app.post("/embed_text")
+    async def embed_text_route(request: Request):
+        """Text -> CLAP vectors for text-to-audio search (docs/CONTRACTS.md section 10).
+
+        Body ``{"texts": ["dusty soul loop", ...]}``; the same bearer as /dispatch.
+        Returns ``{"ok": true, "model", "dim", "vectors": [[...], ...]}``; 503 when no embedder is installed.
+        """
+        if not verify_bearer(request.headers.get("authorization"), app.state.secret):
+            return unauthorized()
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse({"ok": False, "error": "body must be JSON: {\"texts\": [\"...\"]}"}, status_code=400)
+        texts = body.get("texts") if isinstance(body, dict) else None
+        if not isinstance(texts, list) or not texts or not all(isinstance(t, str) and t.strip() for t in texts):
+            return JSONResponse({"ok": False, "error": "texts must be a non-empty list of strings"}, status_code=400)
+        if len(texts) > MAX_EMBED_TEXTS or any(len(t) > MAX_EMBED_TEXT_CHARS for t in texts):
+            return JSONResponse({"ok": False, "error": f"at most {MAX_EMBED_TEXTS} texts of {MAX_EMBED_TEXT_CHARS} characters"},
+                                status_code=400)
+        try:
+            result = app.state.embed_text([t.strip() for t in texts])
+        except ImportError as exc:
+            return JSONResponse({"ok": False, "error": f"no text embedder on this runner: {exc}"}, status_code=503)
+        except Exception as exc:
+            log.exception("embed_text failed")
+            return JSONResponse({"ok": False, "error": f"embed_text failed: {exc}"}, status_code=500)
+        return {"ok": True, **result}
 
     return app
 
