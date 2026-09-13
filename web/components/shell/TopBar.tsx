@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { SearchBox } from "@/components/library/SearchBox";
 import { btn, btnQuiet, cx } from "@/components/ui";
 import { useLibrary } from "@/lib/state/LibraryProvider";
@@ -38,6 +39,9 @@ export function TopBar({
         )}
       </div>
       <div className="px-4 flex items-center gap-2">
+        <Link href="/beatbox" className={btn} title="Enroll your kick, snare and hat; beatbox a pattern to MIDI">
+          Beatbox
+        </Link>
         <button type="button" onClick={onKeymap} className={btn} title="Keyboard map (?)" aria-label="Keyboard map">
           <span className="font-mono">?</span>
         </button>
