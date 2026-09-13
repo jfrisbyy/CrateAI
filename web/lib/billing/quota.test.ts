@@ -1,14 +1,27 @@
 import { describe, expect, it } from "vitest";
+import { CHAT_MODEL } from "@/lib/anthropic/models";
+import { chatTurnUsd, estimateSpendUsd } from "./cost";
 import { PLAN_LIMITS } from "./limits";
-import { checkChatQuota, checkJobQuota, checkStorageQuota, checkWebSearchQuota } from "./quota";
+import { checkChatQuota, checkJobQuota, checkStorageQuota, checkWebSearchQuota, chatTurnsLeft, webSearchesLeft } from "./quota";
 import { fractions, type UsageReport } from "./usage";
 import { subscriptionPatch, verifyWebhookSignature } from "./stripe";
 import { createHmac } from "node:crypto";
 import { rateLimit, resetRateLimits } from "@/lib/ratelimit";
 
 function report(over: Partial<UsageReport["usage"]> = {}, plan: "free" | "pro" = "free"): UsageReport {
-  const usage = { storage_bytes: 0, gpu_seconds_month: 0, cpu_seconds_month: 0, stem_jobs_month: 0, chat_turns_today: 0, web_searches_today: 0, ...over };
-  return { plan, plan_status: "active", limits: PLAN_LIMITS[plan], usage, fractions: fractions(PLAN_LIMITS[plan], usage) };
+  const usage = {
+    storage_bytes: 0, gpu_seconds_month: 0, cpu_seconds_month: 0, stem_jobs_month: 0,
+    chat_turns_today: 0, chat_turns_month: 0, web_searches_today: 0, web_searches_month: 0, ...over,
+  };
+  return {
+    plan,
+    plan_status: "active",
+    limits: PLAN_LIMITS[plan],
+    usage,
+    fractions: fractions(PLAN_LIMITS[plan], usage),
+    cost: estimateSpendUsd(usage, CHAT_MODEL),
+    chat_turn_usd: chatTurnUsd(CHAT_MODEL),
+  };
 }
 
 describe("quotas", () => {
@@ -20,15 +33,38 @@ describe("quotas", () => {
     expect(checkJobQuota(report({ stem_jobs_month: 5 }, "pro"), "stems").ok).toBe(true);
   });
   it("caps storage, chat turns and web searches", () => {
-    const r = report({ storage_bytes: PLAN_LIMITS.free.storage_bytes - 100 });
+    const free = PLAN_LIMITS.free;
+    const r = report({ storage_bytes: free.storage_bytes - 100 });
     expect(checkStorageQuota(r, 50).ok).toBe(true);
     expect(checkStorageQuota(r, 200).ok).toBe(false);
-    expect(checkChatQuota(report({ chat_turns_today: 50 })).ok).toBe(false);
-    expect(checkWebSearchQuota(report({ web_searches_today: 19 })).ok).toBe(true);
-    expect(checkWebSearchQuota(report({ web_searches_today: 20 })).ok).toBe(false);
+    expect(checkChatQuota(report({ chat_turns_today: free.chat_turns_per_day })).ok).toBe(false);
+    expect(checkChatQuota(report({ chat_turns_today: free.chat_turns_per_day - 1 })).ok).toBe(true);
+    expect(checkWebSearchQuota(report({ web_searches_today: free.web_searches_per_day - 1 })).ok).toBe(true);
+    expect(checkWebSearchQuota(report({ web_searches_today: free.web_searches_per_day })).ok).toBe(false);
   });
+
+  it("caps the month as well as the day, and says which one bit", () => {
+    const free = PLAN_LIMITS.free;
+    const monthly = checkChatQuota(report({ chat_turns_month: free.chat_turns_per_month }));
+    expect(monthly.ok).toBe(false);
+    expect(monthly.ok === false && monthly.reason).toContain("a month");
+    const daily = checkChatQuota(report({ chat_turns_today: free.chat_turns_per_day, chat_turns_month: 1 }));
+    expect(daily.ok === false && daily.reason).toContain("a day");
+    // a month's worth of searches with none today still refuses
+    expect(checkWebSearchQuota(report({ web_searches_month: free.web_searches_per_month })).ok).toBe(false);
+  });
+
+  it("reports what is left as the tighter of the two caps", () => {
+    const free = PLAN_LIMITS.free;
+    expect(chatTurnsLeft(report())).toBe(free.chat_turns_per_day);
+    expect(chatTurnsLeft(report({ chat_turns_month: free.chat_turns_per_month - 2 }))).toBe(2);
+    expect(chatTurnsLeft(report({ chat_turns_month: free.chat_turns_per_month + 5 }))).toBe(0);
+    expect(webSearchesLeft(report({ web_searches_month: free.web_searches_per_month - 1 }))).toBe(1);
+  });
+
   it("reports fractions", () => {
     expect(fractions(PLAN_LIMITS.free, report({ stem_jobs_month: 1 }).usage).stem_jobs_per_month).toBeCloseTo(0.2);
+    expect(fractions(PLAN_LIMITS.free, report({ chat_turns_month: 20 }).usage).chat_turns_per_month).toBeCloseTo(0.5);
   });
 });
 

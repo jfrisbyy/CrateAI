@@ -103,13 +103,31 @@ and records an item as lost instead of hanging if a worker still dies.
 
 ## 6. Billing, quotas, and takedowns (Phase 10)
 
-- Plan limits are constants in `web/lib/billing/limits.ts` (free: 2 GB, 5 stem
-  jobs/month, 30 GPU minutes/month, 50 chat turns/day, 20 web searches/day).
-  Quotas are enforced once, at the dispatch step (`web/lib/compute/dispatch.ts`)
+- Plan limits are constants in `web/lib/billing/limits.ts`, the only place any
+  cap is written down, with the arithmetic that chose each one in that file's
+  header and in `web/lib/billing/cost.ts`. Free: 2 GB, 5 stem jobs/month, 30 GPU
+  minutes/month, **8 chat turns a day and 40 a month, 5 web searches a day and
+  25 a month**. Every conversation-shaped cap is doubled on purpose — the daily
+  cap bounds one day's burst, the monthly cap is the financial ceiling, and a
+  daily cap on its own cannot bound a monthly bill. Full arithmetic and the Pro
+  break-even price: `docs/HANDOFF_launch_readiness.md`.
+- Model routing is `web/lib/anthropic/models.ts`: chat turns and the search
+  query parser on Sonnet 5, breakdown narration on Opus 5, each with the cost
+  of that path written next to it. The chat's system prompt and tool schemas
+  are cached (one breakpoint on the last system block, one rolling through the
+  tool loop); `web/lib/chat/caching.test.ts` is the standing check.
+- Quotas are enforced once, at the dispatch step (`web/lib/compute/dispatch.ts`)
   and at upload prepare; an over-quota job is marked failed with the reason.
-- Usage: compute writes one `usage_events` row per finished job (CPU or GPU
-  seconds, plus `stem_job`); storage is summed from `files.size_bytes`. The
-  account page (`/account`) shows usage against the limits.
+  Chat and web search check at the route, before the model is called.
+- Usage: `usage_events` is the one table that answers "what has this account
+  cost me". Compute writes a row per finished job (CPU or GPU seconds, plus
+  `stem_job`); the web app writes one per chat turn and one per batch of web
+  searches (`web/lib/billing/meter.ts`, service role). Storage is summed from
+  `files.size_bytes`. `/account` shows usage against the limits and an estimate
+  of what the account has cost, from the list prices in `web/lib/billing/cost.ts`.
+- If `SUPABASE_SERVICE_ROLE_KEY` is missing, metering stops (one warning per
+  process in the server log) and the chat-turn cap falls back to counting
+  `messages`. The preflight in section 7 fails on a missing key for this reason.
 - Stripe: create a recurring price for Pro, set `STRIPE_SECRET_KEY`,
   `STRIPE_PRICE_ID`, `NEXT_PUBLIC_APP_URL`, and a webhook endpoint at
   `POST {app}/api/billing/webhook` for `checkout.session.completed`,
@@ -126,3 +144,42 @@ and records an item as lost instead of hanging if a worker still dies.
   Anthropic key is set.
 - Rate limits: `web/lib/ratelimit.ts` is a per-instance token bucket for public
   routes; durable limits are the quotas above.
+
+## 7. Before you open signups
+
+Run the preflight. It is the last step, after everything above is deployed and
+before the first stranger can create an account.
+
+```bash
+node scripts/preflight.mjs              # the full check, against the real services
+node scripts/preflight.mjs --offline    # shapes and files only, no network
+node scripts/preflight.mjs --json       # the same result, machine readable
+```
+
+It reads `web/.env.local` (then `.env.production.local`, then `.env`), with the
+process environment winning, so in CI or on the server just export the
+variables. Run it from the repository root; Node 22 is the only requirement.
+
+What it checks, in order:
+
+| Group | What has to be true |
+|---|---|
+| environment | Every variable set and shaped right: the two Supabase keys are different keys, `ANTHROPIC_API_KEY` looks like one, `COMPUTE_DISPATCH_SECRET` is not still `change-me`, `STRIPE_PRICE_ID` is a price and not a product, the search provider's own key is present. |
+| legal | `web/app/legal/{terms,privacy,dmca}` all exist and no `TODO(owner)` is left in any of them. |
+| supabase | The project answers, every table and every callable function the migrations in `supabase/migrations/` create is present (the list is read out of the SQL, so it maintains itself), and the `audio` bucket exists and is **private**. |
+| compute | The dispatcher's `/health` answers, and it is not a fake or local runner. |
+| anthropic | The key is accepted, and every model id in `web/lib/anthropic/{models,narrate}.ts` is visible to this workspace. |
+| stripe | The key is accepted and `STRIPE_PRICE_ID` is an active recurring price. |
+
+Three properties it keeps, so it can be run without thinking about it:
+
+- **It never prints a secret.** Only the variable's name and a verdict; never
+  a value, not even a prefix.
+- **It only reads.** No writes, no charges, no tokens spent. Run it against
+  production as often as you like.
+- **A FAIL is something that breaks a real user's first session**; a WARN is
+  something you can launch with but should know about (a test-mode Stripe key,
+  a localhost app URL, a local compute runner). Only a FAIL sets the exit code,
+  so `node scripts/preflight.mjs && echo ready` is a safe gate.
+
+Fix every FAIL, read every WARN, then open signups.

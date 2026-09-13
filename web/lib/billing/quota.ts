@@ -1,5 +1,10 @@
 // Quota decisions. Pure functions over a UsageReport so they're testable; the
-// dispatch step and the upload prepare route call them.
+// dispatch step, the upload prepare route, the chat route and the web search
+// route call them.
+//
+// Chat turns and web searches are capped twice: a daily cap that bounds one
+// day's burst and a monthly cap that is the real financial ceiling. The
+// monthly one binds first for a heavy user, so its message names the month.
 
 import type { JobKind } from "@/lib/types/db";
 import { formatBytes, formatMinutes } from "./limits";
@@ -43,15 +48,45 @@ export function checkStorageQuota(report: UsageReport, addBytes: number): QuotaD
 }
 
 export function checkChatQuota(report: UsageReport): QuotaDecision {
-  if (report.usage.chat_turns_today >= report.limits.chat_turns_per_day) {
-    return { ok: false, reason: `quota: ${report.limits.chat_turns_per_day} chat turns a day on the ${report.plan} plan` };
+  const { limits, usage, plan } = report;
+  if (usage.chat_turns_month >= limits.chat_turns_per_month) {
+    return { ok: false, reason: `quota: ${limits.chat_turns_per_month} chat turns a month on the ${plan} plan; the count resets on the first of the month` };
+  }
+  if (usage.chat_turns_today >= limits.chat_turns_per_day) {
+    return { ok: false, reason: `quota: ${limits.chat_turns_per_day} chat turns a day on the ${plan} plan; the count resets at midnight UTC` };
   }
   return { ok: true };
 }
 
 export function checkWebSearchQuota(report: UsageReport): QuotaDecision {
-  if (report.usage.web_searches_today >= report.limits.web_searches_per_day) {
-    return { ok: false, reason: `quota: ${report.limits.web_searches_per_day} web searches a day on the ${report.plan} plan` };
+  const { limits, usage, plan } = report;
+  if (usage.web_searches_month >= limits.web_searches_per_month) {
+    return { ok: false, reason: `quota: ${limits.web_searches_per_month} web searches a month on the ${plan} plan; the count resets on the first of the month` };
+  }
+  if (usage.web_searches_today >= limits.web_searches_per_day) {
+    return { ok: false, reason: `quota: ${limits.web_searches_per_day} web searches a day on the ${plan} plan; the count resets at midnight UTC` };
   }
   return { ok: true };
+}
+
+/** How many more chat turns this account may take right now (the tighter of the two caps). */
+export function chatTurnsLeft(report: UsageReport): number {
+  return Math.max(
+    0,
+    Math.min(
+      report.limits.chat_turns_per_day - report.usage.chat_turns_today,
+      report.limits.chat_turns_per_month - report.usage.chat_turns_month,
+    ),
+  );
+}
+
+/** How many more web searches this account may run right now (the tighter of the two caps). */
+export function webSearchesLeft(report: UsageReport): number {
+  return Math.max(
+    0,
+    Math.min(
+      report.limits.web_searches_per_day - report.usage.web_searches_today,
+      report.limits.web_searches_per_month - report.usage.web_searches_month,
+    ),
+  );
 }

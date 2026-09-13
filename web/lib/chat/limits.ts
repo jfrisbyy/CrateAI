@@ -1,37 +1,78 @@
-// Free-tier caps (BUILD_PACKET section 19, OPEN_QUESTIONS J.31) as constants,
-// and the per-user daily counts they are checked against. Kept deliberately
-// simple: chat turns are the caller's `messages` rows with role user today;
-// web searches are counted from the tool calls recorded on today's assistant
-// messages (each web_search is one, identify_context records how many it
-// ran). Phase 10 replaces the counting with metering and billing; the
-// constants stay here.
+// The chat seam's view of the plan caps: how many turns and web searches this
+// account has left, the sentences the producer sees when they run out, and the
+// metering that makes the counts true.
+//
+// The caps themselves are NOT here. Every number lives in
+// `lib/billing/limits.ts` with the arithmetic that chose it; this file only
+// reads them, so the chat and the account page can never disagree about what
+// the free tier is.
+//
+// What changed in the launch pass: the counts used to be derived by re-reading
+// `messages` and the tool calls recorded on assistant rows, which meant a
+// direct `POST /api/web/search` cost nothing and a turn that spent four
+// searches inside one tool call was invisible until it was written down. Now
+// every turn and every search writes a `usage_events` row (lib/billing/
+// meter.ts) and the counts come from `usage_summary`, the same table and the
+// same function compute has always metered into. `messages` stays as a floor
+// under the chat-turn count so the cap still bites if metering is unavailable.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { PLAN_LIMITS } from "@/lib/billing/limits";
+import { meterUsage } from "@/lib/billing/meter";
+import { chatTurnsLeft, webSearchesLeft } from "@/lib/billing/quota";
+import { getUsage, type UsageReport } from "@/lib/billing/usage";
 import type { Database, Json } from "@/lib/types/db";
 
-export const FREE_TIER = {
-  chat_turns_per_day: 50,
-  web_searches_per_day: 20,
-  storage_bytes: 2 * 1024 * 1024 * 1024,
-  stem_jobs_per_month: 5,
-} as const;
+/**
+ * The free tier, for the places that describe it rather than enforce it.
+ * An alias, not a second copy: `lib/billing/limits.ts` is the source.
+ */
+export const FREE_TIER = PLAN_LIMITS.free;
 
-export interface UsageCounts {
-  chat_turns_today: number;
-  web_searches_today: number;
-  /** ISO start of the UTC day the counts cover */
-  day_start: string;
+/** How many more a caller may take right now: the tighter of the day's and the month's cap. */
+export { chatTurnsLeft, webSearchesLeft };
+
+// ---------------------------------------------------------------------------
+// reading
+// ---------------------------------------------------------------------------
+
+/**
+ * Everything a route needs to decide a chat quota: the caller's plan, its
+ * caps, and today's and this month's metered usage. RLS scopes every read to
+ * the caller.
+ */
+export async function readUsage(supabase: SupabaseClient<Database>, userId: string, now: Date = new Date()): Promise<UsageReport> {
+  return getUsage(supabase, userId, now);
 }
 
-export interface UsageSource {
-  countUserMessagesSince(iso: string): Promise<number>;
-  /** the tool_calls column of the caller's assistant messages since `iso` */
-  listToolCallsSince(iso: string): Promise<Array<Json | null>>;
+/** The 429 body when a turn is refused, in the producer's language, not SQL's. */
+export function chatQuotaMessage(report: UsageReport): string {
+  const { limits, usage } = report;
+  if (usage.chat_turns_month >= limits.chat_turns_per_month) {
+    return `You've used this month's ${limits.chat_turns_per_month} chat turns on the ${report.plan} plan. The count resets on the first of the month.`;
+  }
+  return `You've used today's ${limits.chat_turns_per_day} chat turns on the ${report.plan} plan. The count resets at midnight UTC.`;
 }
 
-export function startOfUtcDay(now: Date): Date {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+/** The same for the search route. */
+export function webQuotaMessage(report: UsageReport): string {
+  const { limits, usage } = report;
+  if (usage.web_searches_month >= limits.web_searches_per_month) {
+    return `You've used this month's ${limits.web_searches_per_month} web searches on the ${report.plan} plan. The count resets on the first of the month.`;
+  }
+  return `You've used today's ${limits.web_searches_per_day} web searches on the ${report.plan} plan. The count resets at midnight UTC.`;
 }
+
+/**
+ * What the chat says mid-turn when the search budget runs out. It is a tool
+ * result, so it stays plan-neutral: the route already gave them the numbers.
+ */
+export const WEB_QUOTA_MESSAGE =
+  "Your web searches for this period are used up; the daily count resets at midnight UTC and the monthly one on the first. I can still answer from the analysis.";
+
+// ---------------------------------------------------------------------------
+// counting what a turn spent
+// ---------------------------------------------------------------------------
 
 /** Web searches recorded in one assistant message's tool_calls. */
 export function webSearchesIn(toolCalls: Json | null): number {
@@ -47,39 +88,21 @@ export function webSearchesIn(toolCalls: Json | null): number {
   return n;
 }
 
-export async function readUsage(source: UsageSource, now: Date = new Date()): Promise<UsageCounts> {
-  const dayStart = startOfUtcDay(now).toISOString();
-  const [turns, toolCalls] = await Promise.all([source.countUserMessagesSince(dayStart), source.listToolCallsSince(dayStart)]);
-  return {
-    chat_turns_today: turns,
-    web_searches_today: toolCalls.reduce<number>((sum, tc) => sum + webSearchesIn(tc), 0),
-    day_start: dayStart,
-  };
+// ---------------------------------------------------------------------------
+// metering
+// ---------------------------------------------------------------------------
+
+/**
+ * One turn, metered the moment it is accepted — before the model is called, so
+ * a turn that fails halfway still counts against the burst cap. Best effort:
+ * `meterUsage` never throws.
+ */
+export async function meterChatTurn(userId: string): Promise<void> {
+  await meterUsage(userId, [{ kind: "chat_turn" }]);
 }
 
-export function chatTurnsLeft(usage: UsageCounts): number {
-  return Math.max(0, FREE_TIER.chat_turns_per_day - usage.chat_turns_today);
-}
-
-export function webSearchesLeft(usage: UsageCounts): number {
-  return Math.max(0, FREE_TIER.web_searches_per_day - usage.web_searches_today);
-}
-
-export const CHAT_QUOTA_MESSAGE = `You've used today's ${FREE_TIER.chat_turns_per_day} chat turns on the free tier. The count resets at midnight UTC.`;
-export const WEB_QUOTA_MESSAGE = `Today's ${FREE_TIER.web_searches_per_day} web searches on the free tier are used up; the count resets at midnight UTC. I can still answer from the analysis.`;
-
-/** The counts from the caller's own rows (RLS scopes both queries to the user). */
-export function supabaseUsageSource(supabase: SupabaseClient<Database>): UsageSource {
-  return {
-    async countUserMessagesSince(iso) {
-      const { count, error } = await supabase.from("messages").select("id", { count: "exact", head: true }).eq("role", "user").gte("created_at", iso);
-      if (error) throw new Error(`counting chat turns: ${error.message}`);
-      return count ?? 0;
-    },
-    async listToolCallsSince(iso) {
-      const { data, error } = await supabase.from("messages").select("tool_calls").eq("role", "assistant").gte("created_at", iso).limit(500);
-      if (error) throw new Error(`counting web searches: ${error.message}`);
-      return (data ?? []).map((r) => r.tool_calls);
-    },
-  };
+/** The searches one turn actually ran, metered once when the turn finishes. */
+export async function meterWebSearches(userId: string, count: number): Promise<void> {
+  if (count <= 0) return;
+  await meterUsage(userId, [{ kind: "web_search", amount: count }]);
 }
