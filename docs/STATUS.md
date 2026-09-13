@@ -39,20 +39,29 @@ no model or search keys, no egress to Beatport or the ISMIR mirror):
 
 ## Accuracy harness (synthetic set, 48 items, `scripts/gates.json`)
 
-| metric | before this pass | now | gate (synthetic) | packet gate |
+| metric | at first run | now | gate (synthetic) | packet gate |
 |---|---:|---:|---:|---:|
 | bpm_exact | 0.542 | 0.562 | 0.50 (see below) | 0.80 |
 | bpm_octave | 0.917 | 1.000 | 0.95 | 0.95 |
 | key_exact | 0.583 | 0.833 | 0.65 | 0.65 |
 | key_relative | 0.792 | 1.000 | 0.85 | 0.85 |
 | downbeat | 0.625 | 0.792 | 0.75 | 0.75 |
-| structure_f | 0.435 | 0.677 | 0.60 | 0.60 |
+| structure_f | 0.435 | 0.931 | 0.60 | 0.60 |
 
-"Before" is the first full run of the set; "now" is `data/eval/latest.md`
-after the tempo family check, the harmonic-chroma key, the gated harmonic
-downbeat cue, the combined structure novelty, and the set re-rendered with
-two loop iterations per section. Every synthetic gate passes; `bpm_exact`
-passes at the lowered synthetic gate only.
+"At first run" is the first full scoring of the set; "now" is
+`data/eval/latest.md` after the tempo family check, the harmonic-chroma key,
+the gated harmonic downbeat cue, the set re-rendered with two loop iterations
+per section, and five structure defects fixed (see
+`docs/HANDOFF_structure_accuracy.md`). Every synthetic gate passes;
+`bpm_exact` passes at the lowered synthetic gate only.
+
+Structure is near this dataset's ceiling rather than near 1.0: in an AABA
+item the two A sections carry the same material, so the truth file asserts a
+boundary that carries no acoustic evidence. Fourteen of the fifteen AABA
+items are capped at F=0.80 on that first boundary, which puts the reachable
+figure somewhere around 0.94. Making repeated sections differ the way real
+records do, with a fill or a dropped layer in the last bar, is the fixture
+work that would lift it.
 
 The synthetic set has tempos spread uniformly over 65–175 BPM with hats on
 every eighth, so the exact octave is a convention, not a measurement; the

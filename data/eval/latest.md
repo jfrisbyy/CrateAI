@@ -1,4 +1,4 @@
-# Accuracy harness — 2026-09-13T16:37:52Z
+# Accuracy harness — 2026-09-13T16:42:40Z
 
 datasets: ['synthetic']; workers: 3; ci: False
 
@@ -16,7 +16,7 @@ Score = hits/n for the boolean metrics, mean F for `structure_f`; (n) = items th
 - `synthetic.downbeat`: median offset 675 ms ×1; median offset 476 ms ×1; median offset 432 ms ×1
 - `synthetic.structure_f`: P=1.00 R=0.67 ×15; P=0.67 R=0.67 ×1
 
-## Gates (not enforced)
+## Gates
 
 | gate | score | threshold | n | result |
 |---|---:|---:|---:|---|
@@ -26,3 +26,5 @@ Score = hits/n for the boolean metrics, mean F for `structure_f`; (n) = items th
 | synthetic.key_relative | 1.000 | 0.85 | 48 | PASS |
 | synthetic.downbeat | 0.792 | 0.75 | 48 | PASS |
 | synthetic.structure_f | 0.931 | 0.60 | 48 | PASS |
+
+**Gate verdict: PASS**

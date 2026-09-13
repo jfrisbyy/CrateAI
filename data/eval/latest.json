@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "created_at": "2026-09-13T16:37:52Z",
+ "created_at": "2026-09-13T16:42:40Z",
  "analysis_version": 1,
  "stages": null,
  "meta": {
@@ -19,7 +19,7 @@
    "skipped": [],
    "note": null,
    "requested": true,
-   "elapsed_s": 111.95,
+   "elapsed_s": 107.84,
    "metrics": {
     "bpm_exact": {
      "metric": "bpm_exact",
@@ -217,17 +217,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 13.241,
+     "elapsed_s": 13.022,
      "duration_s": 118.50380952380952,
      "timings_s": {
-      "tempo": 4.95,
-      "beats": 7.481,
+      "tempo": 4.545,
+      "beats": 7.648,
       "onsets": 0.003,
-      "key": 0.003,
+      "key": 0.004,
       "groove": 0.003,
-      "loudness": 0.337,
-      "spectral": 0.193,
-      "structure": 0.163
+      "loudness": 0.332,
+      "spectral": 0.194,
+      "structure": 0.188
      },
      "meta": {
       "structure": "ABAB",
@@ -357,17 +357,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 13.696,
+     "elapsed_s": 12.562,
      "duration_s": 107.3166439909297,
      "timings_s": {
-      "tempo": 4.745,
-      "beats": 7.4,
+      "tempo": 4.346,
+      "beats": 6.88,
       "onsets": 0.003,
       "key": 0.004,
       "groove": 0.002,
-      "loudness": 0.672,
-      "spectral": 0.287,
-      "structure": 0.307
+      "loudness": 0.677,
+      "spectral": 0.259,
+      "structure": 0.168
      },
      "meta": {
       "structure": "AABA",
@@ -497,17 +497,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 13.26,
+     "elapsed_s": 11.958,
      "duration_s": 99.71151927437641,
      "timings_s": {
-      "tempo": 4.639,
-      "beats": 7.357,
+      "tempo": 4.125,
+      "beats": 6.67,
       "onsets": 0.003,
-      "key": 0.004,
-      "groove": 0.003,
-      "loudness": 0.56,
-      "spectral": 0.244,
-      "structure": 0.187
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.599,
+      "spectral": 0.216,
+      "structure": 0.194
      },
      "meta": {
       "structure": "ABCB",
@@ -637,17 +637,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 8.442,
+     "elapsed_s": 7.113,
      "duration_s": 93.37854875283446,
      "timings_s": {
-      "tempo": 1.714,
-      "beats": 6.091,
-      "onsets": 0.004,
+      "tempo": 0.581,
+      "beats": 5.921,
+      "onsets": 0.003,
       "key": 0.003,
       "groove": 0.003,
-      "loudness": 0.306,
-      "spectral": 0.148,
-      "structure": 0.167
+      "loudness": 0.315,
+      "spectral": 0.149,
+      "structure": 0.132
      },
      "meta": {
       "structure": "ABAB",
@@ -777,17 +777,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 8.53,
+     "elapsed_s": 6.557,
      "duration_s": 88.9863492063492,
      "timings_s": {
-      "tempo": 1.602,
-      "beats": 5.904,
-      "onsets": 0.002,
-      "key": 0.003,
-      "groove": 0.002,
-      "loudness": 0.6,
-      "spectral": 0.221,
-      "structure": 0.156
+      "tempo": 0.693,
+      "beats": 4.912,
+      "onsets": 0.008,
+      "key": 0.004,
+      "groove": 0.003,
+      "loudness": 0.57,
+      "spectral": 0.205,
+      "structure": 0.124
      },
      "meta": {
       "structure": "AABA",
@@ -917,17 +917,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 9.135,
+     "elapsed_s": 7.872,
      "duration_s": 85.4325850340136,
      "timings_s": {
-      "tempo": 1.183,
-      "beats": 5.917,
+      "tempo": 0.716,
+      "beats": 5.19,
       "onsets": 0.002,
       "key": 0.003,
       "groove": 0.003,
-      "loudness": 1.103,
-      "spectral": 0.644,
-      "structure": 0.172
+      "loudness": 1.236,
+      "spectral": 0.427,
+      "structure": 0.117
      },
      "meta": {
       "structure": "ABCB",
@@ -1057,17 +1057,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 6.526,
+     "elapsed_s": 6.911,
      "duration_s": 82.5,
      "timings_s": {
-      "tempo": 0.899,
-      "beats": 5.107,
-      "onsets": 0.006,
+      "tempo": 1.111,
+      "beats": 5.218,
+      "onsets": 0.008,
       "key": 0.003,
       "groove": 0.003,
-      "loudness": 0.287,
-      "spectral": 0.121,
-      "structure": 0.095
+      "loudness": 0.308,
+      "spectral": 0.131,
+      "structure": 0.124
      },
      "meta": {
       "structure": "ABAB",
@@ -1197,17 +1197,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 6.878,
+     "elapsed_s": 7.061,
      "duration_s": 79.94997732426305,
      "timings_s": {
-      "tempo": 0.805,
-      "beats": 5.151,
-      "onsets": 0.004,
+      "tempo": 1.134,
+      "beats": 5.005,
+      "onsets": 0.002,
       "key": 0.003,
       "groove": 0.003,
-      "loudness": 0.522,
-      "spectral": 0.208,
-      "structure": 0.137
+      "loudness": 0.548,
+      "spectral": 0.185,
+      "structure": 0.142
      },
      "meta": {
       "structure": "AABA",
@@ -1337,17 +1337,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 5.78,
+     "elapsed_s": 5.919,
      "duration_s": 74.77310657596372,
      "timings_s": {
-      "tempo": 0.659,
-      "beats": 4.364,
-      "onsets": 0.005,
-      "key": 0.003,
-      "groove": 0.003,
-      "loudness": 0.437,
-      "spectral": 0.161,
-      "structure": 0.113
+      "tempo": 0.577,
+      "beats": 4.54,
+      "onsets": 0.002,
+      "key": 0.002,
+      "groove": 0.002,
+      "loudness": 0.445,
+      "spectral": 0.155,
+      "structure": 0.161
      },
      "meta": {
       "structure": "ABCB",
@@ -1477,17 +1477,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 5.57,
+     "elapsed_s": 5.001,
      "duration_s": 72.3166439909297,
      "timings_s": {
-      "tempo": 0.51,
-      "beats": 4.499,
+      "tempo": 0.469,
+      "beats": 3.985,
       "onsets": 0.002,
-      "key": 0.003,
+      "key": 0.002,
       "groove": 0.003,
-      "loudness": 0.298,
-      "spectral": 0.098,
-      "structure": 0.154
+      "loudness": 0.342,
+      "spectral": 0.094,
+      "structure": 0.098
      },
      "meta": {
       "structure": "ABAB",
@@ -1617,17 +1617,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 6.419,
+     "elapsed_s": 4.707,
      "duration_s": 70.35709750566893,
      "timings_s": {
-      "tempo": 0.993,
-      "beats": 4.51,
+      "tempo": 0.439,
+      "beats": 3.439,
       "onsets": 0.002,
-      "key": 0.003,
-      "groove": 0.003,
-      "loudness": 0.608,
-      "spectral": 0.167,
-      "structure": 0.101
+      "key": 0.002,
+      "groove": 0.002,
+      "loudness": 0.429,
+      "spectral": 0.262,
+      "structure": 0.098
      },
      "meta": {
       "structure": "AABA",
@@ -1757,17 +1757,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 6.071,
+     "elapsed_s": 5.886,
      "duration_s": 68.67410430839003,
      "timings_s": {
-      "tempo": 0.876,
-      "beats": 4.249,
+      "tempo": 0.956,
+      "beats": 3.913,
       "onsets": 0.002,
       "key": 0.003,
       "groove": 0.002,
-      "loudness": 0.604,
-      "spectral": 0.204,
-      "structure": 0.101
+      "loudness": 0.735,
+      "spectral": 0.151,
+      "structure": 0.093
      },
      "meta": {
       "structure": "ABCB",
@@ -1897,17 +1897,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 5.245,
+     "elapsed_s": 4.93,
      "duration_s": 65.84997732426304,
      "timings_s": {
-      "tempo": 0.783,
-      "beats": 4.03,
+      "tempo": 0.461,
+      "beats": 4.018,
       "onsets": 0.002,
       "key": 0.002,
-      "groove": 0.003,
-      "loudness": 0.241,
-      "spectral": 0.088,
-      "structure": 0.091
+      "groove": 0.002,
+      "loudness": 0.23,
+      "spectral": 0.083,
+      "structure": 0.128
      },
      "meta": {
       "structure": "ABAB",
@@ -2037,17 +2037,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 4.866,
+     "elapsed_s": 5.038,
      "duration_s": 64.03705215419501,
      "timings_s": {
-      "tempo": 0.513,
-      "beats": 3.71,
+      "tempo": 0.454,
+      "beats": 3.939,
       "onsets": 0.002,
-      "key": 0.003,
-      "groove": 0.002,
-      "loudness": 0.391,
-      "spectral": 0.139,
-      "structure": 0.077
+      "key": 0.002,
+      "groove": 0.001,
+      "loudness": 0.382,
+      "spectral": 0.131,
+      "structure": 0.099
      },
      "meta": {
       "structure": "AABA",
@@ -2177,17 +2177,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 5.114,
+     "elapsed_s": 5.337,
      "duration_s": 62.656235827664396,
      "timings_s": {
-      "tempo": 0.441,
-      "beats": 3.883,
+      "tempo": 0.609,
+      "beats": 3.754,
       "onsets": 0.002,
-      "key": 0.003,
-      "groove": 0.003,
-      "loudness": 0.424,
-      "spectral": 0.22,
-      "structure": 0.109
+      "key": 0.002,
+      "groove": 0.002,
+      "loudness": 0.578,
+      "spectral": 0.255,
+      "structure": 0.104
      },
      "meta": {
       "structure": "ABCB",
@@ -2317,17 +2317,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 4.676,
+     "elapsed_s": 4.508,
      "duration_s": 61.49541950113379,
      "timings_s": {
-      "tempo": 0.386,
-      "beats": 3.786,
+      "tempo": 0.393,
+      "beats": 3.527,
       "onsets": 0.002,
-      "key": 0.004,
+      "key": 0.002,
       "groove": 0.002,
-      "loudness": 0.246,
-      "spectral": 0.149,
-      "structure": 0.097
+      "loudness": 0.309,
+      "spectral": 0.171,
+      "structure": 0.098
      },
      "meta": {
       "structure": "ABAB",
@@ -2457,17 +2457,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 4.429,
+     "elapsed_s": 4.349,
      "duration_s": 56.00213151927438,
      "timings_s": {
-      "tempo": 0.453,
-      "beats": 3.388,
-      "onsets": 0.001,
+      "tempo": 0.363,
+      "beats": 3.079,
+      "onsets": 0.002,
       "key": 0.002,
       "groove": 0.001,
-      "loudness": 0.388,
-      "spectral": 0.111,
-      "structure": 0.059
+      "loudness": 0.557,
+      "spectral": 0.216,
+      "structure": 0.101
      },
      "meta": {
       "structure": "AABA",
@@ -2597,17 +2597,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 5.085,
+     "elapsed_s": 5.411,
      "duration_s": 53.983333333333334,
      "timings_s": {
-      "tempo": 0.752,
-      "beats": 3.154,
-      "onsets": 0.006,
+      "tempo": 0.571,
+      "beats": 3.328,
+      "onsets": 0.002,
       "key": 0.002,
       "groove": 0.002,
-      "loudness": 0.728,
-      "spectral": 0.283,
-      "structure": 0.088
+      "loudness": 0.896,
+      "spectral": 0.455,
+      "structure": 0.094
      },
      "meta": {
       "structure": "ABCB",
@@ -2737,17 +2737,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 3.986,
+     "elapsed_s": 3.624,
      "duration_s": 52.44997732426304,
      "timings_s": {
-      "tempo": 0.379,
-      "beats": 3.164,
+      "tempo": 0.455,
+      "beats": 2.885,
       "onsets": 0.001,
       "key": 0.002,
       "groove": 0.002,
-      "loudness": 0.281,
-      "spectral": 0.078,
-      "structure": 0.075
+      "loudness": 0.122,
+      "spectral": 0.064,
+      "structure": 0.088
      },
      "meta": {
       "structure": "ABAB",
@@ -2877,17 +2877,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 3.827,
+     "elapsed_s": 3.789,
      "duration_s": 51.18072562358277,
      "timings_s": {
-      "tempo": 0.316,
-      "beats": 2.896,
-      "onsets": 0.001,
+      "tempo": 0.459,
+      "beats": 2.816,
+      "onsets": 0.002,
       "key": 0.002,
       "groove": 0.001,
-      "loudness": 0.419,
-      "spectral": 0.094,
-      "structure": 0.077
+      "loudness": 0.325,
+      "spectral": 0.098,
+      "structure": 0.062
      },
      "meta": {
       "structure": "AABA",
@@ -3017,17 +3017,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 3.693,
+     "elapsed_s": 3.741,
      "duration_s": 48.49814058956916,
      "timings_s": {
-      "tempo": 0.3,
-      "beats": 2.862,
-      "onsets": 0.002,
-      "key": 0.003,
+      "tempo": 0.321,
+      "beats": 2.898,
+      "onsets": 0.001,
+      "key": 0.002,
       "groove": 0.002,
-      "loudness": 0.34,
-      "spectral": 0.085,
-      "structure": 0.076
+      "loudness": 0.336,
+      "spectral": 0.094,
+      "structure": 0.063
      },
      "meta": {
       "structure": "ABCB",
@@ -3157,17 +3157,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 3.181,
+     "elapsed_s": 3.281,
      "duration_s": 47.078548752834465,
      "timings_s": {
-      "tempo": 0.405,
-      "beats": 2.553,
+      "tempo": 0.304,
+      "beats": 2.689,
       "onsets": 0.001,
       "key": 0.002,
-      "groove": 0.001,
-      "loudness": 0.101,
-      "spectral": 0.059,
-      "structure": 0.056
+      "groove": 0.002,
+      "loudness": 0.118,
+      "spectral": 0.074,
+      "structure": 0.087
      },
      "meta": {
       "structure": "ABAB",
@@ -3297,17 +3297,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 3.263,
+     "elapsed_s": 3.257,
      "duration_s": 46.598775510204085,
      "timings_s": {
-      "tempo": 0.326,
-      "beats": 2.468,
+      "tempo": 0.302,
+      "beats": 2.527,
       "onsets": 0.001,
       "key": 0.002,
       "groove": 0.002,
-      "loudness": 0.258,
-      "spectral": 0.1,
-      "structure": 0.085
+      "loudness": 0.24,
+      "spectral": 0.104,
+      "structure": 0.057
      },
      "meta": {
       "structure": "AABA",
@@ -3437,17 +3437,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 3.476,
+     "elapsed_s": 3.418,
      "duration_s": 46.52140589569161,
      "timings_s": {
-      "tempo": 0.27,
-      "beats": 2.676,
+      "tempo": 0.275,
+      "beats": 2.732,
       "onsets": 0.001,
-      "key": 0.002,
+      "key": 0.003,
       "groove": 0.002,
-      "loudness": 0.254,
-      "spectral": 0.164,
-      "structure": 0.089
+      "loudness": 0.245,
+      "spectral": 0.082,
+      "structure": 0.057
      },
      "meta": {
       "structure": "ABCB",
@@ -3577,17 +3577,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 12.612,
+     "elapsed_s": 12.391,
      "duration_s": 124.33095238095238,
      "timings_s": {
-      "tempo": 2.307,
-      "beats": 8.231,
+      "tempo": 2.344,
+      "beats": 7.989,
       "onsets": 0.004,
-      "key": 0.003,
+      "key": 0.004,
       "groove": 0.003,
-      "loudness": 1.152,
-      "spectral": 0.683,
-      "structure": 0.189
+      "loudness": 0.704,
+      "spectral": 1.054,
+      "structure": 0.246
      },
      "meta": {
       "structure": "AABA",
@@ -3717,17 +3717,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 12.218,
+     "elapsed_s": 13.416,
      "duration_s": 141.9772335600907,
      "timings_s": {
-      "tempo": 2.108,
-      "beats": 8.3,
-      "onsets": 0.004,
-      "key": 0.004,
-      "groove": 0.004,
-      "loudness": 0.823,
-      "spectral": 0.709,
-      "structure": 0.199
+      "tempo": 2.276,
+      "beats": 8.984,
+      "onsets": 0.003,
+      "key": 0.003,
+      "groove": 0.005,
+      "loudness": 1.268,
+      "spectral": 0.434,
+      "structure": 0.378
      },
      "meta": {
       "structure": "ABAB",
@@ -3857,17 +3857,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 8.067,
+     "elapsed_s": 7.426,
      "duration_s": 91.00290249433107,
      "timings_s": {
-      "tempo": 0.91,
-      "beats": 6.052,
-      "onsets": 0.003,
+      "tempo": 0.577,
+      "beats": 5.933,
+      "onsets": 0.002,
       "key": 0.003,
-      "groove": 0.003,
-      "loudness": 0.531,
-      "spectral": 0.411,
-      "structure": 0.113
+      "groove": 0.002,
+      "loudness": 0.521,
+      "spectral": 0.205,
+      "structure": 0.148
      },
      "meta": {
       "structure": "ABAB",
@@ -3997,17 +3997,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 8.802,
+     "elapsed_s": 9.607,
      "duration_s": 111.34997732426304,
      "timings_s": {
-      "tempo": 1.068,
-      "beats": 6.59,
-      "onsets": 0.01,
+      "tempo": 1.25,
+      "beats": 7.074,
+      "onsets": 0.004,
       "key": 0.003,
       "groove": 0.005,
-      "loudness": 0.666,
-      "spectral": 0.241,
-      "structure": 0.168
+      "loudness": 0.678,
+      "spectral": 0.269,
+      "structure": 0.273
      },
      "meta": {
       "structure": "ABCB",
@@ -4137,17 +4137,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 9.303,
+     "elapsed_s": 7.752,
      "duration_s": 113.29115646258504,
      "timings_s": {
-      "tempo": 1.004,
-      "beats": 7.328,
+      "tempo": 0.785,
+      "beats": 6.283,
       "onsets": 0.003,
       "key": 0.003,
       "groove": 0.003,
-      "loudness": 0.383,
-      "spectral": 0.345,
-      "structure": 0.216
+      "loudness": 0.323,
+      "spectral": 0.182,
+      "structure": 0.161
      },
      "meta": {
       "structure": "ABAB",
@@ -4277,17 +4277,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 7.967,
+     "elapsed_s": 8.42,
      "duration_s": 94.5085260770975,
      "timings_s": {
-      "tempo": 0.915,
-      "beats": 5.951,
-      "onsets": 0.005,
+      "tempo": 1.092,
+      "beats": 6.042,
+      "onsets": 0.002,
       "key": 0.003,
-      "groove": 0.005,
-      "loudness": 0.66,
-      "spectral": 0.233,
-      "structure": 0.151
+      "groove": 0.003,
+      "loudness": 0.794,
+      "spectral": 0.221,
+      "structure": 0.212
      },
      "meta": {
       "structure": "AABA",
@@ -4417,17 +4417,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 7.308,
+     "elapsed_s": 6.838,
      "duration_s": 81.1920634920635,
      "timings_s": {
-      "tempo": 0.947,
-      "beats": 5.48,
-      "onsets": 0.004,
+      "tempo": 1.029,
+      "beats": 4.993,
+      "onsets": 0.003,
       "key": 0.003,
-      "groove": 0.003,
-      "loudness": 0.515,
-      "spectral": 0.198,
-      "structure": 0.125
+      "groove": 0.002,
+      "loudness": 0.446,
+      "spectral": 0.194,
+      "structure": 0.127
      },
      "meta": {
       "structure": "ABCB",
@@ -4557,17 +4557,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 4.794,
+     "elapsed_s": 5.428,
      "duration_s": 63.800816326530615,
      "timings_s": {
-      "tempo": 0.466,
-      "beats": 3.896,
+      "tempo": 0.688,
+      "beats": 4.29,
       "onsets": 0.002,
       "key": 0.003,
       "groove": 0.002,
-      "loudness": 0.23,
-      "spectral": 0.096,
-      "structure": 0.095
+      "loudness": 0.244,
+      "spectral": 0.095,
+      "structure": 0.098
      },
      "meta": {
       "structure": "ABAB",
@@ -4697,17 +4697,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 3.441,
+     "elapsed_s": 4.126,
      "duration_s": 52.95269841269841,
      "timings_s": {
-      "tempo": 0.327,
-      "beats": 2.621,
-      "onsets": 0.001,
+      "tempo": 0.362,
+      "beats": 3.216,
+      "onsets": 0.002,
       "key": 0.002,
       "groove": 0.001,
-      "loudness": 0.305,
-      "spectral": 0.09,
-      "structure": 0.07
+      "loudness": 0.336,
+      "spectral": 0.11,
+      "structure": 0.062
      },
      "meta": {
       "structure": "AABA",
@@ -4837,17 +4837,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 3.542,
+     "elapsed_s": 3.754,
      "duration_s": 47.39541950113379,
      "timings_s": {
-      "tempo": 0.274,
-      "beats": 2.719,
+      "tempo": 0.545,
+      "beats": 2.726,
       "onsets": 0.001,
       "key": 0.002,
-      "groove": 0.001,
-      "loudness": 0.238,
-      "spectral": 0.19,
-      "structure": 0.1
+      "groove": 0.002,
+      "loudness": 0.247,
+      "spectral": 0.096,
+      "structure": 0.113
      },
      "meta": {
       "structure": "ABCB",
@@ -4977,17 +4977,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 4.558,
+     "elapsed_s": 3.499,
      "duration_s": 55.507120181405895,
      "timings_s": {
-      "tempo": 0.4,
-      "beats": 3.59,
-      "onsets": 0.005,
-      "key": 0.002,
-      "groove": 0.001,
-      "loudness": 0.341,
-      "spectral": 0.116,
-      "structure": 0.074
+      "tempo": 0.329,
+      "beats": 2.628,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.302,
+      "spectral": 0.109,
+      "structure": 0.103
      },
      "meta": {
       "structure": "ABAB",
@@ -5117,17 +5117,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 10.577,
+     "elapsed_s": 9.5,
      "duration_s": 110.36426303854876,
      "timings_s": {
-      "tempo": 1.752,
-      "beats": 7.168,
+      "tempo": 1.465,
+      "beats": 6.502,
       "onsets": 0.004,
-      "key": 0.004,
-      "groove": 0.003,
-      "loudness": 0.883,
-      "spectral": 0.534,
-      "structure": 0.18
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.916,
+      "spectral": 0.405,
+      "structure": 0.162
      },
      "meta": {
       "structure": "ABAB",
@@ -5257,17 +5257,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 4.276,
+     "elapsed_s": 4.356,
      "duration_s": 53.249977324263035,
      "timings_s": {
-      "tempo": 0.432,
-      "beats": 3.164,
-      "onsets": 0.001,
+      "tempo": 0.376,
+      "beats": 3.387,
+      "onsets": 0.002,
       "key": 0.002,
       "groove": 0.002,
-      "loudness": 0.358,
-      "spectral": 0.17,
-      "structure": 0.123
+      "loudness": 0.36,
+      "spectral": 0.104,
+      "structure": 0.099
      },
      "meta": {
       "structure": "AABA",
@@ -5397,16 +5397,16 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 9.57,
+     "elapsed_s": 8.866,
      "duration_s": 105.24997732426304,
      "timings_s": {
-      "tempo": 1.417,
-      "beats": 7.062,
-      "onsets": 0.003,
+      "tempo": 0.884,
+      "beats": 6.49,
+      "onsets": 0.007,
       "key": 0.003,
       "groove": 0.003,
-      "loudness": 0.611,
-      "spectral": 0.27,
+      "loudness": 0.717,
+      "spectral": 0.558,
       "structure": 0.16
      },
      "meta": {
@@ -5537,17 +5537,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 3.88,
+     "elapsed_s": 3.277,
      "duration_s": 50.32498866213152,
      "timings_s": {
-      "tempo": 0.627,
-      "beats": 2.941,
-      "onsets": 0.002,
-      "key": 0.002,
+      "tempo": 0.495,
+      "beats": 2.531,
+      "onsets": 0.001,
+      "key": 0.003,
       "groove": 0.002,
-      "loudness": 0.127,
-      "spectral": 0.081,
-      "structure": 0.091
+      "loudness": 0.108,
+      "spectral": 0.064,
+      "structure": 0.069
      },
      "meta": {
       "structure": "ABCB",
@@ -5677,17 +5677,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 8.37,
+     "elapsed_s": 7.28,
      "duration_s": 98.7,
      "timings_s": {
-      "tempo": 0.876,
-      "beats": 6.755,
-      "onsets": 0.016,
+      "tempo": 0.622,
+      "beats": 5.955,
+      "onsets": 0.005,
       "key": 0.003,
       "groove": 0.003,
-      "loudness": 0.332,
-      "spectral": 0.185,
-      "structure": 0.192
+      "loudness": 0.335,
+      "spectral": 0.195,
+      "structure": 0.153
      },
      "meta": {
       "structure": "ABCB",
@@ -5817,17 +5817,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 3.562,
+     "elapsed_s": 3.08,
      "duration_s": 45.264263038548755,
      "timings_s": {
-      "tempo": 0.302,
-      "beats": 2.733,
+      "tempo": 0.259,
+      "beats": 2.217,
       "onsets": 0.001,
-      "key": 0.002,
+      "key": 0.003,
       "groove": 0.002,
       "loudness": 0.249,
-      "spectral": 0.114,
-      "structure": 0.139
+      "spectral": 0.258,
+      "structure": 0.071
      },
      "meta": {
       "structure": "ABAB",
@@ -5957,17 +5957,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 8.15,
+     "elapsed_s": 7.583,
      "duration_s": 90.17854875283447,
      "timings_s": {
-      "tempo": 1.508,
-      "beats": 5.636,
-      "onsets": 0.005,
+      "tempo": 0.836,
+      "beats": 5.753,
+      "onsets": 0.002,
       "key": 0.003,
       "groove": 0.003,
-      "loudness": 0.607,
-      "spectral": 0.206,
-      "structure": 0.145
+      "loudness": 0.577,
+      "spectral": 0.229,
+      "structure": 0.129
      },
      "meta": {
       "structure": "ABAB",
@@ -6097,17 +6097,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 6.597,
+     "elapsed_s": 7.405,
      "duration_s": 90.34997732426304,
      "timings_s": {
-      "tempo": 0.785,
-      "beats": 5.28,
-      "onsets": 0.004,
+      "tempo": 1.087,
+      "beats": 5.464,
+      "onsets": 0.002,
       "key": 0.003,
-      "groove": 0.002,
-      "loudness": 0.258,
-      "spectral": 0.119,
-      "structure": 0.134
+      "groove": 0.003,
+      "loudness": 0.557,
+      "spectral": 0.133,
+      "structure": 0.143
      },
      "meta": {
       "structure": "ABCB",
@@ -6237,17 +6237,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 7.348,
+     "elapsed_s": 7.462,
      "duration_s": 86.08480725623583,
      "timings_s": {
-      "tempo": 1.258,
-      "beats": 5.134,
+      "tempo": 0.975,
+      "beats": 5.308,
       "onsets": 0.002,
       "key": 0.003,
       "groove": 0.003,
-      "loudness": 0.611,
-      "spectral": 0.171,
-      "structure": 0.118
+      "loudness": 0.684,
+      "spectral": 0.31,
+      "structure": 0.138
      },
      "meta": {
       "structure": "ABAB",
@@ -6377,17 +6377,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 5.585,
+     "elapsed_s": 6.383,
      "duration_s": 79.61732426303855,
      "timings_s": {
-      "tempo": 0.474,
-      "beats": 4.276,
+      "tempo": 0.5,
+      "beats": 4.733,
       "onsets": 0.002,
       "key": 0.003,
-      "groove": 0.002,
-      "loudness": 0.429,
-      "spectral": 0.158,
-      "structure": 0.211
+      "groove": 0.003,
+      "loudness": 0.485,
+      "spectral": 0.511,
+      "structure": 0.114
      },
      "meta": {
       "structure": "AABA",
@@ -6517,17 +6517,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 5.671,
+     "elapsed_s": 5.38,
      "duration_s": 68.05165532879819,
      "timings_s": {
-      "tempo": 0.977,
-      "beats": 4.152,
+      "tempo": 0.577,
+      "beats": 4.221,
       "onsets": 0.002,
-      "key": 0.002,
-      "groove": 0.002,
-      "loudness": 0.285,
-      "spectral": 0.118,
-      "structure": 0.126
+      "key": 0.004,
+      "groove": 0.004,
+      "loudness": 0.243,
+      "spectral": 0.202,
+      "structure": 0.122
      },
      "meta": {
       "structure": "ABCB",
@@ -6657,17 +6657,17 @@
       "n_sections": 4
      },
      "errors": {},
-     "elapsed_s": 4.953,
+     "elapsed_s": 4.738,
      "duration_s": 61.77854875283447,
      "timings_s": {
-      "tempo": 0.428,
-      "beats": 3.908,
+      "tempo": 0.379,
+      "beats": 3.766,
       "onsets": 0.002,
       "key": 0.002,
       "groove": 0.002,
-      "loudness": 0.359,
-      "spectral": 0.136,
-      "structure": 0.087
+      "loudness": 0.379,
+      "spectral": 0.112,
+      "structure": 0.071
      },
      "meta": {
       "structure": "ABAB",
@@ -6797,17 +6797,17 @@
       "n_sections": 3
      },
      "errors": {},
-     "elapsed_s": 4.342,
+     "elapsed_s": 4.325,
      "duration_s": 59.30671201814059,
      "timings_s": {
-      "tempo": 0.687,
-      "beats": 3.113,
+      "tempo": 0.428,
+      "beats": 3.33,
       "onsets": 0.002,
       "key": 0.002,
       "groove": 0.002,
-      "loudness": 0.344,
-      "spectral": 0.106,
-      "structure": 0.062
+      "loudness": 0.368,
+      "spectral": 0.104,
+      "structure": 0.06
      },
      "meta": {
       "structure": "AABA",
@@ -6905,7 +6905,7 @@
   }
  },
  "gates": {
-  "enforced": false,
+  "enforced": true,
   "results": [
    {
     "dataset": "synthetic",
@@ -6956,7 +6956,7 @@
     "passed": true
    }
   ],
-  "passed": null,
+  "passed": true,
   "notes": []
  }
 }
