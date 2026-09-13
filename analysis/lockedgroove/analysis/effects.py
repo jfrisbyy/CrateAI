@@ -11,8 +11,8 @@ from typing import Optional
 
 import numpy as np
 
-from ..report import EffectsEstimates, Estimate, SidechainEstimate
 from .. import pipeline as _p
+from ..report import EffectsEstimates, Estimate, SidechainEstimate
 
 CONF_CAP = 0.6
 

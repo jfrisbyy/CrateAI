@@ -6,9 +6,17 @@ import pytest
 
 from lockedgroove.chops.chop import chop_filename, chop_grid, chop_manual, chop_transients, extract
 from lockedgroove.chops.midi import (
-    Grid, Hit, apply_groove, bundle_zip, chord_label_to_pitches, chords_midi, drum_midi, groove_midi, groove_template,
+    Grid,
+    Hit,
+    apply_groove,
+    bundle_zip,
+    chord_label_to_pitches,
+    chords_midi,
+    drum_midi,
+    groove_midi,
+    groove_template,
 )
-from lockedgroove.testing.synth import Pattern, drum_loop, silence
+from lockedgroove.testing.synth import Pattern, drum_loop
 
 SR = 22050
 

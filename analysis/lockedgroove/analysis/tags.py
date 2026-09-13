@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..report import Tag
 from .. import pipeline as _p
+from ..report import Tag
 
 VOCABULARY: list[str] = [
     # instruments

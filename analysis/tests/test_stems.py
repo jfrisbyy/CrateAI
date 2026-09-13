@@ -2,7 +2,13 @@ import numpy as np
 import pytest
 import soundfile as sf
 
-from lockedgroove.stems.separate import MODELS, FakeSeparator, StemAudio, separate_file, stem_name_from_filename
+from lockedgroove.stems.separate import (
+    MODELS,
+    FakeSeparator,
+    StemAudio,
+    separate_file,
+    stem_name_from_filename,
+)
 from lockedgroove.testing.synth import Pattern, chord_progression, drum_loop, mix, triad
 
 SR = 22050

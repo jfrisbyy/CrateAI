@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
 
-from lockedgroove.analysis.tags import VOCABULARY, run as tags_run, zero_shot_tags
+from lockedgroove.analysis.tags import VOCABULARY, zero_shot_tags
+from lockedgroove.analysis.tags import run as tags_run
 from lockedgroove.embeddings.clap import CLAP_DIM, HashEmbedder, cosine, get_embedder, l2, set_embedder
 from lockedgroove.pipeline import Context, analyze_array
 from lockedgroove.report import AnalysisReport

@@ -6,9 +6,32 @@ from lockedgroove.breakdown.compare import compare
 from lockedgroove.breakdown.compose import SECTION_ORDER, compose, requires_for
 from lockedgroove.breakdown.words import key_display, key_token, step_name, steps_phrase, with_hedge
 from lockedgroove.report import (
-    AnalysisReport, Beats, Chords, ChordSegment, DrumHit, DrumPattern, Drums, EffectsEstimates, Estimate,
-    FileInfo, Groove, Instrumentation, InstrumentationSection, InstrumentEvent, Key, KeyAlternate, Loudness, Onsets,
-    SampleUse, Section, SidechainEstimate, Spectral, Structure, Tempo, TimingDeviation, UserEdits,
+    AnalysisReport,
+    Beats,
+    Chords,
+    ChordSegment,
+    DrumHit,
+    DrumPattern,
+    Drums,
+    EffectsEstimates,
+    Estimate,
+    FileInfo,
+    Groove,
+    Instrumentation,
+    InstrumentationSection,
+    InstrumentEvent,
+    Key,
+    KeyAlternate,
+    Loudness,
+    Onsets,
+    SampleUse,
+    Section,
+    SidechainEstimate,
+    Spectral,
+    Structure,
+    Tempo,
+    TimingDeviation,
+    UserEdits,
 )
 
 

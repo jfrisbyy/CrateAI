@@ -4,7 +4,14 @@ from lockedgroove.analysis import sampleuse
 from lockedgroove.pipeline import Context
 from lockedgroove.report import AnalysisReport, Beats, Tempo
 from lockedgroove.testing.synth import (
-    Pattern, arpeggio, chord_progression, continuous_chord_progression, drum_loop, midi_note, mix, triad,
+    Pattern,
+    arpeggio,
+    chord_progression,
+    continuous_chord_progression,
+    drum_loop,
+    midi_note,
+    mix,
+    triad,
 )
 
 SR = 22050

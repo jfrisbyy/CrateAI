@@ -1,7 +1,7 @@
 import numpy as np
 
 from lockedgroove.beatbox.features import detect_onsets, hit_features
-from lockedgroove.beatbox.train import Example, examples_from_recording, train
+from lockedgroove.beatbox.train import examples_from_recording, train
 from lockedgroove.beatbox.transcribe import step_view, transcribe
 from lockedgroove.chops.midi import Grid
 from lockedgroove.testing.synth import hat, kick, silence, snare

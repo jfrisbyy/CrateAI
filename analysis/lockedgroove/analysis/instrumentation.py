@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..report import Instrumentation, InstrumentationSection, InstrumentEvent
 from .. import pipeline as _p
+from ..report import Instrumentation, InstrumentationSection, InstrumentEvent
 from ._beatgrid import bar_times, section_bounds
 
 PRESENT_DB = -45.0          # absolute floor

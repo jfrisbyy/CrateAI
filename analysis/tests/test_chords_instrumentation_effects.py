@@ -1,12 +1,21 @@
 import numpy as np
-import pytest
 
 from lockedgroove.analysis import chords as chords_mod
 from lockedgroove.analysis import effects, instrumentation
 from lockedgroove.pipeline import Context
 from lockedgroove.report import AnalysisReport, Beats, Section, Structure, Tempo
 from lockedgroove.testing.synth import (
-    Pattern, add_reverb, chord, chord_progression, click, drum_loop, kick, mix, silence, sidechain, sine, triad,
+    Pattern,
+    add_reverb,
+    chord,
+    chord_progression,
+    click,
+    drum_loop,
+    mix,
+    sidechain,
+    silence,
+    sine,
+    triad,
 )
 
 SR = 22050

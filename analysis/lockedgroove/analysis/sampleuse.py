@@ -25,8 +25,8 @@ from typing import Optional
 import numpy as np
 from scipy.cluster.hierarchy import fcluster, linkage
 
-from ..report import SampleUse
 from .. import pipeline as _p
+from ..report import SampleUse
 from ._beatgrid import bar_times, beats_per_bar
 
 LOOP_STRENGTH = 0.6

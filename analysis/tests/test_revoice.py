@@ -1,10 +1,15 @@
 import numpy as np
 import pytest
 
-from lockedgroove.chops.midi import Grid, MidiResult, NoteEvent
+from lockedgroove.chops.midi import Grid, MidiResult
 from lockedgroove.revoice import neural
 from lockedgroove.revoice.symbolic import (
-    INSTRUMENTS, midi_for_instrument, midi_result_from_notes, render, render_simple, revoice,
+    INSTRUMENTS,
+    midi_for_instrument,
+    midi_result_from_notes,
+    render,
+    render_simple,
+    revoice,
 )
 
 
