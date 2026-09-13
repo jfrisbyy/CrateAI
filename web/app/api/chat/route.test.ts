@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PLAN_LIMITS } from "@/lib/billing/limits";
 import {
   createWorld,
+  jsonResponse,
   ndjson,
   post,
   rawPost,
   seedConversation,
   seedFile,
   seedMessage,
+  seedUsageEvent,
   USER_A,
   USER_B,
   type World,
@@ -127,6 +130,36 @@ describe("POST /api/chat", () => {
     const res = await POST(post("/api/chat", { message: "still fine" }));
     expect(res.status).toBe(200);
     await ndjson(res);
+  });
+
+  it("meters the turn into usage_events", async () => {
+    await ndjson(await POST(post("/api/chat", { message: "what is the tempo?" })));
+    const events = world.db.rows("usage_events");
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({ user_id: USER_A, kind: "chat_turn", amount: 1 });
+  });
+
+  it("meters the searches a turn actually ran", async () => {
+    world = createWorld({ env: { ANTHROPIC_API_KEY: "test-key", WEB_SEARCH_PROVIDER: "brave", BRAVE_SEARCH_API_KEY: "k" } });
+    world.onFetch((url) => (url.startsWith("https://api.search.brave.com/") ? jsonResponse({ web: { results: [] } }) : null));
+    script({ tools: [{ id: "t1", name: "web_search", input: { query: "who produced this" } }] }, { text: "Nothing found." });
+    await ndjson(await POST(post("/api/chat", { message: "who produced this?" })));
+    const searches = world.db.rows("usage_events").filter((e) => e.kind === "web_search");
+    expect(searches).toHaveLength(1);
+    expect(searches[0]!.amount).toBe(1);
+  });
+
+  it("429s on the monthly ceiling even with none spent today", async () => {
+    seedUsageEvent(world.db, USER_A, {
+      id: "u1",
+      kind: "chat_turn",
+      amount: PLAN_LIMITS.free.chat_turns_per_month,
+      created_at: "2026-09-01T00:00:00.000Z",
+    });
+    const res = await POST(post("/api/chat", { message: "one more" }));
+    expect(res.status).toBe(429);
+    const { error } = (await res.json()) as { error: string };
+    expect(error).toContain("month");
   });
 
   it("503s without a model key", async () => {

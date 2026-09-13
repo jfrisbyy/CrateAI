@@ -9,6 +9,31 @@
 //
 // The model is an interface so the tests script it; the real one is
 // `client.messages.stream` from lib/anthropic/client.ts.
+//
+// ---------------------------------------------------------------------------
+// Prompt caching
+// ---------------------------------------------------------------------------
+//
+// The cache is a prefix match and the render order is tools, then system, then
+// messages, so a breakpoint on the last system block covers both the tool
+// schemas and the frozen system prompt — about 7,000 tokens, two thirds of a
+// typical turn's input. The route places that one (app/api/chat/route.ts) and
+// keeps everything volatile after it: the date, the attached files and the
+// open file's report are the second system block, and the producer's question
+// is a message.
+//
+// This file places the second breakpoint: a rolling one on the last tool
+// result of each round, the standard multi-turn placement. A turn that calls
+// tools sends the whole conversation again on every round, so round three
+// reads back what round two wrote instead of paying full input price for it.
+// It rolls rather than accumulating because a request may carry at most four
+// breakpoints and a turn may run twelve rounds; moving a `cache_control`
+// marker does not invalidate anything, since the markers are not part of the
+// cache key (blocks marked by an earlier request stay readable).
+//
+// Verification is `caching.test.ts`, which drives this loop against a model
+// that implements the prefix rule and asserts the second request reports
+// non-zero `cache_read_input_tokens`. Live: see docs/HANDOFF_launch_readiness.md.
 
 import type Anthropic from "@anthropic-ai/sdk";
 import type { Json } from "@/lib/types/db";
@@ -63,6 +88,8 @@ export async function runToolLoop(input: ToolLoopInput): Promise<ToolLoopResult>
   let stopReason: Anthropic.StopReason | null = null;
   let iterations = 0;
   let emittedAny = false;
+  /** where the rolling message breakpoint currently sits, so it can be moved */
+  let cachedBlock: Anthropic.ToolResultBlockParam | null = null;
 
   const say = (text: string) => {
     input.emit({ type: "text", delta: emittedAny ? `\n\n${text}` : text });
@@ -134,6 +161,15 @@ export async function runToolLoop(input: ToolLoopInput): Promise<ToolLoopResult>
       }
       // every result in ONE user message, so parallel calls stay parallel
       messages.push({ role: "user", content: results });
+      // roll the message breakpoint onto the end of what the next request will
+      // send, so the round after it reads this prefix back instead of paying
+      // full input price for it
+      const last = results[results.length - 1];
+      if (last) {
+        if (cachedBlock) delete cachedBlock.cache_control;
+        last.cache_control = { type: "ephemeral" };
+        cachedBlock = last;
+      }
       continue;
     }
 

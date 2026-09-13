@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cx } from "@/components/ui";
+import { formatUsd } from "@/lib/billing/cost";
 import { formatBytes, formatMinutes, PLAN_LABELS } from "@/lib/billing/limits";
 import type { UsageReport } from "@/lib/billing/usage";
 import type { ProfileRow } from "@/lib/types/db";
@@ -17,6 +18,18 @@ function Bar({ label, used, limit, fraction }: { label: string; used: string; li
       <div className="mt-1 h-1 w-full bg-slate">
         <div className={cx("h-1", fraction >= 1 ? "bg-chalk" : "bg-pad")} style={{ width: `${pct}%` }} />
       </div>
+    </div>
+  );
+}
+
+function CostLine({ label, amount, note }: { label: string; amount: number; note?: string }) {
+  return (
+    <div className="flex items-baseline justify-between border-l-2 border-rule pl-3 text-sm">
+      <span>
+        {label}
+        {note ? <span className="text-chalk-dim"> {note}</span> : null}
+      </span>
+      <span className="font-mono text-chalk-dim">{formatUsd(amount)}</span>
     </div>
   );
 }
@@ -45,7 +58,7 @@ export function AccountPanel({ profile, usage, billingConfigured }: { profile: P
     if (!res.ok) setOptIn(!next);
   }
 
-  const { limits, usage: u, fractions } = usage;
+  const { limits, usage: u, fractions, cost } = usage;
   return (
     <div className="space-y-8">
       <section className="space-y-3">
@@ -55,7 +68,7 @@ export function AccountPanel({ profile, usage, billingConfigured }: { profile: P
         </div>
         <p className="text-sm text-chalk-dim">
           {usage.plan === "free"
-            ? "Free covers a small library and a few stem separations a month. Pro raises every cap."
+            ? "Free is a taste: a small library, a few separations, and enough chat to see whether this is for you. Pro raises every cap."
             : "Pro. Manage the subscription, invoices, and the payment method in the billing portal."}
         </p>
         <div className="flex gap-3">
@@ -75,12 +88,37 @@ export function AccountPanel({ profile, usage, billingConfigured }: { profile: P
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg">Usage this month</h2>
-        <Bar label="Storage" used={formatBytes(u.storage_bytes)} limit={formatBytes(limits.storage_bytes)} fraction={fractions.storage_bytes} />
+        <h2 className="text-lg">This month</h2>
+        <Bar label="Chat turns" used={String(u.chat_turns_month)} limit={String(limits.chat_turns_per_month)} fraction={fractions.chat_turns_per_month} />
+        <Bar label="Web searches" used={String(u.web_searches_month)} limit={String(limits.web_searches_per_month)} fraction={fractions.web_searches_per_month} />
         <Bar label="Stem separations" used={String(u.stem_jobs_month)} limit={String(limits.stem_jobs_per_month)} fraction={fractions.stem_jobs_per_month} />
         <Bar label="GPU time" used={formatMinutes(u.gpu_seconds_month)} limit={formatMinutes(limits.gpu_seconds_per_month)} fraction={fractions.gpu_seconds_per_month} />
-        <Bar label="Chat turns today" used={String(u.chat_turns_today)} limit={String(limits.chat_turns_per_day)} fraction={fractions.chat_turns_per_day} />
-        <Bar label="Web searches today" used={String(u.web_searches_today)} limit={String(limits.web_searches_per_day)} fraction={fractions.web_searches_per_day} />
+        <Bar label="Storage" used={formatBytes(u.storage_bytes)} limit={formatBytes(limits.storage_bytes)} fraction={fractions.storage_bytes} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg">Today</h2>
+        <p className="text-sm text-chalk-dim">
+          Daily caps sit under the monthly ones so one heavy afternoon can&rsquo;t spend the month. Both reset on their own clock: the
+          day at midnight UTC, the month on the first.
+        </p>
+        <Bar label="Chat turns" used={String(u.chat_turns_today)} limit={String(limits.chat_turns_per_day)} fraction={fractions.chat_turns_per_day} />
+        <Bar label="Web searches" used={String(u.web_searches_today)} limit={String(limits.web_searches_per_day)} fraction={fractions.web_searches_per_day} />
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-lg">What this has cost</h2>
+          <span className="font-mono text-sm">{formatUsd(cost.total_usd)}</span>
+        </div>
+        <CostLine label="Chat" amount={cost.chat_usd} note={`${u.chat_turns_month} turns at about ${formatUsd(usage.chat_turn_usd)} each`} />
+        <CostLine label="Web searches" amount={cost.web_search_usd} note={`${u.web_searches_month} searches`} />
+        <CostLine label="Compute" amount={cost.compute_usd} note={`${formatMinutes(u.gpu_seconds_month)} GPU, ${formatMinutes(u.cpu_seconds_month)} CPU`} />
+        <CostLine label="Storage" amount={cost.storage_usd} note={formatBytes(u.storage_bytes)} />
+        <p className="text-sm text-chalk-dim">
+          Our cost of running this account this month, estimated from published list prices, not a bill and not what you pay. It is
+          here so the numbers above mean something.
+        </p>
       </section>
 
       <section className="space-y-2">

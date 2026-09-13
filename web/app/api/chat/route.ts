@@ -19,7 +19,7 @@ import { CHAT_MAX_TOKENS, CHAT_MODEL } from "@/lib/anthropic/models";
 import { supabaseChatDb } from "@/lib/chat/db";
 import { batchFingerprint, runTool, type ToolContext } from "@/lib/chat/handlers";
 import { HISTORY_LIMIT, historyFromRows } from "@/lib/chat/history";
-import { CHAT_QUOTA_MESSAGE, chatTurnsLeft, readUsage, supabaseUsageSource, webSearchesLeft } from "@/lib/chat/limits";
+import { chatQuotaMessage, chatTurnsLeft, meterChatTurn, meterWebSearches, readUsage, webSearchesIn, webSearchesLeft } from "@/lib/chat/limits";
 import { runToolLoop, type ChatModel, type ToolLoopResult } from "@/lib/chat/loop";
 import { CHAT_CONTENT_TYPE, encodeEvent, type ChatEvent } from "@/lib/chat/protocol";
 import { buildContextBlock, SYSTEM_PROMPT } from "@/lib/chat/system";
@@ -60,8 +60,10 @@ export async function POST(req: Request) {
     const text = (body.message ?? body.content) as string;
     if (!hasAnthropicKey()) throw new HttpError(503, "Chat needs ANTHROPIC_API_KEY; add it to web/.env.local.");
 
-    const usage = await readUsage(supabaseUsageSource(supabase));
-    if (chatTurnsLeft(usage) <= 0) throw new HttpError(429, CHAT_QUOTA_MESSAGE);
+    // One read answers both caps (today's burst and this month's ceiling) and
+    // carries the caller's plan, so a Pro account is not held to free limits.
+    const usage = await readUsage(supabase, user.id);
+    if (chatTurnsLeft(usage) <= 0) throw new HttpError(429, chatQuotaMessage(usage));
 
     // ---- conversation ------------------------------------------------------
     let conversationId = body.conversation_id ?? null;
@@ -103,6 +105,9 @@ export async function POST(req: Request) {
       .select("id")
       .single();
     if (userMessage.error) throw dbError(userMessage.error, "Saving your message");
+    // Metered here, not at the end: a turn that dies mid-stream still spent
+    // input tokens, so it still counts. Best effort; it never fails the turn.
+    await meterChatTurn(user.id);
 
     // ---- context and tools ---------------------------------------------------
     const db = supabaseChatDb(supabase, user.id);
@@ -129,6 +134,13 @@ export async function POST(req: Request) {
       userText += `\n\n[The producer pressed Run on the batch confirmation ${confirmedBatch}. Call the batch tool now with confirmed=true and exactly these operations: ${JSON.stringify(body.batch.operations)}]`;
     }
     const messages: Anthropic.MessageParam[] = [...history, { role: "user", content: userText }];
+    // The cache is a prefix match and the render order is tools, then system,
+    // then messages, so this one breakpoint covers CHAT_TOOLS plus the frozen
+    // SYSTEM_PROMPT — about 7,000 tokens that never change. Everything that
+    // moves stays after it: the context block carries today's date and the
+    // attached files' reports, and the producer's question is a message.
+    // Nothing above this line may be interpolated into SYSTEM_PROMPT or
+    // CHAT_TOOLS without giving up the cache for every request.
     const system: Anthropic.TextBlockParam[] = [
       { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
       { type: "text", text: contextBlock },
@@ -182,6 +194,11 @@ export async function POST(req: Request) {
         } catch (err) {
           failure = failure ?? `The reply could not be saved: ${err instanceof Error ? err.message : String(err)}`;
         }
+
+        // The searches this turn actually ran, metered once. Reading them back
+        // off the recorded tool calls catches the ones identify_context fans
+        // out internally, which the per-call budget only approximates.
+        if (result) await meterWebSearches(user.id, webSearchesIn(result.toolCalls as unknown as Json));
 
         if (result && result.citations.length > 0) emit({ type: "citations", items: result.citations });
         if (failure) emit({ type: "error", message: failure });

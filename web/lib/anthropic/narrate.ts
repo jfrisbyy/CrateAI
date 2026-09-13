@@ -10,12 +10,20 @@
 import "server-only";
 
 import Anthropic from "@anthropic-ai/sdk";
+import type { ModelId } from "@/lib/billing/cost";
 import { serverEnv } from "@/lib/env";
 import type { NarrateOptions, Narrator, NarratorStop } from "@/lib/narration/narrator";
 import { buildNarrationPrompt } from "@/lib/narration/prompt";
 import type { BreakdownContent } from "@/lib/types/db";
 
-export const NARRATION_MODEL = "claude-opus-5";
+/**
+ * Narration stays on Opus 5 while chat and the search parser move to Sonnet 5;
+ * the routing table and the per-call cost of each path are in
+ * `lib/anthropic/models.ts`. Short version: this is the one piece of prose a
+ * producer reads instead of the numbers, it runs once per breakdown rather
+ * than once per turn, and it is validated fact by fact before it is shown.
+ */
+export const NARRATION_MODEL: ModelId = "claude-opus-5";
 export const NARRATION_MAX_TOKENS = 16000;
 
 /** Bridges the stream's text events into an async iterable the orchestrator can pull from. */
@@ -82,6 +90,9 @@ export class AnthropicNarrator implements Narrator {
       max_tokens: NARRATION_MAX_TOKENS,
       thinking: { type: "adaptive" },
       output_config: { effort: "medium" },
+      // `buildNarrationPrompt` returns the frozen NARRATION_SYSTEM_PROMPT as
+      // `system` every time, so the breakpoint is on bytes that never change;
+      // the per-breakdown fact list is the user message, after it.
       system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
       messages: [{ role: "user", content: user }],
     });

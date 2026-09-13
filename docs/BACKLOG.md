@@ -41,9 +41,16 @@ they're scheduled and out of here when they ship.
 - [ ] FluidSynth and a General MIDI soundfont must be in the compute image for sampled re-voice renders; the additive fallback is preview quality and says so.
 
 ## Phase 8
-- [ ] The chat's turn and web-search caps count from `messages` and recorded tool calls; move them onto `usage_events` / `usage_summary` (the table every compute job already meters into) so `/api/web/search` called directly is counted too. See "Usage events behind every quota" in PROPOSALS.
+- [x] The chat's turn and web-search caps counted from `messages` and recorded tool calls. They now meter into `usage_events` and read back through `usage_summary`, so a direct `POST /api/web/search` is counted too (`web/lib/billing/meter.ts`, `web/lib/chat/limits.ts`); `messages` stays as a floor under the chat-turn count for when the service role is missing. Closes "Usage events behind every quota" in PROPOSALS.
 - [ ] Not exercised without an API key: a real model turn through `/api/chat`, the strict tool schemas against the live API, and incremental NDJSON delivery through Vercel. First signed-in run with `ANTHROPIC_API_KEY` set should watch these.
+- [ ] Prompt caching is verified against a fake that implements the prefix rule (`web/lib/chat/caching.test.ts`), not against the live API. The first real turn should log `usage.cache_read_input_tokens` on the second request of a session; the procedure is "Confirming the cache live" in `docs/HANDOFF_launch_readiness.md`.
+- [ ] The rolling message breakpoint inside the tool loop pays a cache write every round. It wins on turns of three rounds or more and costs about a fifth of a cent on a two-round turn. Worth measuring against real traffic; the knob is one condition in `web/lib/chat/loop.ts`.
+- [ ] `CHAT_TURN_SHAPE` in `web/lib/billing/cost.ts` estimates tokens from character counts, because there is no tokenizer in the test environment. Re-baseline it with `messages.count_tokens` on a handful of real turns, and against the `usage` numbers those turns report, once a key is available. Everything downstream (the tier caps, the account page's cost) moves with it.
 
 ## Phase 10
 - [ ] Backups: point-in-time recovery is a Supabase plan setting, not code; documented in the runbook.
-- [ ] Stripe, the DMCA agent registration and the legal pages' company details are placeholders until the owner fills them (RUNBOOK section 6).
+- [ ] Stripe, the DMCA agent registration and the legal pages' company details are placeholders until the owner fills them (RUNBOOK section 6). `node scripts/preflight.mjs` fails until they are.
+- [ ] The Pro price is still unset (OPEN_QUESTIONS J.31). The caps in `web/lib/billing/limits.ts` put a fully used Pro account at about $23 a month of our cost; the price has to clear that, or the caps have to come down. Nothing enforces the relationship except `planCeilingUsd` and its test.
+- [ ] The free tier's chat caps (8/day, 40/month) are set from cost, not from what a producer needs to evaluate the product. Once there is conversion data, raise them deliberately: every extra turn per free account per month is about 3.3 cents of real money.
+- [ ] Unit costs in `web/lib/billing/cost.ts` (Brave per query, Modal GPU and CPU per second, Supabase per GiB-month) are list prices typed from the vendors' pages, not measured from invoices. Reconcile them against the first real bill.
+- [ ] Quota enforcement is per request, so two chat turns started in the same instant can both pass the check. At these cap sizes the overrun is one turn; a transactional check needs a counter with a unique constraint or an RPC.
