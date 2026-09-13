@@ -125,7 +125,23 @@ description. The packet expects the gates to rise when neural beat tracking
 PR green; if a regression is intended, write the reason in the PR and in
 `docs/BACKLOG.md`.
 
-## 5. CI
+## 5. Sharing results without sharing audio
+
+`data/` is gitignored except `data/eval/latest.json`, `data/eval/*.md` and
+`data/SOURCES.md`. Those are scores and provenance, never audio, so a run on
+a machine that holds the datasets can be committed and read anywhere:
+
+```
+python scripts/fetch_public_datasets.py --dataset all
+python scripts/eval_accuracy.py --dataset all --workers 4 --no-gate
+git add data/eval/latest.json data/eval/latest.md data/SOURCES.md && git commit
+```
+
+`latest.json` carries per-item predictions, truths, miss reasons and stage
+timings, which is everything needed to work on accuracy. The audio stays on
+the machine that fetched it, as the datasets' terms require.
+
+## 6. CI
 
 `.github/workflows/ci.yml`:
 

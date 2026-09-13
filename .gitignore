@@ -22,8 +22,18 @@ build/
 !.env.example
 supabase/.temp/
 
-# datasets and model caches (fetched by scripts, never committed)
-data/
+# datasets and model caches (fetched by scripts, never committed).
+# Git cannot re-include a file under an excluded directory, so exclude the
+# contents and re-include the harness's own scores: text only, no audio,
+# nothing redistributed, and the only thing needed to work on accuracy from
+# a machine that cannot hold the datasets.
+data/*
+!data/eval/
+data/eval/*
+!data/eval/latest.json
+!data/eval/latest.md
+!data/eval/*.md
+!data/SOURCES.md
 analysis/tests/fixtures/generated/
 .cache/
 
