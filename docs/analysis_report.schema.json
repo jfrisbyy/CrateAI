@@ -1,0 +1,1400 @@
+{
+  "$defs": {
+    "Beats": {
+      "additionalProperties": false,
+      "properties": {
+        "times_s": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Times S",
+          "type": "array"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "downbeats_s": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Downbeats S",
+          "type": "array"
+        },
+        "downbeat_phase": {
+          "default": 0,
+          "title": "Downbeat Phase",
+          "type": "integer"
+        },
+        "downbeat_confidence": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Downbeat Confidence",
+          "type": "number"
+        },
+        "downbeat_method": {
+          "default": "",
+          "title": "Downbeat Method",
+          "type": "string"
+        },
+        "meter": {
+          "default": "4/4",
+          "title": "Meter",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "times_s",
+        "confidence",
+        "method"
+      ],
+      "title": "Beats",
+      "type": "object"
+    },
+    "ChordSegment": {
+      "additionalProperties": false,
+      "properties": {
+        "start_s": {
+          "title": "Start S",
+          "type": "number"
+        },
+        "end_s": {
+          "title": "End S",
+          "type": "number"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "start_s",
+        "end_s",
+        "label",
+        "confidence"
+      ],
+      "title": "ChordSegment",
+      "type": "object"
+    },
+    "Chords": {
+      "additionalProperties": false,
+      "properties": {
+        "segments": {
+          "items": {
+            "$ref": "#/$defs/ChordSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "segments",
+        "method"
+      ],
+      "title": "Chords",
+      "type": "object"
+    },
+    "DrumHit": {
+      "additionalProperties": false,
+      "description": "One position of a per-section drum pattern on a 16th grid.\n\n``step`` is 0..15 within the bar. ``frequency`` is the fraction of bars in\nthe section where a hit lands on this step. ``velocity`` is the mean\nnormalized hit strength. ``offset_ms`` is the mean measured offset from the\ngrid; positive is late. Offsets are what make the MIDI export keep the feel.",
+      "properties": {
+        "step": {
+          "minimum": 0,
+          "title": "Step",
+          "type": "integer"
+        },
+        "velocity": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Velocity",
+          "type": "number"
+        },
+        "frequency": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Frequency",
+          "type": "number"
+        },
+        "offset_ms": {
+          "default": 0.0,
+          "title": "Offset Ms",
+          "type": "number"
+        }
+      },
+      "required": [
+        "step",
+        "velocity",
+        "frequency"
+      ],
+      "title": "DrumHit",
+      "type": "object"
+    },
+    "DrumPattern": {
+      "additionalProperties": false,
+      "properties": {
+        "section_index": {
+          "title": "Section Index",
+          "type": "integer"
+        },
+        "kick": {
+          "items": {
+            "$ref": "#/$defs/DrumHit"
+          },
+          "title": "Kick",
+          "type": "array"
+        },
+        "snare": {
+          "items": {
+            "$ref": "#/$defs/DrumHit"
+          },
+          "title": "Snare",
+          "type": "array"
+        },
+        "hat": {
+          "items": {
+            "$ref": "#/$defs/DrumHit"
+          },
+          "title": "Hat",
+          "type": "array"
+        },
+        "other": {
+          "items": {
+            "$ref": "#/$defs/DrumHit"
+          },
+          "title": "Other",
+          "type": "array"
+        },
+        "accents": {
+          "description": "steps carrying accents",
+          "items": {
+            "type": "integer"
+          },
+          "title": "Accents",
+          "type": "array"
+        },
+        "density_per_bar": {
+          "default": 0.0,
+          "title": "Density Per Bar",
+          "type": "number"
+        },
+        "hat_open_ratio": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hat Open Ratio"
+        },
+        "ghost_notes": {
+          "description": "snare steps with low velocity",
+          "items": {
+            "type": "integer"
+          },
+          "title": "Ghost Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "section_index"
+      ],
+      "title": "DrumPattern",
+      "type": "object"
+    },
+    "Drums": {
+      "additionalProperties": false,
+      "properties": {
+        "source_estimate": {
+          "enum": [
+            "sampled_break",
+            "programmed",
+            "mixed",
+            "unknown"
+          ],
+          "title": "Source Estimate",
+          "type": "string"
+        },
+        "source_confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Source Confidence",
+          "type": "number"
+        },
+        "patterns": {
+          "items": {
+            "$ref": "#/$defs/DrumPattern"
+          },
+          "title": "Patterns",
+          "type": "array"
+        },
+        "layered_kick": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layered Kick"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "source_estimate",
+        "source_confidence",
+        "patterns",
+        "method"
+      ],
+      "title": "Drums",
+      "type": "object"
+    },
+    "EffectsEstimates": {
+      "additionalProperties": false,
+      "properties": {
+        "reverb_tail_s": {
+          "$ref": "#/$defs/Estimate"
+        },
+        "sidechain_ducking": {
+          "$ref": "#/$defs/SidechainEstimate"
+        },
+        "saturation_above_hz": {
+          "$ref": "#/$defs/Estimate"
+        }
+      },
+      "required": [
+        "reverb_tail_s",
+        "sidechain_ducking",
+        "saturation_above_hz"
+      ],
+      "title": "EffectsEstimates",
+      "type": "object"
+    },
+    "Estimate": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "confidence",
+        "method"
+      ],
+      "title": "Estimate",
+      "type": "object"
+    },
+    "FileInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "original_filename": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Original Filename"
+        },
+        "duration_s": {
+          "default": 0.0,
+          "title": "Duration S",
+          "type": "number"
+        },
+        "sample_rate": {
+          "default": 0,
+          "title": "Sample Rate",
+          "type": "integer"
+        },
+        "channels": {
+          "default": 0,
+          "title": "Channels",
+          "type": "integer"
+        },
+        "format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Format"
+        },
+        "kind": {
+          "default": "original",
+          "enum": [
+            "original",
+            "stem",
+            "chop",
+            "loop_render",
+            "layer_render",
+            "revoice_render"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "parent_file_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent File Id"
+        }
+      },
+      "title": "FileInfo",
+      "type": "object"
+    },
+    "Groove": {
+      "additionalProperties": false,
+      "properties": {
+        "swing_pct": {
+          "title": "Swing Pct",
+          "type": "number"
+        },
+        "timing_deviation_ms": {
+          "$ref": "#/$defs/TimingDeviation"
+        },
+        "feel": {
+          "enum": [
+            "straight",
+            "swung",
+            "loose"
+          ],
+          "title": "Feel",
+          "type": "string"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "swing_pct",
+        "timing_deviation_ms",
+        "feel",
+        "method",
+        "confidence"
+      ],
+      "title": "Groove",
+      "type": "object"
+    },
+    "InstrumentEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "instrument": {
+          "title": "Instrument",
+          "type": "string"
+        },
+        "bar": {
+          "title": "Bar",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "instrument",
+        "bar"
+      ],
+      "title": "InstrumentEvent",
+      "type": "object"
+    },
+    "Instrumentation": {
+      "additionalProperties": false,
+      "properties": {
+        "per_section": {
+          "items": {
+            "$ref": "#/$defs/InstrumentationSection"
+          },
+          "title": "Per Section",
+          "type": "array"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "per_section",
+        "method",
+        "confidence"
+      ],
+      "title": "Instrumentation",
+      "type": "object"
+    },
+    "InstrumentationSection": {
+      "additionalProperties": false,
+      "properties": {
+        "section_index": {
+          "title": "Section Index",
+          "type": "integer"
+        },
+        "present": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Present",
+          "type": "array"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/InstrumentEvent"
+          },
+          "title": "Entries",
+          "type": "array"
+        },
+        "exits": {
+          "items": {
+            "$ref": "#/$defs/InstrumentEvent"
+          },
+          "title": "Exits",
+          "type": "array"
+        }
+      },
+      "required": [
+        "section_index",
+        "present"
+      ],
+      "title": "InstrumentationSection",
+      "type": "object"
+    },
+    "Key": {
+      "additionalProperties": false,
+      "properties": {
+        "tonic": {
+          "title": "Tonic",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "major",
+            "minor"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "alternate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeyAlternate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "tonic",
+        "mode",
+        "confidence",
+        "method"
+      ],
+      "title": "Key",
+      "type": "object"
+    },
+    "KeyAlternate": {
+      "additionalProperties": false,
+      "properties": {
+        "tonic": {
+          "title": "Tonic",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "major",
+            "minor"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "correlation": {
+          "title": "Correlation",
+          "type": "number"
+        }
+      },
+      "required": [
+        "tonic",
+        "mode",
+        "correlation"
+      ],
+      "title": "KeyAlternate",
+      "type": "object"
+    },
+    "KeyEdit": {
+      "additionalProperties": false,
+      "properties": {
+        "tonic": {
+          "title": "Tonic",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "major",
+            "minor"
+          ],
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tonic",
+        "mode"
+      ],
+      "title": "KeyEdit",
+      "type": "object"
+    },
+    "Loudness": {
+      "additionalProperties": false,
+      "properties": {
+        "integrated_lufs": {
+          "title": "Integrated Lufs",
+          "type": "number"
+        },
+        "true_peak_dbtp": {
+          "title": "True Peak Dbtp",
+          "type": "number"
+        },
+        "loudness_range_lu": {
+          "title": "Loudness Range Lu",
+          "type": "number"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "integrated_lufs",
+        "true_peak_dbtp",
+        "loudness_range_lu",
+        "method"
+      ],
+      "title": "Loudness",
+      "type": "object"
+    },
+    "Onsets": {
+      "additionalProperties": false,
+      "properties": {
+        "times_s": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Times S",
+          "type": "array"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "times_s",
+        "method",
+        "count"
+      ],
+      "title": "Onsets",
+      "type": "object"
+    },
+    "SampleUse": {
+      "additionalProperties": false,
+      "properties": {
+        "is_loop_based": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Is Loop Based"
+        },
+        "chop_count_estimate": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chop Count Estimate"
+        },
+        "chop_reordering_detected": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chop Reordering Detected"
+        },
+        "chop_order": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Chop Order",
+          "type": "array"
+        },
+        "pitch_shift_semitones_estimate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch Shift Semitones Estimate"
+        },
+        "pitch_shift_source_file_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch Shift Source File Id"
+        },
+        "sample_bars": {
+          "description": "bars where the sample is present",
+          "items": {
+            "type": "integer"
+          },
+          "title": "Sample Bars",
+          "type": "array"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "confidence",
+        "method"
+      ],
+      "title": "SampleUse",
+      "type": "object"
+    },
+    "Section": {
+      "additionalProperties": false,
+      "properties": {
+        "start_s": {
+          "title": "Start S",
+          "type": "number"
+        },
+        "end_s": {
+          "title": "End S",
+          "type": "number"
+        },
+        "start_bar": {
+          "title": "Start Bar",
+          "type": "integer"
+        },
+        "bars": {
+          "title": "Bars",
+          "type": "integer"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "energy": {
+          "title": "Energy",
+          "type": "number"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "start_s",
+        "end_s",
+        "start_bar",
+        "bars",
+        "label",
+        "energy",
+        "confidence"
+      ],
+      "title": "Section",
+      "type": "object"
+    },
+    "SidechainEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "detected": {
+          "title": "Detected",
+          "type": "boolean"
+        },
+        "depth_db": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depth Db"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "detected",
+        "confidence",
+        "method"
+      ],
+      "title": "SidechainEstimate",
+      "type": "object"
+    },
+    "Spectral": {
+      "additionalProperties": false,
+      "properties": {
+        "centroid_hz_mean": {
+          "title": "Centroid Hz Mean",
+          "type": "number"
+        },
+        "stereo_width": {
+          "title": "Stereo Width",
+          "type": "number"
+        },
+        "low_high_ratio_db": {
+          "title": "Low High Ratio Db",
+          "type": "number"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "centroid_hz_mean",
+        "stereo_width",
+        "low_high_ratio_db",
+        "method"
+      ],
+      "title": "Spectral",
+      "type": "object"
+    },
+    "Structure": {
+      "additionalProperties": false,
+      "properties": {
+        "sections": {
+          "items": {
+            "$ref": "#/$defs/Section"
+          },
+          "title": "Sections",
+          "type": "array"
+        },
+        "loop_period_bars": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Loop Period Bars"
+        },
+        "loop_period_confidence": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Loop Period Confidence",
+          "type": "number"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "sections",
+        "method"
+      ],
+      "title": "Structure",
+      "type": "object"
+    },
+    "Tag": {
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "title": "Tag",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "source": {
+          "default": "model",
+          "enum": [
+            "model",
+            "user"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tag",
+        "confidence"
+      ],
+      "title": "Tag",
+      "type": "object"
+    },
+    "Tempo": {
+      "additionalProperties": false,
+      "properties": {
+        "bpm": {
+          "title": "Bpm",
+          "type": "number"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "alternates_bpm": {
+          "description": "[half, double]",
+          "items": {
+            "type": "number"
+          },
+          "title": "Alternates Bpm",
+          "type": "array"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "bpm",
+        "confidence",
+        "method"
+      ],
+      "title": "Tempo",
+      "type": "object"
+    },
+    "TimingDeviation": {
+      "additionalProperties": false,
+      "properties": {
+        "mean": {
+          "title": "Mean",
+          "type": "number"
+        },
+        "std": {
+          "title": "Std",
+          "type": "number"
+        }
+      },
+      "required": [
+        "mean",
+        "std"
+      ],
+      "title": "TimingDeviation",
+      "type": "object"
+    },
+    "UserEdits": {
+      "additionalProperties": false,
+      "properties": {
+        "tempo_bpm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tempo Bpm"
+        },
+        "downbeat_phase": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Downbeat Phase"
+        },
+        "first_downbeat_s": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "First Downbeat S"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeyEdit"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "meter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Meter"
+        },
+        "section_labels": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "section index (as a string) -> label",
+          "title": "Section Labels"
+        },
+        "edited_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Edited At"
+        }
+      },
+      "title": "UserEdits",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "3.0",
+      "default": "3.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "analysis_version": {
+      "default": 0,
+      "title": "Analysis Version",
+      "type": "integer"
+    },
+    "file": {
+      "$ref": "#/$defs/FileInfo"
+    },
+    "tempo": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Tempo"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "beats": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Beats"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "key": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Key"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "chords": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Chords"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "onsets": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Onsets"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "groove": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Groove"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "structure": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Structure"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "drums": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Drums"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "sample_use": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SampleUse"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "instrumentation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Instrumentation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "loudness": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Loudness"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "spectral": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Spectral"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "effects_estimates": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EffectsEstimates"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "tags": {
+      "items": {
+        "$ref": "#/$defs/Tag"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "user_edits": {
+      "$ref": "#/$defs/UserEdits"
+    }
+  },
+  "title": "AnalysisReport",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://crateai.app/schemas/analysis_report.schema.json"
+}
