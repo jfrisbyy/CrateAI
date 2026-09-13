@@ -258,3 +258,20 @@ def test_usage_events_are_recorded_per_job(world, monkeypatch):
     kinds = sorted(e["kind"] for e in events)
     assert kinds == ["cpu_seconds", "gpu_seconds", "stem_job"]
     assert all(e["amount"] >= 0 for e in events)
+
+
+def test_breakdown_phase4_stages_run_with_force(world, monkeypatch):
+    monkeypatch.setenv("LOCKEDGROOVE_FAKE_STEMS", "1")
+    stems_job = world.job("stems", world.beat["id"], model="htdemucs_ft")
+    run_job(stems_job["id"], world.db, world.storage)
+    for jid in world.db.get_job(stems_job["id"])["result"]["queued_job_ids"]:
+        run_job(jid, world.db, world.storage)
+    final = run_job(world.job("breakdown", world.beat["id"])["id"], world.db, world.storage)
+    assert final["status"] == "done", final["error"]
+    phase4 = final["result"]["queued"].get("analyze:phase4")
+    assert phase4, final["result"]
+    params = world.db.get_job(phase4)["params"]
+    assert params.get("force") is True and "drums" in params["stages"]
+    run_job(phase4, world.db, world.storage)
+    assert world.db.get_job(phase4)["result"]["skipped"] is False
+    assert world.db.get_file(world.beat["id"])["report"]["drums"] is not None

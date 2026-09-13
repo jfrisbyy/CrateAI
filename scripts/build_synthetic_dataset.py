@@ -17,7 +17,8 @@ The set varies
 * the offset of the first downbeat: leading silence and pickups (a partial
   bar before the first downbeat);
 * swing (50 / 58 / 62 / 66.7 %) with programmed and sampled-break feel;
-* structure: ABAB, AABA, ABCB with 4- and 8-bar loops;
+* structure: ABAB, AABA, ABCB with 4- and 8-bar loops; every section plays its loop twice, so a
+  section is a loop that repeats and a boundary is where the loop changes;
 * stereo width (mono, 0.3, 0.6) and sample rate (22050, a few at 44100);
 * drums on/off and three drum patterns.
 
@@ -117,7 +118,7 @@ def build_specs() -> list[dict[str, Any]]:
     for i, ((tonic, mode), bpm) in enumerate(zip(KEYS, tempos24, strict=True)):
         specs.append(_spec(
             f"key{i:02d}_{tonic.replace('#', 's')}_{mode}_{bpm:g}bpm", bpm=bpm, tonic=tonic, mode=mode,
-            structure=structures[i % 3], loop_bars=4, section_bars=4 if bpm < 100 else 8,
+            structure=structures[i % 3], loop_bars=4, section_bars=8,
             pattern=patterns[i % 3], harmonic=harmonics[(i // 3) % 3],
             lead_s=leads[i % 4], pickup_beats=pickups[(i // 4) % 4], width=widths[i % 3],
             octave=4 if i % 2 == 0 else 3, sr=44100 if i % 12 == 5 else 22050,
@@ -129,7 +130,7 @@ def build_specs() -> list[dict[str, Any]]:
             tonic, mode = KEYS[(7 * j + (0 if which == "half" else 13)) % 24]
             specs.append(_spec(
                 f"octave{j}_{which}_{bpm:g}bpm", bpm=bpm, tonic=tonic, mode=mode,
-                structure=structures[j % 3], loop_bars=4, section_bars=4 if bpm < 100 else 8,
+                structure=structures[j % 3], loop_bars=4, section_bars=8,
                 pattern=patterns[(j + 1) % 3], harmonic=harmonics[j % 3],
                 lead_s=leads[(j + 1) % 4], pickup_beats=pickups[j % 4], width=widths[(j + 1) % 3],
             ))
@@ -140,7 +141,7 @@ def build_specs() -> list[dict[str, Any]]:
         tonic, mode = KEYS[(5 * j + 3) % 24]
         specs.append(_spec(
             f"swing{j}_{swing:g}pct_{'sampled' if jitter else 'programmed'}_{bpm}bpm", bpm=bpm, tonic=tonic, mode=mode,
-            structure=structures[(j + 2) % 3], loop_bars=4, section_bars=4 if bpm < 100 else 8,
+            structure=structures[(j + 2) % 3], loop_bars=4, section_bars=8,
             pattern="boom_bap", harmonic=harmonics[(j + 1) % 3], swing=swing, jitter_ms=jitter,
             spectral_variation=0.2 if jitter else 0.0, lead_s=leads[j % 4], pickup_beats=pickups[(j + 2) % 4],
             width=widths[j % 3],
@@ -151,7 +152,7 @@ def build_specs() -> list[dict[str, Any]]:
         tonic, mode = KEYS[(11 * j + 6) % 24]
         specs.append(_spec(
             f"loop8_{structure}_{bpm}bpm", bpm=bpm, tonic=tonic, mode=mode, structure=structure,
-            loop_bars=8, section_bars=8, pattern=patterns[j % 3], harmonic=harmonics[(j + 2) % 3],
+            loop_bars=8, section_bars=16, pattern=patterns[j % 3], harmonic=harmonics[(j + 2) % 3],
             lead_s=leads[(j + 2) % 4], pickup_beats=pickups[(j + 1) % 4], width=widths[(j + 2) % 3],
             sr=44100 if j == 1 else 22050,
         ))
@@ -161,7 +162,7 @@ def build_specs() -> list[dict[str, Any]]:
         tonic, mode = KEYS[(9 * j + 1) % 24]
         specs.append(_spec(
             f"nodrums{j}_{harmonics[j % 3]}_{bpm}bpm", bpm=bpm, tonic=tonic, mode=mode,
-            structure=structures[j % 3], loop_bars=4, section_bars=4 if bpm < 100 else 8,
+            structure=structures[j % 3], loop_bars=4, section_bars=8,
             harmonic=harmonics[j % 3], with_drums=False, lead_s=0.5 if j % 2 else 0.0,
             pickup_beats=0, width=widths[j % 3], octave=3 if j % 2 else 4,
         ))

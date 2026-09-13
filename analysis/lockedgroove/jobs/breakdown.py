@@ -50,7 +50,9 @@ def run(job: dict, db: Database, storage: Storage, ctx: JobContext) -> dict:
                 getattr(report, f) is None for f in ("drums", "sample_use", "instrumentation", "effects_estimates")):
             if not any(p.get("params", {}).get("stages") == PHASE4_STAGES for p in db.select("jobs", {"file_id": file_id, "kind": "analyze"})
                        if p.get("status") in ("queued", "running")):
-                queued["analyze:phase4"] = queue_analyze(db, ctx, file["user_id"], file_id, stages=PHASE4_STAGES)["id"]
+                # force: the file is already at the current analysis version; without it the analyze job skips
+                queued["analyze:phase4"] = queue_analyze(db, ctx, file["user_id"], file_id, stages=PHASE4_STAGES,
+                                                         extra_params={"force": True})["id"]
 
     ctx.progress(0.5, "compose")
     content = compose(report or __import__("lockedgroove.report", fromlist=["AnalysisReport"]).AnalysisReport.empty(),

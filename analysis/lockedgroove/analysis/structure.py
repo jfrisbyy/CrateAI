@@ -163,6 +163,49 @@ def sequence_novelty(S: np.ndarray, L: int) -> np.ndarray:
     return nov
 
 
+def checkerboard_novelty(S: np.ndarray, L: int) -> np.ndarray:
+    """Foote's contrast novelty: within-block similarity minus cross-block similarity around each beat.
+
+    Independent of the loop period, so a section change that shows as a change of
+    material (harmony set, instrumentation, energy) is found even when nothing repeats.
+    Values are clipped at 0 and scaled so a full contrast (blocks that share nothing)
+    reads 1.
+    """
+    n = S.shape[0]
+    nov = np.zeros(n)
+    if L < 1 or n < 2 * L:
+        return nov
+    for c in range(L, n - L + 1):
+        a = S[c - L:c, c - L:c]
+        b = S[c:c + L, c:c + L]
+        x = S[c - L:c, c:c + L]
+        within = 0.5 * (a.mean() + b.mean())
+        nov[c] = max(0.0, float(within - x.mean()))
+    return nov
+
+
+CB_FULL = 0.35  # contrast that counts as a complete change of material
+
+
+def combined_novelty(Spe: np.ndarray, seq_L: int | None, bpb: int) -> np.ndarray:
+    """Loop-aligned sequence novelty when a period is known (repetition evidence); otherwise the
+    four-bar checkerboard contrast, which needs no period. Both live on a [0, 1] scale."""
+    n = Spe.shape[0]
+    if seq_L is not None and n >= 2 * seq_L:
+        return sequence_novelty(Spe, seq_L)
+    L = 4 * bpb
+    if n >= 2 * L:
+        cb = checkerboard_novelty(Spe, L)
+        if cb.max() > 0:
+            return np.clip(cb / CB_FULL, 0.0, 1.0)
+    L = 2 * bpb
+    if n >= 2 * L:
+        cb = checkerboard_novelty(Spe, L)
+        if cb.max() > 0:
+            return np.clip(cb / CB_FULL, 0.0, 1.0)
+    return np.zeros(n)
+
+
 def pick_boundaries(nov: np.ndarray, min_distance: int) -> tuple[np.ndarray, np.ndarray]:
     """Peak beat indices and their prominence relative to the strongest peak."""
     import scipy.signal
@@ -283,11 +326,11 @@ def run(y: np.ndarray, sr: int, ctx) -> Structure:
         if abs(lag / bpb - round(lag / bpb)) > 0.25:
             loop_conf *= 0.5
 
-    # boundaries
+    # boundaries: repetition-based novelty at the loop period plus contrast-based novelty
     L = int(lag) if reliable else 2 * bpb
     L = max(bpb, L)
-    nov = sequence_novelty(Spe, L) if n >= 2 * L else np.zeros(n)
-    peaks, rel_prom = pick_boundaries(nov, max(bpb, L // 2))
+    nov = combined_novelty(Spe, L if reliable else None, bpb)
+    peaks, rel_prom = pick_boundaries(nov, max(bpb, min(L // 2, 2 * bpb)))
     downbeat_idx = np.array(sorted({int(np.argmin(np.abs(beats - d))) for d in downbeats}), dtype=int) if downbeats.size else np.arange(0, n, bpb)
     edge = max(L, 2 * bpb)
     downbeat_idx = downbeat_idx[(downbeat_idx >= edge) & (downbeat_idx <= n - edge)]
@@ -331,10 +374,10 @@ def run(y: np.ndarray, sr: int, ctx) -> Structure:
         sections.append(Section(start_s=float(s0), end_s=float(s1), start_bar=int(start_bars[i]), bars=max(1, int(bars)),
                                 label=_label(cluster_ids[i]), energy=round(float(energies[i] / e_max), 4),
                                 confidence=round(float(np.clip(conf, 0.0, 1.0)), 4)))
-    notes = None if reliable else "no reliable loop period; boundaries compared fixed two-bar blocks"
+    notes = None if reliable else "no reliable loop period; boundaries from contrast novelty only"
     return Structure(sections=sections, loop_period_bars=loop_bars, loop_period_confidence=round(float(np.clip(loop_conf, 0.0, 1.0)), 4),
                      method=METHOD, notes=notes)
 
 
-__all__ = ["METHOD", "beat_features", "cluster_sections", "lag_histogram", "loop_period", "path_enhance", "pick_boundaries",
+__all__ = ["METHOD", "beat_features", "checkerboard_novelty", "cluster_sections", "combined_novelty", "lag_histogram", "loop_period", "path_enhance", "pick_boundaries",
            "run", "sequence_novelty", "similarity_matrix"]
