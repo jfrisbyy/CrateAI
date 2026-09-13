@@ -178,16 +178,19 @@ function Inside({ library }: { library: DemoLibrary }) {
   // ---- the command line ----------------------------------------------------
   const apply = useCallback(
     (command: SessionCommand) => {
+      const result = applySessionCommand(command, {
+        session,
+        rack: rack.rack,
+        openFileId: library.bed.id,
+        showSong,
+        panel: (action) => setStack((prev) => (action === "close" ? closePanel(prev) : goBack(prev))),
+        openRack: openDemoRack,
+        zoom: (direction) => emitTimelineView({ kind: "zoom", direction }),
+      });
+      // The processing chain answers for its own verbs from its provider, which
+      // the prototype does not mount. Saying so beats answering with silence.
       emitCommandResult(
-        applySessionCommand(command, {
-          session,
-          rack: rack.rack,
-          openFileId: library.bed.id,
-          showSong,
-          panel: (action) => setStack((prev) => (action === "close" ? closePanel(prev) : goBack(prev))),
-          openRack: openDemoRack,
-          zoom: (direction) => emitTimelineView({ kind: "zoom", direction }),
-        }),
+        result ?? { text: "the processing chain is not in this prototype, so there is nothing here to move.", ok: false },
       );
     },
     [session, rack.rack, library.bed.id, showSong, openDemoRack],

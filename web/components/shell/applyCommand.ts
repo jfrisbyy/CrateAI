@@ -45,7 +45,16 @@ export interface CommandEnv {
   zoom: (direction: "in" | "out" | "fit") => void;
 }
 
-export function applySessionCommand(command: SessionCommand, env: CommandEnv): CommandResult {
+/**
+ * `null` means the command is not this dispatcher's to carry out.
+ *
+ * The bus in `sessionCommands.ts` broadcasts, and more than one provider
+ * listens. The processing chain owns its own verbs and answers for them from
+ * `components/processing/ProcessingProvider.tsx`, where the controls a mouse
+ * would move actually live. Answering here as well would put two lines in the
+ * chat for one sentence, and the second would be a guess.
+ */
+export function applySessionCommand(command: SessionCommand, env: CommandEnv): CommandResult | null {
   const { session } = env;
   const say = (text: string, ok = true): CommandResult => ({ text, ok });
 
@@ -187,5 +196,16 @@ export function applySessionCommand(command: SessionCommand, env: CommandEnv): C
       session.edit(next, describeCommand(command));
       return say(describeCommand(command));
     }
+    // The processing chain's own verbs. ProcessingProvider is listening to the
+    // same bus and answers for these against the real controls; see the note
+    // on the return type.
+    case "processing":
+    case "processing-bypass":
+    case "processing-reset":
+    case "fix":
+    case "eq":
+    case "tune":
+    case "limiter":
+      return null;
   }
 }

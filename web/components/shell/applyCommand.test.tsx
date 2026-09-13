@@ -109,11 +109,21 @@ function harness(over: Partial<SessionState> = {}, arrangement?: Arrangement) {
     openRack: (request) => calls.racks.push(request),
     zoom: (direction) => calls.zooms.push(direction),
   };
-  /** Parse and apply in one step, the way the chat does. */
+  /**
+   * Parse and apply in one step, the way the chat does.
+   *
+   * A `null` result means the dispatcher declined the verb because another
+   * provider on the bus owns it. Every sentence in this file is one this
+   * dispatcher is supposed to carry out, so a decline is a failure here rather
+   * than something to tiptoe around: if a verb is ever moved out, this throws
+   * and names it instead of the assertion dying on a missing property.
+   */
   const say = (text: string, patch: Partial<CommandEnv> = {}) => {
     const command = parseSessionCommand(text);
     if (!command) throw new Error(`"${text}" did not parse as a command`);
-    return applySessionCommand(command, { ...env, ...patch });
+    const result = applySessionCommand(command, { ...env, ...patch });
+    if (!result) throw new Error(`"${text}" was declined by applySessionCommand; another provider owns "${command.kind}"`);
+    return result;
   };
   return { calls, env, say, current: () => current };
 }

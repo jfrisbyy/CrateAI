@@ -155,8 +155,7 @@ function Shell({ children }: { children: ReactNode }) {
   // sentence goes through exactly one implementation.
   const apply = useCallback(
     (command: SessionCommand) => {
-      emitCommandResult(
-        applySessionCommand(command, {
+      const result = applySessionCommand(command, {
           session,
           rack,
           openFileId,
@@ -164,8 +163,9 @@ function Shell({ children }: { children: ReactNode }) {
           panel: (action) => setStack((prev) => (action === "close" ? closePanel(prev) : goBack(prev))),
           openRack,
           zoom: (direction) => emitTimelineView({ kind: "zoom", direction }),
-        }),
-      );
+      });
+      // null means another provider on the bus owns this verb and will answer.
+      if (result) emitCommandResult(result);
     },
     [session, rack, openFileId, showSession],
   );
