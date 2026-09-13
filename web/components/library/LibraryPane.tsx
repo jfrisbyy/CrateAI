@@ -91,8 +91,8 @@ export function LibraryPane() {
           </section>
         ) : files.length === 0 && uploads.length === 0 ? (
           <p className="px-4 py-3 text-sm text-chalk-dim">
-            The library is empty. Drop a folder of samples above; each file is hashed, checked against what you already
-            have, uploaded, and analyzed.
+            Nothing in the crate yet. One record is enough to start; a folder works too. Each file is hashed here in the
+            browser, checked against what you already have, uploaded, then measured.
           </p>
         ) : (
           grouped.map((g) => (
