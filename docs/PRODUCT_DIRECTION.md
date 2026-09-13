@@ -206,6 +206,43 @@ before rendering", "Audition a fact's span", "Audition the edited MIDI in the
 browser" — are all the same feature seen from three tabs. They collapse into
 the session transport and should be built as one thing, not three.
 
+## Build order, decided 2026-09-13
+
+The owner set this sequence. Each step depends on the one before it, which is
+why they are not parallel.
+
+**In flight now, four independent tracks:**
+
+1. **Audio quality chain** — best-available separation with no fast mode, a
+   real time stretcher, measured source bandwidth surfaced to the producer,
+   and a harness that fails if the chain gets lossier.
+2. **Session transport and the audition rack** — the Web Audio engine
+   (clock, tracks, regions, scheduling, loop points, mute/solo/gain), the
+   rack of playable candidates with solo-against-the-session, and the
+   adaptive chat-to-panel layout.
+3. **Launch readiness** — free-tier limits that survive contact with free
+   users, model routing by task, prompt caching on the system block, spend
+   metered into one table, and a preflight script.
+4. **Sample-pair evaluation** — somewhere to put the owner's original-plus-flip
+   pairs, and the metric that asks whether our finder locates the section a
+   producer actually used.
+
+**Then, in order:**
+
+5. **The song timeline.** Arrange, trim, drag regions, transport across the
+   whole song. Needs the session engine from (2) to exist first. Together
+   with the rack this is the product: the rack is how you audition, the
+   timeline is how you decide what the song is. Regions keep their lineage
+   back to the record and the transform, which is the thing a normal DAW
+   throws away and this one cannot afford to.
+6. **A clickable, deployable prototype.** The layout running end to end with
+   real interaction, so the owner can feel it rather than read about it.
+   Deliberately after (5), because a prototype of a surface that exists is
+   worth more than a mockup of one that does not.
+
+Per-track corrective processing (EQ, filters, tuning) follows, its shape
+informed by what the timeline makes obvious.
+
 ## Open questions this raises
 
 38. **Session persistence.** Is a song a first-class library row with its own
