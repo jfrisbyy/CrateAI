@@ -1,7 +1,7 @@
 """``analyze``: the primary analysis of a library file, plus the ``find_loops`` task.
 
 params: ``{ analysis_version?: int, stages?: string[], force?: bool, task?: "analyze" | "find_loops",
-            bars?: int[], top_k?: int }``
+            bars?: int[], top_k?: int, use_stems?: bool, personalize?: bool }``
 
 writes (task ``analyze``): ``files.report``, ``files.peaks``,
 ``files.duration_s/sample_rate/channels/format``, ``files.analysis_version``,
@@ -20,6 +20,14 @@ stems, they are loaded and each candidate carries what is and is not playing
 in it per stem (``components.sample_ready``: vocal-free, drums-free,
 drums-only, fullness, each with a confidence). ``params.use_stems = false``
 skips that; without stems the finder behaves exactly as it did.
+
+The ranking is then adjusted by *this account's own* loop corrections
+(``lockedgroove.learn.loop_prefs``, principle 7): the measured score stays in
+``components.personalization.score_measured`` beside the delta and the reasons,
+and ``score`` -- which is what orders the rack -- becomes the adjusted one. An
+account with no loop corrections, or one that set ``profiles.loop_personalization
+= false``, gets the finder's list unchanged, object for object.
+``params.personalize = false`` turns it off for one run.
 """
 
 from __future__ import annotations
@@ -278,6 +286,38 @@ def loop_stems(db: Database, ctx: JobContext, file: dict, sr: int) -> tuple[dict
         return None, None
 
 
+def personalize_ranking(db: Database, file: dict, candidates: list[Any], params: dict) -> tuple[list[Any], Any]:
+    """Re-rank one account's candidates by its own loop corrections (principle 7).
+
+    The account is ``file["user_id"]`` and nothing else: the preference is read
+    for that id, learned from that id's rows, and applied only to that id's
+    ranking. ``params.personalize = false`` and
+    ``profiles.loop_personalization = false`` both mean "the measurement alone".
+
+    Best effort in the same sense as the stem profile: a history that cannot be
+    read costs the personal ordering, never the loop search. On any failure the
+    finder's own list comes back untouched.
+    """
+    from ..learn.loop_prefs import LoopPreference, apply_preference, loop_preference_for
+
+    user_id = str(file.get("user_id") or "")
+    if not user_id:
+        raise JobError("the file has no user_id; a loop ranking cannot be personalized safely")
+    wanted = params.get("personalize", True)
+    if wanted is False:
+        return candidates, LoopPreference.neutral(user_id, enabled=False)
+    if any(not hasattr(c, "components") for c in candidates):
+        # a finder that returns plain rows still ranks; it just cannot be personalized,
+        # because the adjustment is computed from the scored terms in ``components``
+        return candidates, LoopPreference.neutral(user_id)
+    try:
+        preference = loop_preference_for(db, user_id)
+        return apply_preference(candidates, preference, user_id), preference
+    except Exception:  # pragma: no cover - a ranking must never fail on its history
+        log.warning("could not personalize the loop ranking for file %s", file.get("id"), exc_info=True)
+        return candidates, LoopPreference.neutral(user_id)
+
+
 def _accepts_stems(find_loops: Any) -> bool:
     try:
         return "stems" in inspect.signature(find_loops).parameters
@@ -329,6 +369,9 @@ def find_loops_task(job: dict, db: Database, storage: Storage, ctx: JobContext, 
         kwargs["stem_source"] = stem_source
     candidates = list(find_loops(y, sr, report, **kwargs) or [])
 
+    ctx.progress(0.85, "personalize")
+    candidates, preference = personalize_ranking(db, file, candidates, params)
+
     rows = [_loop_row(c, file) for c in candidates]
     ctx.progress(0.9, "write")
     deleted = db.delete_rows("loops", {"file_id": file["id"], "origin": "finder"})
@@ -341,6 +384,7 @@ def find_loops_task(job: dict, db: Database, storage: Storage, ctx: JobContext, 
         "bars": bars,
         "top_k": top_k,
         "stems_used": sorted(stems_arrays) if stems_arrays else [],
+        "personalization": preference.to_dict(),
     }
     if stems_arrays:
         result["stem_model"] = getattr(stem_source, "model", None)
@@ -350,4 +394,4 @@ def find_loops_task(job: dict, db: Database, storage: Storage, ctx: JobContext, 
 
 
 __all__ = ["DEFAULT_LOOP_BARS", "DEFAULT_LOOP_TOP_K", "MAX_ANALYSIS_S", "analyze_task", "find_loops_task",
-           "loop_name", "loop_stems", "run"]
+           "loop_name", "loop_stems", "personalize_ranking", "run"]

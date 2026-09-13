@@ -5,7 +5,30 @@ AnalysisReport (``effective(report)``: user edits win over predictions) into
 loop candidates ``[anchor_i, anchor_(i+n))`` for ``n`` in ``bars`` and scores
 each one in ``[0, 1]``:
 
-    score = 0.40 * seam + 0.25 * stability + 0.25 * novelty + 0.10 * onset_lock
+    score = 0.30 * seam + 0.22 * phrase + 0.15 * stability + 0.15 * novelty
+          + 0.10 * onset_lock + 0.08 * recurrence
+
+Why ``phrase`` and ``recurrence`` exist
+---------------------------------------
+The original four terms all measure *how little goes wrong inside the span*,
+and a short span has less inside it. Measured on the sample-pair record (40 s,
+16 bars, the pipeline's own beat grid), the mean of each term by bar count was::
+
+    bars=1  seam 0.599  stability 0.950  novelty 1.000  ->  score 0.827
+    bars=2  seam 0.564  stability 0.949  novelty 0.972  ->  score 0.806
+    bars=4  seam 0.531  stability 0.948  novelty 0.904  ->  score 0.776
+    bars=8  seam 0.615  stability 0.947  novelty 0.741  ->  score 0.768
+
+``novelty`` is a pure length penalty -- a longer span crosses more section
+boundaries -- and ``seam`` decays with length because two 100 ms windows 2 s
+apart are more alike than two 16 s apart. ``stability`` is flat. Nothing scored
+*being a musically useful length*, so one-bar candidates swept the top by
+construction and the four bars a producer actually flipped ranked 50th of 52.
+A producer looking for something to rap over is nearly never looking for one bar.
+
+The fix is not a bonus for length -- a two-bar break is sometimes exactly right
+-- but two terms that say what makes a span a loop instead of a fragment, both
+built from measurements the pipeline already makes.
 
 ``seam``
     How the loop point sounds, averaged over the two ways it is played:
@@ -33,6 +56,36 @@ each one in ``[0, 1]``:
     1.0 when an onset lies within ±20 ms of the start, decaying linearly to 0
     at ±80 ms. Onsets come from ``report.onsets``; when that section is null
     they are detected locally (librosa, backtracked).
+``phrase``
+    Is this a musically useful length, and does it sit where a phrase sits?
+    ``0.6 * phrase_length + 0.4 * phrase_alignment``.
+
+    ``phrase_length`` is ``BAR_PRIOR[bars]`` -- four bars is the default unit
+    of a sampled loop in this music, two bars is the break, eight bars is a
+    long phrase you chop down, one bar is a one-shot -- multiplied by how well
+    that length agrees with the loop period ``structure`` measured for *this*
+    record (``PERIOD_AGREEMENT``, faded in by ``loop_period_confidence``, so a
+    record that makes no claim leaves the prior alone; principle 2). The
+    record can pull the prior down where its own structure contradicts it and
+    can never invent a preference the measurement does not support.
+
+    ``phrase_alignment`` asks whether the candidate starts on a phrase line:
+    the offset of its start anchor from a phrase origin, modulo its own
+    length, scaled so a whole-phrase start is 1.0 and a start half a phrase
+    late is 0.0. Phrase origins are the first anchor plus every measured
+    section start, and the best origin wins -- a record with a two-bar intro
+    still has its phrases found. This is the term that separates "bars 5-8"
+    from "the window that happens to start in the middle of bar 6".
+``recurrence``
+    Does this content actually come back in the record? The number of *other*
+    candidates of the same length whose fingerprint matches this one (cosine
+    >= ``REPEAT_SIMILARITY``), saturating at ``RECURRENCE_FULL``. Counted on
+    the deduped set before the repeat collapse, so it measures the record
+    rather than which candidates happened to survive -- which is also what
+    keeps it, and therefore the score, blind to stems. The main loop
+    of a record recurs; the intro, the bridge and the outro do not. Nothing
+    here favours length: a one-bar cell recurs as readily as a four-bar
+    phrase, which is exactly why it is a separate term from ``phrase``.
 
 Anchors are the effective downbeats when
 ``beats.downbeat_confidence >= DOWNBEAT_CONFIDENCE_THRESHOLD`` (OPEN_QUESTIONS
@@ -44,13 +97,18 @@ a track can be a loop; those candidates carry ``extrapolated_end: true``.
 When the file has stems, each surviving candidate also gets a per-stem energy
 profile and the claims a producer actually digs for -- vocal-free, drums-free,
 drums-only, fullness -- under ``components["sample_ready"]`` (see
-``sample_ready.py``). The four scored terms above are **not** touched by it:
+``sample_ready.py``). The six scored terms above are **not** touched by it:
 a loop's score means the same thing with or without stems. The only thing the
 stem profile moves is the order the candidates come back in, through
 ``ranking_factor``, which is 1.0 for everything except a span with a single
 lone part in it (a bass note on its own); a drums-only break is a find, not a
 lone part, and keeps 1.0. Without stems the factor is 1.0 everywhere and the
 result is identical to what it has always been.
+
+Personalization is deliberately *not* here. ``find_loops`` returns the measured
+ranking and nothing else, so the accuracy harness always scores what ships by
+default; a producer's own corrections are applied on top of this result by
+``lockedgroove.learn.loop_prefs`` inside the job (principle 7).
 
 Deduping: candidates with the same bar count whose starts are within 30 ms of
 each other collapse onto the higher score; contiguous repeats of the same
@@ -83,16 +141,71 @@ from .sample_ready import reasons as stem_reasons
 DOWNBEAT_CONFIDENCE_THRESHOLD = 0.5
 """Use downbeats as loop anchors at or above this confidence, else beats (OPEN_QUESTIONS C.16)."""
 
-WEIGHT_SEAM = 0.40
-WEIGHT_STABILITY = 0.25
-WEIGHT_NOVELTY = 0.25
+WEIGHT_SEAM = 0.30
+WEIGHT_PHRASE = 0.22
+WEIGHT_STABILITY = 0.15
+WEIGHT_NOVELTY = 0.15
 WEIGHT_ONSET_LOCK = 0.10
+WEIGHT_RECURRENCE = 0.08
 WEIGHTS: dict[str, float] = {
     "seam": WEIGHT_SEAM,
+    "phrase": WEIGHT_PHRASE,
     "stability": WEIGHT_STABILITY,
     "novelty": WEIGHT_NOVELTY,
     "onset_lock": WEIGHT_ONSET_LOCK,
+    "recurrence": WEIGHT_RECURRENCE,
 }
+"""The scored terms and their weights; they sum to 1 so ``score`` stays in [0, 1].
+
+``seam``, ``stability`` and ``novelty`` all fall with length (see the module
+docstring), so their share dropped from 0.90 to 0.60 and the 0.30 freed went to
+the two terms that measure length *musically*. ``seam`` keeps the largest single
+weight because it is the only term that measures what the loop point sounds
+like; ``stability`` lost the most because it measured almost nothing (0.947 to
+0.950 across every bar count on the pair record) while still being a proxy for
+"nothing happens in here", which is precisely what penalizes a phrase with a
+fill in it. ``onset_lock`` is unchanged: it is the only term that never had a
+length bias, because it looks at the start alone.
+"""
+
+BAR_PRIOR: dict[int, float] = {1: 0.25, 2: 0.70, 4: 1.00, 8: 0.85}
+"""How much of a loop each bar count is, before the record gets a say.
+
+Four bars is the default unit of a sampled loop in this music; two bars is the
+break; eight bars is a long phrase, usually chopped down; one bar is a one-shot,
+not something to rap over. The shape is a peak at four, not a ramp -- a bonus
+for length would put every eight-bar candidate on top, and a two-bar break is
+sometimes exactly right. ``BAR_PRIOR_DEFAULT`` covers anything else (3, 16, a
+meter-driven oddity): neither preferred nor rejected.
+
+This is the one term a producer's own corrections move (``learn.loop_prefs``).
+"""
+BAR_PRIOR_DEFAULT = 0.45
+
+PERIOD_AGREEMENT: dict[float, float] = {1.0: 1.00, 0.5: 0.90, 2.0: 0.80, 0.25: 0.45, 4.0: 0.45}
+"""``bars / loop_period_bars`` -> how well the length agrees with the record.
+
+A candidate the length of the measured loop period *is* the record's repeating
+unit (1.00). Half of it is one of the two phrases in that unit, which is the
+most common flip there is (0.90) -- an ABAB record measures a period of 8 bars
+and a producer takes 4. Twice it is two statements (0.80). A quarter or four
+times is a fragment or a stack of phrases (0.45). Anything else -- a 4-bar
+candidate on a record that repeats every 3 -- gets ``PERIOD_AGREEMENT_OTHER``.
+The whole table is faded in by ``structure.loop_period_confidence``, so a record
+that measured no period changes nothing.
+"""
+PERIOD_AGREEMENT_OTHER = 0.35
+
+PHRASE_LENGTH_SHARE = 0.6
+"""How much of ``phrase`` is the length and how much is where the span starts.
+
+The length is the bigger half because it is the claim that fixes the bug; the
+alignment is the discriminator *within* a length, and it depends on a bar grid
+that can be a bar out of phase on a real record, so it does not get a veto.
+"""
+
+RECURRENCE_FULL = 2
+"""Content that comes back this many times elsewhere is fully "a loop the record plays"."""
 
 DEFAULT_BARS: tuple[int, ...] = (1, 2, 4, 8)
 SEAM_WINDOW_S = 0.100
@@ -326,9 +439,15 @@ class _Cand:
     bars: int
     bar_index: int | None
     extrapolated_end: bool
+    anchor_index: int = 0
+    """Index of the start anchor in ``_Grid.anchors`` (a downbeat, or a beat in beats mode)."""
     score: float = 0.0
+    base_score: float = 0.0
+    """The four length-blind terms only; what dedupe orders by, before phrase and recurrence."""
     metrics: dict[str, Any] = field(default_factory=dict)
     repeats: int = 0
+    recurs: int = 0
+    """Other candidates of the same length carrying the same content (non-contiguous included)."""
     fp: np.ndarray | None = None
     ready: SampleReady | None = None
 
@@ -358,7 +477,7 @@ def _enumerate(grid: _Grid, bar_list: Sequence[int], duration_s: float) -> list[
                 continue
             out.append(_Cand(start_s=s, end_s=min(e, duration_s), bars=bars,
                              bar_index=i if grid.name == "downbeats" else None,
-                             extrapolated_end=j >= grid.n_measured))
+                             extrapolated_end=j >= grid.n_measured, anchor_index=i))
     return out
 
 
@@ -442,9 +561,69 @@ def _score_onset_lock(onsets: np.ndarray, s: float) -> tuple[float, float | None
     return (ONSET_LOCK_ZERO_MS - d_ms) / (ONSET_LOCK_ZERO_MS - ONSET_LOCK_FULL_MS), d_ms
 
 
+def _period_agreement(bars: int, loop_period: int | None, confidence: float) -> float:
+    """How well ``bars`` agrees with the loop period this record was measured to have.
+
+    1.0 when the record made no claim (no structure, no period, zero
+    confidence): an unmeasured record never moves the prior (principle 2).
+    """
+    if not loop_period or loop_period <= 0 or confidence <= 0.0:
+        return 1.0
+    ratio = bars / float(loop_period)
+    agree = PERIOD_AGREEMENT.get(round(ratio, 4), PERIOD_AGREEMENT_OTHER)
+    return 1.0 - float(np.clip(confidence, 0.0, 1.0)) * (1.0 - agree)
+
+
+def _phrase_alignment(anchor_index: int, span_anchors: int, origins: Sequence[int]) -> float:
+    """1.0 when the start sits on a phrase line, 0.0 half a phrase off it.
+
+    ``span_anchors`` is the candidate's own length in anchors, so a 4-bar
+    candidate is asked about 4-bar phrases and an 8-bar one about 8-bar
+    phrases. The best origin wins: a record with a two-bar intro still has its
+    phrases found, through the section start that marks where they begin.
+    """
+    if span_anchors <= 0:
+        return 1.0
+    best = 0.0
+    for origin in origins:
+        off = (anchor_index - origin) % span_anchors
+        distance = min(off, span_anchors - off) / span_anchors  # 0 .. 0.5
+        best = max(best, 1.0 - 2.0 * distance)
+        if best >= 1.0:
+            break
+    return float(np.clip(best, 0.0, 1.0))
+
+
+def _score_phrase(c: _Cand, grid: _Grid, origins: Sequence[int], loop_period: int | None,
+                  period_confidence: float) -> dict[str, float]:
+    """Is this a musically useful length, and does it start where a phrase starts?"""
+    prior = float(BAR_PRIOR.get(c.bars, BAR_PRIOR_DEFAULT))
+    agreement = _period_agreement(c.bars, loop_period, period_confidence)
+    length = float(np.clip(prior * agreement, 0.0, 1.0))
+    alignment = _phrase_alignment(c.anchor_index, c.bars * grid.step, origins)
+    return {
+        "phrase": PHRASE_LENGTH_SHARE * length + (1.0 - PHRASE_LENGTH_SHARE) * alignment,
+        "phrase_length": length,
+        "phrase_alignment": alignment,
+        "period_agreement": agreement,
+    }
+
+
+def _score_recurrence(c: _Cand) -> float:
+    """Saturating count of the other places this content is heard: nowhere else -> 0.0."""
+    if RECURRENCE_FULL <= 0:
+        return 0.0
+    return float(min(1.0, c.recurs / float(RECURRENCE_FULL)))
+
+
 def _score(c: _Cand, feat: _Features, grid: _Grid, boundaries: list[tuple[float, float]] | None,
            duration_s: float) -> bool:
-    """Fill ``c.score`` and ``c.metrics``; False when the candidate is silence."""
+    """Fill the four length-blind terms and ``c.base_score``; False when the candidate is silence.
+
+    ``phrase`` and ``recurrence`` cannot be scored yet: recurrence is only
+    known once the whole surviving set exists, and the total score has to
+    include it. :func:`_finalize_score` closes both after the collapse pass.
+    """
     s, e = c.start_s, c.end_s
     if feat.rms(s, e) < SILENCE_RMS:
         return False
@@ -453,8 +632,9 @@ def _score(c: _Cand, feat: _Features, grid: _Grid, boundaries: list[tuple[float,
     stability, _ = _score_stability(feat, grid, s, e, c.bars)
     novelty, n_inside = _score_novelty(boundaries, grid.beat_period_s, s, e)
     onset_lock, onset_d = _score_onset_lock(feat.onsets_s, s)
-    c.score = (WEIGHT_SEAM * seam + WEIGHT_STABILITY * stability + WEIGHT_NOVELTY * novelty
-               + WEIGHT_ONSET_LOCK * onset_lock)
+    c.base_score = (WEIGHT_SEAM * seam + WEIGHT_STABILITY * stability + WEIGHT_NOVELTY * novelty
+                    + WEIGHT_ONSET_LOCK * onset_lock)
+    c.score = c.base_score
     c.metrics = {
         **seams,
         "stability": stability, "novelty": novelty, "interior_boundaries": n_inside,
@@ -463,10 +643,71 @@ def _score(c: _Cand, feat: _Features, grid: _Grid, boundaries: list[tuple[float,
     return True
 
 
+def _finalize_score(c: _Cand, grid: _Grid, origins: Sequence[int], loop_period: int | None,
+                    period_confidence: float) -> None:
+    """Add ``phrase`` and ``recurrence`` and make ``c.score`` the whole formula."""
+    phrase = _score_phrase(c, grid, origins, loop_period, period_confidence)
+    recurrence = _score_recurrence(c)
+    c.metrics.update(phrase)
+    c.metrics["recurrence"] = recurrence
+    c.score = (c.base_score + WEIGHT_PHRASE * phrase["phrase"] + WEIGHT_RECURRENCE * recurrence)
+
+
+def _phrase_origins(grid: _Grid, boundaries: list[tuple[float, float]] | None) -> list[int]:
+    """Anchor indices a phrase may start on: the first anchor, plus every section start.
+
+    A section start only counts when it lands within
+    ``NOVELTY_BOUNDARY_TOLERANCE_BEATS`` of an anchor -- the same bar the
+    novelty term uses for "this boundary *is* that edge". Further away it is not
+    on the grid, so it cannot be a phrase line on it.
+    """
+    origins = [0]
+    if not boundaries or not grid.anchors:
+        return origins
+    anchors = np.asarray(grid.anchors, dtype=np.float64)
+    tol = NOVELTY_BOUNDARY_TOLERANCE_BEATS * grid.beat_period_s
+    for t, _confidence in boundaries:
+        j = int(np.argmin(np.abs(anchors - t)))
+        if abs(float(anchors[j]) - t) <= tol and j not in origins:
+            origins.append(j)
+    return origins
+
+
+def _mark_recurrence(cands: list[_Cand], feat: _Features) -> None:
+    """Count, per candidate, the other candidates of the same length with the same content.
+
+    Runs on the deduped set *before* the repeat collapse, so the answer is "how
+    many times are these bars heard in this record" and not "how many candidates
+    happened to survive". That also keeps it stem-blind: the collapse is the one
+    pass stems change, so a loop's score means the same thing with stems or
+    without (the contract the module docstring makes). One normalized matrix
+    product per bar count; the fingerprints are the ones the collapse needs next.
+    """
+    by_bars: dict[int, list[_Cand]] = {}
+    for c in cands:
+        by_bars.setdefault(c.bars, []).append(c)
+    for bars, group in by_bars.items():
+        if len(group) < 2:
+            continue
+        for c in group:
+            if c.fp is None:
+                c.fp = feat.fingerprint(c.start_s, c.end_s, bars)
+        matrix = np.asarray([c.fp for c in group], dtype=np.float32)
+        norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+        norms[norms < 1e-12] = 1.0
+        matrix /= norms
+        sim = matrix @ matrix.T
+        # the same threshold the collapse uses, with float32 slack, so a pair that folds
+        # there is never missed here: ``recurs`` can only ever be >= ``repeats``
+        hits = (sim >= REPEAT_SIMILARITY - 1e-5).sum(axis=1) - 1  # never count the candidate itself
+        for c, n in zip(group, hits.tolist(), strict=True):
+            c.recurs = int(max(0, n))
+
+
 def _dedupe_near_identical(cands: list[_Cand]) -> list[_Cand]:
     tol = DEDUPE_START_MS / 1000.0
     kept: list[_Cand] = []
-    for c in sorted(cands, key=lambda x: (-x.score, x.start_s)):
+    for c in sorted(cands, key=lambda x: (-x.base_score, x.start_s)):
         dup = False
         for k in kept:
             if k.bars == c.bars and abs(k.start_s - c.start_s) <= tol and \
@@ -540,8 +781,20 @@ def _reasons(c: _Cand, grid: _Grid, has_structure: bool, loop_period: int | None
         out.append("no onset near the start")
     if c.repeats:
         out.append(f"repeats {c.repeats}x right after")
+    if c.recurs:
+        out.append(f"the same {c.bars} bars come back {c.recurs}x in the record")
+    elif m.get("recurrence") == 0.0:
+        out.append("these bars are not heard again")
     if loop_period is not None and loop_period == c.bars:
         out.append(f"matches the measured loop period ({c.bars} bars)")
+    elif loop_period and c.bars * 2 == loop_period:
+        out.append(f"half the measured loop period ({loop_period} bars)")
+    if m.get("phrase_alignment", 0.0) >= 0.999:
+        out.append(f"lands on a {c.bars}-bar phrase line")
+    elif m.get("phrase_alignment", 1.0) <= 0.25:
+        out.append("starts part-way through a phrase")
+    if m.get("phrase_length", 1.0) <= 0.35:
+        out.append(f"{c.bars} bar{'' if c.bars == 1 else 's'} is short for a loop to play under")
     if c.extrapolated_end:
         out.append("ends at the end of the file")
     return out
@@ -602,15 +855,20 @@ def find_loops(y: np.ndarray, sr: int, report: AnalysisReport, bars: Sequence[in
     feat = _compute_features(mono_native, sr, onsets)
     boundaries = _structure_boundaries(rep)
     loop_period = rep.structure.loop_period_bars if rep.structure is not None else None
+    period_confidence = float(rep.structure.loop_period_confidence) if rep.structure is not None else 0.0
+    origins = _phrase_origins(grid, boundaries)
 
     scored = [c for c in raw if _score(c, feat, grid, boundaries, duration_s)]
     scored = _dedupe_near_identical(scored)
+    _mark_recurrence(scored, feat)
     energies = stem_energies(stems, sr, mix=mono_native, source=stem_source) if stems else None
     if energies is not None:
         # before the repeat pass: a repeat with a vocal over it is a different loop
         for c in scored:
             c.ready = sample_ready(energies, c.start_s, c.end_s)
     scored = _collapse_repeats(scored, feat, grid.beat_period_s)
+    for c in scored:
+        _finalize_score(c, grid, origins, loop_period, period_confidence)
     scored.sort(key=lambda c: (-c.rank_score, c.start_s))
     if top_k is not None:
         scored = scored[:top_k]
@@ -620,20 +878,27 @@ def find_loops(y: np.ndarray, sr: int, report: AnalysisReport, bars: Sequence[in
         m = c.metrics
         components: dict[str, Any] = {
             "seam": _round(m["seam"]),
+            "phrase": _round(m["phrase"]),
             "stability": _round(m["stability"]),
             "novelty": _round(m["novelty"]),
             "onset_lock": _round(m["onset_lock"]),
+            "recurrence": _round(m["recurrence"]),
             "seam_mel": _round(m["seam_mel"]),
             "seam_rms": _round(m["seam_rms"]),
             "seam_raw": _round(m["seam_raw"]),
             "seam_wrap": _round(m["seam_wrap"]),
+            "phrase_length": _round(m["phrase_length"]),
+            "phrase_alignment": _round(m["phrase_alignment"]),
+            "period_agreement": _round(m["period_agreement"]),
             "onset_distance_ms": _round(m["onset_distance_ms"], 1),
             "interior_boundaries": int(m["interior_boundaries"]),
             "repeats": int(c.repeats),
+            "recurs_elsewhere": int(c.recurs),
             "grid": grid.name,
             "bar_index": c.bar_index,
             "extrapolated_end": bool(c.extrapolated_end),
             "matches_loop_period": bool(loop_period is not None and loop_period == c.bars),
+            "loop_period_bars": loop_period,
             "weights": dict(WEIGHTS),
             "reasons": _reasons(c, grid, boundaries is not None, loop_period),
         }
@@ -647,6 +912,8 @@ def find_loops(y: np.ndarray, sr: int, report: AnalysisReport, bars: Sequence[in
 
 
 __all__ = [
-    "DEFAULT_BARS", "DOWNBEAT_CONFIDENCE_THRESHOLD", "LoopCandidate", "WEIGHTS", "WEIGHT_NOVELTY",
-    "WEIGHT_ONSET_LOCK", "WEIGHT_SEAM", "WEIGHT_STABILITY", "beats_per_bar", "find_loops",
+    "BAR_PRIOR", "BAR_PRIOR_DEFAULT", "DEFAULT_BARS", "DOWNBEAT_CONFIDENCE_THRESHOLD",
+    "LoopCandidate", "PERIOD_AGREEMENT", "PERIOD_AGREEMENT_OTHER", "PHRASE_LENGTH_SHARE",
+    "RECURRENCE_FULL", "WEIGHTS", "WEIGHT_NOVELTY", "WEIGHT_ONSET_LOCK", "WEIGHT_PHRASE",
+    "WEIGHT_RECURRENCE", "WEIGHT_SEAM", "WEIGHT_STABILITY", "beats_per_bar", "find_loops",
 ]
