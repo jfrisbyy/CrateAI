@@ -19,6 +19,14 @@ def _env_exp(n: int, sr: int, decay_s: float) -> np.ndarray:
     return np.exp(-t / max(decay_s, 1e-4)).astype(np.float32)
 
 
+def _fade_out(y: np.ndarray, sr: int, ms: float = 5.0) -> np.ndarray:
+    """Linear fade over the last ``ms`` so a truncated tail never clicks."""
+    n = min(len(y), max(1, int(round(sr * ms / 1000))))
+    if n > 1:
+        y[-n:] = y[-n:] * np.linspace(1.0, 0.0, n, dtype=np.float32)
+    return y
+
+
 def normalize(y: np.ndarray, peak: float = 0.9) -> np.ndarray:
     m = float(np.max(np.abs(y))) if y.size else 0.0
     if m <= 0:
@@ -76,7 +84,7 @@ def kick(sr: int = DEFAULT_SR, seconds: float = 0.28, f_start: float = 160.0, f_
     if brightness > 0:
         rng = np.random.default_rng(0)
         body = body + brightness * rng.standard_normal(n) * _env_exp(n, sr, 0.008)
-    return (amplitude * body).astype(np.float32)
+    return _fade_out((amplitude * body).astype(np.float32), sr)
 
 
 def snare(sr: int = DEFAULT_SR, seconds: float = 0.22, amplitude: float = 0.8, tone_hz: float = 185.0,
@@ -96,7 +104,7 @@ def snare(sr: int = DEFAULT_SR, seconds: float = 0.22, amplitude: float = 0.8, t
         hp[i] = prev_y
     hp = hp / (np.max(np.abs(hp)) + 1e-9) * _env_exp(n, sr, decay_s)
     y = (1 - noise_mix) * tone + noise_mix * hp
-    return (amplitude * y / (np.max(np.abs(y)) + 1e-9)).astype(np.float32)
+    return _fade_out((amplitude * y / (np.max(np.abs(y)) + 1e-9)).astype(np.float32), sr)
 
 
 def hat(sr: int = DEFAULT_SR, seconds: float = 0.06, amplitude: float = 0.5, open_hat: bool = False,
@@ -111,7 +119,7 @@ def hat(sr: int = DEFAULT_SR, seconds: float = 0.06, amplitude: float = 0.5, ope
     hp = np.diff(hp, prepend=0.0)
     hp = hp / (np.max(np.abs(hp)) + 1e-9)
     env = _env_exp(n, sr, 0.09 if open_hat else 0.018)
-    return (amplitude * hp * env).astype(np.float32)
+    return _fade_out((amplitude * hp * env).astype(np.float32), sr)
 
 
 @dataclass
@@ -259,6 +267,41 @@ def chord_progression(chords: list[list[float]], beats_per_chord: float, bpm: fl
     seg_s = beats_per_chord * 60.0 / bpm
     parts = [chord(c, seg_s, sr, amplitude=amplitude, decay_s=seg_s * 1.5) for c in chords] * repeats
     return np.concatenate(parts).astype(np.float32)
+
+
+def continuous_chord_progression(chords: list[list[float]], beats_per_chord: float, bpm: float,
+                                 sr: int = DEFAULT_SR, repeats: int = 1, amplitude: float = 0.5,
+                                 crossfade_ms: float = 50.0, harmonics: int = 6) -> np.ndarray:
+    """Chords that crossfade into each other: no attacks or fades at the changes.
+
+    Used where a bar boundary must be musically continuous (so a raw cut there
+    is a detectable seam), unlike ``chord_progression`` whose notes have their
+    own attack and release.
+    """
+    seg_s = beats_per_chord * 60.0 / bpm
+    seq = chords * repeats
+    total_n = int(round(seg_s * len(seq) * sr))
+    t = np.arange(total_n) / sr
+    y = np.zeros(total_n, dtype=np.float64)
+    xf = int(crossfade_ms / 1000 * sr)
+    for i, notes in enumerate(seq):
+        start, end = i * seg_s, (i + 1) * seg_s
+        a, b = int(round(start * sr)), int(round(end * sr))
+        lo, hi = max(0, a - xf // 2), min(total_n, b + xf // 2)
+        env = np.ones(hi - lo)
+        if i > 0:
+            env[: min(xf, len(env))] = np.linspace(0, 1, min(xf, len(env)))
+        if i < len(seq) - 1:
+            env[-min(xf, len(env)):] = np.minimum(env[-min(xf, len(env)):], np.linspace(1, 0, min(xf, len(env))))
+        sig = np.zeros(hi - lo)
+        for n in notes:
+            f0 = midi_to_hz(n)
+            for h in range(1, harmonics + 1):
+                if f0 * h >= sr / 2:
+                    break
+                sig += np.sin(2 * np.pi * f0 * h * t[lo:hi]) / (h ** 1.5)
+        y[lo:hi] += sig * env
+    return (amplitude * y / (np.max(np.abs(y)) + 1e-9)).astype(np.float32)
 
 
 NOTE = {n: i for i, n in enumerate(["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"])}
