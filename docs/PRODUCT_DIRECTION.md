@@ -206,6 +206,106 @@ before rendering", "Audition a fact's span", "Audition the edited MIDI in the
 browser" — are all the same feature seen from three tabs. They collapse into
 the session transport and should be built as one thing, not three.
 
+## Surface 4: the keyboard as the instrument
+
+Decided with the owner 2026-09-13. Phase 3 already ships part of this: sixteen
+pads on `1`-`8` and `Q`-`I` in a 4x4 grid, a `PadEngine`, chop modes for
+transients, grid and manual, and a recorder that captures a take as MIDI with
+its real timing. What follows is the expansion, and every axis is a mode the
+producer picks rather than a decision we make for them.
+
+### Trigger behaviour: one-shot or gate, switchable
+
+**One-shot** fires the whole slice to its end and ignores the key being held.
+This is the MPC feel and what exists today.
+
+**Gate** sounds only while the key is down and cuts on release. This is what
+makes tapping between two keys to hunt a chop feel alive, and it is the mode
+the owner described. It needs note-off, which the engine does not have.
+
+The switch lives per kit, because drums want one-shot and a melodic slice
+usually wants gate.
+
+Two hard details:
+
+- **OS key repeat must be suppressed.** A held key fires `keydown` over and
+  over; in gate mode that retriggers forever. Track held keys and ignore
+  repeats, and release on `keyup`, on `blur`, and on tab visibility change,
+  or a note hangs the moment someone alt-tabs mid-hold.
+- **Release needs a short fade**, a couple of milliseconds, or every key-up is
+  a click.
+
+### Chop mode or note mode, toggleable
+
+**Chop mode**: each key is a different slice. What the pads do now.
+
+**Note mode**: every key plays the *same* slice transposed, so a single stab
+or chord becomes an instrument you can play a melody on. Implement it the way
+a sampler does, with `playbackRate = 2 ** (semitones / 12)` on the source
+node. Pitch and duration stay coupled, which is not a compromise here: it is
+the sound of a sampler and it is what the producer expects.
+
+The root key sits in the middle of the layout so there is room either side.
+
+### Layout is the producer's choice
+
+The owner asked for full-keyboard optionality with switchable sizes, so
+layouts are named presets over one pure mapping function:
+
+| Preset | Keys | For |
+|---|---|---|
+| 8 | number row | a break in eighths, coarse and instantly memorable |
+| 16 | `1`-`8`, `Q`-`I` (today's 4x4) | the default |
+| 24 | number row plus two letter rows | a longer phrase |
+| 32+ | number row plus three letter rows | the deepest chopping, two-handed |
+
+The mapping from key to pad must stay a pure function so the on-screen grid,
+the engine and the recorder can never disagree about what `R` means.
+
+**The constraint that decides the ceiling:** a laptop keyboard registers only
+two or three simultaneous keys in arbitrary combinations. More keys buys more
+*slices*, never more polyphony. Chords are a controller feature, not a laptop
+feature, which is the strongest argument for the Web MIDI work already
+queued. Say this in the interface rather than letting a producer discover it
+by having a chord swallowed.
+
+### Where the AI helps: all four, and they are different problems
+
+**Where the cuts go.** Transients for drums, note starts for a melodic
+sample, section edges for a long phrase. The existing onset, beat and
+structure work already produces these; the job here is to propose them as
+draggable slice points with a reason attached, never to place them silently.
+Material decides the method, which is why the answer differs for a break, a
+horn line and a live instrument.
+
+**Which key gets what.** A pile of slices in file order is not a kit. Drums
+sort by hit class, which `drums.py` already classifies, so kicks land
+together. Melodic slices sort by pitch or by position depending on the mode.
+The producer reorders by dragging, and that reorder is a correction worth
+logging.
+
+**Clean up a take.** The recorder keeps real timing, so cleanup is a pass
+over it: tighten to the grid by a chosen amount rather than all-or-nothing,
+collapse a flam into one hit, flag the bar that was clearly a mistake. Never
+destructive; the played take survives alongside the cleaned one.
+
+**Suggest patterns.** From what was just played, propose variations to accept
+or ignore. This is the one place closest to the "nothing from nothing" line,
+so it stays strictly rearrangement of the producer's own performance and
+their own slices. It never invents a rhythm from a text description.
+
+### What it plugs into
+
+Chopping is performance input for the session. A take lands on a track in the
+timeline, not in a separate toy. It needs the session transport for its clock
+so a recorded take sits in time with everything else, which is why this comes
+after that work rather than beside it.
+
+Two known constraints to measure early rather than discover late: keyboard to
+audible sound wants to stay under about 20 ms to feel played rather than
+triggered, and browser shortcut collisions (`Ctrl`/`Cmd` combinations) have to
+be handled without swallowing the keys people expect to work.
+
 ## Build order, decided 2026-09-13
 
 The owner set this sequence. Each step depends on the one before it, which is
@@ -235,10 +335,14 @@ why they are not parallel.
    timeline is how you decide what the song is. Regions keep their lineage
    back to the record and the transform, which is the thing a normal DAW
    throws away and this one cannot afford to.
-6. **A clickable, deployable prototype.** The layout running end to end with
+6. **The keyboard instrument** (Surface 4 above). Depends on the session
+   transport for its clock, not on the timeline, but lands after it so a
+   recorded take has somewhere to go.
+7. **A clickable, deployable prototype.** The layout running end to end with
    real interaction, so the owner can feel it rather than read about it.
-   Deliberately after (5), because a prototype of a surface that exists is
-   worth more than a mockup of one that does not.
+   Deliberately last, because a prototype of surfaces that exist is worth
+   more than a mockup of ones that do not — and by then the chop surface is
+   in it, which is the part most worth playing with.
 
 Per-track corrective processing (EQ, filters, tuning) follows, its shape
 informed by what the timeline makes obvious.

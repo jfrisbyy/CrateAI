@@ -217,3 +217,19 @@ assumption gets replaced. Numbered so they can be referenced from PRs.
     *Assumption:* the boundary is "does this answer whether the piece fits",
     and it is re-examined the first time a user asks for something on the far
     side of it.
+44. **Keyboard instrument — answered 2026-09-13.** Trigger behaviour is
+    one-shot *or* gate, switchable per kit. Melodic material can be chopped
+    across keys *or* played chromatically from one slice, as a toggle.
+    Layouts are selectable presets from 8 up to the full keyboard, the
+    producer's choice. The AI helps in all four places: where the cuts go,
+    which key gets what, cleaning up a take, and suggesting patterns from
+    what was played. See PRODUCT_DIRECTION, Surface 4.
+45. **Polyphony on a laptop.** Keyboards register only 2-3 simultaneous keys
+    in arbitrary combinations, a hardware limit no code fixes. *Assumption:*
+    the interface says so plainly where it matters, chords are treated as a
+    MIDI-controller feature, and the Web MIDI work stays queued for Phase 13.
+46. **Pattern suggestion and principle 1.** Proposing sequences is the
+    closest this product comes to generating. *Assumption:* suggestions are
+    strictly rearrangements of the producer's own take and their own slices,
+    never a rhythm invented from a description, and the line is revisited if
+    a user asks for something past it.
