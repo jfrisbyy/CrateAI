@@ -37,6 +37,7 @@ Filters = Mapping[str, Any]
 JOB_KINDS = (
     "analyze", "stems", "chop", "midi", "embed", "render_loop", "layer",
     "revoice", "breakdown", "compare", "beatbox_train", "beatbox_transcribe",
+    "export",
 )
 JOB_STATUSES = ("queued", "running", "done", "failed")
 FILE_KINDS = ("original", "stem", "chop", "loop_render", "layer_render", "revoice_render")
