@@ -53,9 +53,11 @@ def _librosa(y: np.ndarray, sr: int, start_bpm: float, hop: int) -> BeatTrack:
     tempo, frames = librosa.beat.beat_track(onset_envelope=onset_env, sr=sr, hop_length=hop, start_bpm=start_bpm,
                                             units="frames")
     beats = [float(b) for b in librosa.frames_to_time(frames, sr=sr, hop_length=hop)]
-    # the tempogram's tempo is quantized by the hop; the tracked beats themselves are finer
+    # the tempogram's tempo and each beat are quantized to the hop (23 ms); a least-squares
+    # line through the beat times averages that quantization out
     if len(beats) >= 4:
-        bpm = float(60.0 / np.median(np.diff(beats)))
+        period = float(np.polyfit(np.arange(len(beats)), np.asarray(beats), 1)[0])
+        bpm = 60.0 / period if period > 0 else float(np.atleast_1d(tempo)[0])
     else:
         bpm = float(np.atleast_1d(tempo)[0])
     return BeatTrack(bpm=bpm, beats_s=beats, downbeats_s=None, method="librosa.beat_track")
