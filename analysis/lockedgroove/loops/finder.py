@@ -41,10 +41,24 @@ beats-per-bar beats long. One bar's worth of anchors is extrapolated past the
 last measured one when it still lands inside the file, so the final bar(s) of
 a track can be a loop; those candidates carry ``extrapolated_end: true``.
 
+When the file has stems, each surviving candidate also gets a per-stem energy
+profile and the claims a producer actually digs for -- vocal-free, drums-free,
+drums-only, fullness -- under ``components["sample_ready"]`` (see
+``sample_ready.py``). The four scored terms above are **not** touched by it:
+a loop's score means the same thing with or without stems. The only thing the
+stem profile moves is the order the candidates come back in, through
+``ranking_factor``, which is 1.0 for everything except a span with a single
+lone part in it (a bass note on its own); a drums-only break is a find, not a
+lone part, and keeps 1.0. Without stems the factor is 1.0 everywhere and the
+result is identical to what it has always been.
+
 Deduping: candidates with the same bar count whose starts are within 30 ms of
 each other collapse onto the higher score; contiguous repeats of the same
 content (mel fingerprint similarity >= ``REPEAT_SIMILARITY``) collapse onto
-the earliest one, which reports the count in ``components["repeats"]``.
+the earliest one, which reports the count in ``components["repeats"]``. With
+stems, a repeat only folds onto its head when the same stems are playing in
+both: the intro and the identical bars with the singer over them are two
+different loops to anyone flipping them.
 
 Every weight and threshold is a module constant: tune only against the
 accuracy harness (principle 9).
@@ -53,7 +67,7 @@ accuracy harness (principle 9).
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -61,6 +75,8 @@ import numpy as np
 
 from ..pipeline import ANALYSIS_SR, resample, to_mono
 from ..report import AnalysisReport, effective
+from .sample_ready import SampleReady, StemSource, sample_ready, stem_energies
+from .sample_ready import reasons as stem_reasons
 
 # --- constants (BUILD_PACKET section 7; tune only against the harness) -------------------------
 
@@ -314,6 +330,19 @@ class _Cand:
     metrics: dict[str, Any] = field(default_factory=dict)
     repeats: int = 0
     fp: np.ndarray | None = None
+    ready: SampleReady | None = None
+
+    @property
+    def rank_score(self) -> float:
+        """Score for ordering. Identical to ``score`` unless stems moved it."""
+        return self.score if self.ready is None else self.score * self.ready.ranking_factor
+
+    @property
+    def shape_key(self) -> tuple | None:
+        """Which stems are playing, for the repeat check. ``None`` without stems."""
+        if self.ready is None:
+            return None
+        return tuple((name, span.presence) for name, span in sorted(self.ready.profile.items()))
 
 
 def _enumerate(grid: _Grid, bar_list: Sequence[int], duration_s: float) -> list[_Cand]:
@@ -464,6 +493,8 @@ def _collapse_repeats(cands: list[_Cand], feat: _Features, beat_period: float) -
             attached = False
             for chain in chains:
                 head, end_s = chain
+                if head.shape_key != c.shape_key:
+                    continue  # same chords, but one of them has the singer on it
                 if abs(end_s - c.start_s) <= tol and _cosine(head.fp, c.fp) >= REPEAT_SIMILARITY:
                     head.repeats += 1
                     chain[1] = c.end_s
@@ -531,13 +562,21 @@ def _round(v: Any, nd: int = 4) -> Any:
 
 
 def find_loops(y: np.ndarray, sr: int, report: AnalysisReport, bars: Sequence[int] = DEFAULT_BARS,
-               top_k: int | None = 12) -> list[LoopCandidate]:
+               top_k: int | None = 12, stems: Mapping[str, np.ndarray] | None = None,
+               stem_source: StemSource | None = None) -> list[LoopCandidate]:
     """Rank loop candidates for ``y`` (mono ``(n,)`` or ``(channels, n)`` float) at ``sr``.
 
     ``report`` is the raw AnalysisReport; ``effective()`` is applied here so user
     edits to tempo, downbeats and meter drive the grid. Returns at most
     ``top_k`` candidates (``None`` for all), sorted by score descending, with no
     duplicates; ``[]`` when the report has no beats.
+
+    ``stems`` (name -> audio at ``sr``, from the file's separation) adds
+    ``components["sample_ready"]``: what is and is not playing in each
+    candidate, per stem, with a confidence on every claim. ``stem_source``
+    says where those stems came from; stems from the development stand-in
+    have their claims withheld. Without ``stems`` nothing changes: the scores,
+    the order and the components are exactly what they were.
     """
     rep = effective(report)
     if rep.beats is None or not rep.beats.times_s:
@@ -566,8 +605,13 @@ def find_loops(y: np.ndarray, sr: int, report: AnalysisReport, bars: Sequence[in
 
     scored = [c for c in raw if _score(c, feat, grid, boundaries, duration_s)]
     scored = _dedupe_near_identical(scored)
+    energies = stem_energies(stems, sr, mix=mono_native, source=stem_source) if stems else None
+    if energies is not None:
+        # before the repeat pass: a repeat with a vocal over it is a different loop
+        for c in scored:
+            c.ready = sample_ready(energies, c.start_s, c.end_s)
     scored = _collapse_repeats(scored, feat, grid.beat_period_s)
-    scored.sort(key=lambda c: (-c.score, c.start_s))
+    scored.sort(key=lambda c: (-c.rank_score, c.start_s))
     if top_k is not None:
         scored = scored[:top_k]
 
@@ -593,6 +637,9 @@ def find_loops(y: np.ndarray, sr: int, report: AnalysisReport, bars: Sequence[in
             "weights": dict(WEIGHTS),
             "reasons": _reasons(c, grid, boundaries is not None, loop_period),
         }
+        if c.ready is not None:
+            components["sample_ready"] = c.ready.to_dict()
+            components["reasons"] = components["reasons"] + stem_reasons(c.ready)
         out.append(LoopCandidate(start_s=float(c.start_s), end_s=float(c.end_s), bars=int(c.bars),
                                  score=round(float(c.score), 4), components=components,
                                  origin="finder", name=_name(c, grid)))

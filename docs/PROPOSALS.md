@@ -323,3 +323,43 @@ Template:
 **What it takes:** The API's compaction on the chat call, storing the compaction block with the assistant message and replaying it; or a local summary of rows older than the last 40.
 **Where it belongs:** Phase 8 hardening.
 **Status:** proposed.
+
+## Take the loop without the vocal, not just the loops without a vocal
+**What it does for a producer:** The four bars I want have one ad-lib on them. Today I am told they are not clean and I move on. Instead: render that loop from the stems with the vocal muted, as a second card next to it — "this loop, minus the vocals" — and the same for "just the drums" and "everything but the drums". The stems are already separated and already in the library; the loop renderer already exists. It is the single most common move after finding a loop with something on it, and the whole thing is the user's own audio.
+**Principle it serves:** 1 (nothing from nothing: it is their record, recombined), 4 (every output editable), 5 (the library: each becomes a loop render of its own).
+**Principle it risks:** None new. It is the same audio through the same renderer; the separation artefacts are audible to the user, who decides.
+**What it takes:** `render_loop` over a summed subset of the stem arrays instead of the mix; a `stems: ["drums", "other"]` parameter on the `render_loop` job and on `loops` rows; a card in the Loops tab with the stem toggles; naming already supports a `stem` token. A day or two.
+**Where it belongs:** Phase 2, right behind stem-aware loop scoring.
+**Status:** proposed.
+
+## Nudge the edge to the nearest clean bar
+**What it does for a producer:** When a loop is spoiled by a vocal tail in its first half second, or one ad-lib near the end, say so *and* say where it stops: "clean from 0.4 s in", "clean if you end one beat early". The profile already knows `loudest_at_s` and the frame envelope; the loop edges are already draggable. Turning a near miss into a one-click correction is the difference between a list of rejects and a list of finds.
+**Principle it serves:** 2 and 4.
+**Principle it risks:** None; it proposes an edit, it does not make one. The suggested edge has to stay on the grid or it stops being a loop.
+**What it takes:** A scan of the stem's frame envelope inside the span for the first and last frame above the absence gate, snapped out to the nearest beat or bar; `clean_from_s` / `clean_to_s` in the profile; a "trim to clean" affordance on the loop card.
+**Where it belongs:** Phase 2 polish.
+**Status:** proposed.
+
+## A vocal-free map of the whole file, not only of the candidates
+**What it does for a producer:** Shade the waveform where the vocal is out, where the drums are out, where it is only drums — the whole record at a glance, before any loop is picked. Scrubbing to find the break is exactly the chore this product exists to remove, and the measurement is the same one the loop claims already use.
+**Principle it serves:** 2, 5, and the "understand the record" goal.
+**Principle it risks:** None; it is the same reading at bar resolution instead of span resolution.
+**What it takes:** `sample_ready` run over every bar of the file (it is already O(frames) per bar), stored once on the file rather than per loop — an `arrangement` block on the report or a small table; waveform shading in the Surface. Note the overlap with `instrumentation.py`, which already computes per-bar per-stem presence for the report: the right move is probably one measurement feeding both, with this module's two-statistic bands replacing the single-threshold one.
+**Where it belongs:** Phase 2, with a look at merging the two presence measurements.
+**Status:** proposed.
+
+## Masking-aware presence: is it audible, not just is it there
+**What it does for a producer:** A vocal 20 dB under a loud band is inaudible in the loop; the same vocal over a sparse intro is glaring. Today both read the same because presence is measured per stem in isolation. Reading the stem against the rest of the span as well (already measured and stored as `rel_mix_db`) would let a faint reading resolve to "you will not hear it" instead of "something is in there".
+**Principle it serves:** 2, and the accuracy of the flag producers care about most.
+**Principle it risks:** 2, if it is guessed rather than measured — real masking is per band, not broadband, and a broadband rule would be a guess dressed as a measurement. It should not ship without the labelled set below.
+**What it takes:** Per-band (say 8 bands) level of the stem against the sum of the others across the span; a simple masking rule; the labelled set from the harness to fit the threshold. A few days, mostly listening.
+**Where it belongs:** Phase 2+, after the harness has stem-aware cases.
+**Status:** proposed.
+
+## Stem-aware cases in the accuracy harness, and library search by what is in a loop
+**What it does for a producer:** Two things the current work leaves open. First, the harness gates merges for analysis (principle 9) but has no case that says "these bars are vocal-free": without one, the thresholds in `sample_ready.py` can only be tuned by hand, which is exactly what principle 9 exists to prevent. Second, once loops carry the flags, the library search should take them: "a dusty 4-bar vocal-free loop in F minor around 88" across the whole crate, not one record at a time.
+**Principle it serves:** 9 and 5.
+**Principle it risks:** None.
+**What it takes:** Harness: a handful of separated records with hand-marked vocal-free, drums-free and break bars, and a scorer that counts claim accuracy and calibration (does a 0.7 confidence mean 70 % right?). Search: `vocal_free`, `drums_free`, `drums_only`, `min_stems` in the hybrid parser's tool schema and in `library_filter`, reading the jsonb path the migration indexes.
+**Where it belongs:** Harness in Phase 2; search in Phase 6.
+**Status:** proposed.

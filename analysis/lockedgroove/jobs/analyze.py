@@ -15,12 +15,17 @@ Files longer than 20 minutes (OPEN_QUESTIONS B.9) are analyzed on their first
 job result carries ``{"truncated_to_s": 1200}``.
 
 writes (task ``find_loops``): replaces the file's ``loops`` rows of origin
-``finder`` with the new candidates and returns their ids.
+``finder`` with the new candidates and returns their ids. When the file has
+stems, they are loaded and each candidate carries what is and is not playing
+in it per stem (``components.sample_ready``: vocal-free, drums-free,
+drums-only, fullness, each with a confidence). ``params.use_stems = false``
+skips that; without stems the finder behaves exactly as it did.
 """
 
 from __future__ import annotations
 
 import importlib
+import inspect
 import logging
 import os
 from typing import Any
@@ -34,7 +39,7 @@ from ..pipeline import DEFAULT_STAGES, analyze_array, to_mono
 from ..report import AnalysisReport, effective
 from ..storage import Storage
 from .common import JobContext, JobError, params_of
-from .derived import STEM_AWARE_STAGES, load_stem_arrays
+from .derived import STEM_AWARE_STAGES, load_stem_arrays, stem_rows
 
 log = logging.getLogger(__name__)
 
@@ -242,6 +247,51 @@ def _loop_row(candidate: Any, file: dict) -> dict:
     }
 
 
+def loop_stems(db: Database, ctx: JobContext, file: dict, sr: int) -> tuple[dict[str, Any] | None, Any]:
+    """The file's stems for the loop finder, plus where they came from.
+
+    Best effort: a missing or unreadable stem must never fail a loop search,
+    it only costs the sample-ready claims. Returns ``(arrays, source)`` with
+    ``arrays`` ``None`` when the file has no stems.
+    """
+    try:
+        rows = stem_rows(db, file["id"])
+        if not rows:
+            return None, None
+        arrays = load_stem_arrays(db, ctx, file, sr_target=int(sr))
+        if not arrays:
+            return None, None
+        from ..loops.sample_ready import StemSource  # imported late, like the finder itself
+
+        labels = sorted({str(r.get("model")) for r in rows.values() if r.get("model")})
+        if not labels:
+            source = StemSource()
+        elif len(labels) == 1:
+            source = StemSource.from_model(labels[0])
+        else:
+            parts = [StemSource.from_model(label) for label in labels]
+            source = StemSource(model=", ".join(labels), trusted=all(p.trusted for p in parts),
+                                note=next((p.note for p in parts if p.note), None))
+        return arrays, source
+    except Exception:  # pragma: no cover - stems are an enrichment, never a failure
+        log.warning("could not load stems for the loop finder on file %s", file.get("id"), exc_info=True)
+        return None, None
+
+
+def _accepts_stems(find_loops: Any) -> bool:
+    try:
+        return "stems" in inspect.signature(find_loops).parameters
+    except (TypeError, ValueError):  # pragma: no cover - builtins and C callables
+        return False
+
+
+def _claim_counts(rows: list[dict]) -> dict[str, int]:
+    """How many of the written loops carry each claim, for the job result."""
+    from ..loops.sample_ready import FLAG_CLAIM_NAMES, holds
+
+    return {name: sum(1 for r in rows if holds(r, name, True)) for name in FLAG_CLAIM_NAMES}
+
+
 def find_loops_task(job: dict, db: Database, storage: Storage, ctx: JobContext, file: dict, params: dict) -> dict:
     try:
         finder = importlib.import_module("lockedgroove.loops.finder")  # Phase 1
@@ -266,22 +316,38 @@ def find_loops_task(job: dict, db: Database, storage: Storage, ctx: JobContext, 
     local = ctx.download(file["storage_path"])
     y, sr = load_audio(local)
     y = to_mono(y)
+    stems_arrays: dict[str, Any] | None = None
+    stem_source = None
+    if params.get("use_stems", True) and _accepts_stems(find_loops):
+        ctx.progress(0.15, "stems")
+        stems_arrays, stem_source = loop_stems(db, ctx, file, int(sr))
+
     ctx.progress(0.2, "find_loops")
-    candidates = list(find_loops(y, sr, report, bars=bars, top_k=top_k) or [])
+    kwargs: dict[str, Any] = {"bars": bars, "top_k": top_k}
+    if stems_arrays:
+        kwargs["stems"] = stems_arrays
+        kwargs["stem_source"] = stem_source
+    candidates = list(find_loops(y, sr, report, **kwargs) or [])
 
     rows = [_loop_row(c, file) for c in candidates]
     ctx.progress(0.9, "write")
     deleted = db.delete_rows("loops", {"file_id": file["id"], "origin": "finder"})
     inserted = db.insert_rows("loops", rows) if rows else []
-    return {
+    result: dict[str, Any] = {
         "file_id": file["id"],
         "loop_ids": [r["id"] for r in inserted],
         "count": len(inserted),
         "replaced": deleted,
         "bars": bars,
         "top_k": top_k,
+        "stems_used": sorted(stems_arrays) if stems_arrays else [],
     }
+    if stems_arrays:
+        result["stem_model"] = getattr(stem_source, "model", None)
+        result["stems_trusted"] = bool(getattr(stem_source, "trusted", False))
+        result["sample_ready_counts"] = _claim_counts(inserted)
+    return result
 
 
 __all__ = ["DEFAULT_LOOP_BARS", "DEFAULT_LOOP_TOP_K", "MAX_ANALYSIS_S", "analyze_task", "find_loops_task",
-           "loop_name", "run"]
+           "loop_name", "loop_stems", "run"]

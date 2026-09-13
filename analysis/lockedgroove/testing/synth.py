@@ -7,6 +7,7 @@ These fixtures are what "tests before DSP" (principle 8) is written against.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -418,3 +419,130 @@ def loop_based_track(bpm: float = 90.0, sr: int = DEFAULT_SR, loop_bars: int = 4
         "key": {"tonic": "F", "mode": "minor"},
     }
     return normalize(y, 0.9), truth
+
+
+# --- stems: a track rendered as separate parts with a known arrangement ---------------------------
+
+STEM_NAMES: tuple[str, ...] = ("drums", "bass", "other", "vocals")
+
+VOCAL_MELODY_MIDI: tuple[int, ...] = (72, 75, 77, 75)   # C5 Eb5 F5 Eb5, one note per bar
+BASS_ROOTS_MIDI: tuple[int, ...] = (41, 44, 46, 48)     # F2 Ab2 Bb2 C3, one per bar
+
+
+def _gate(y: np.ndarray, sr: int, spans_s: Sequence[tuple[float, float]], ramp_ms: float = 10.0,
+          release_s: float = 0.0) -> np.ndarray:
+    """Keep ``y`` only inside ``spans_s``; ``release_s`` lets the part decay past a span's end.
+
+    The ramps are what stops a hard gate from clicking. ``release_s`` > 0 is how
+    a held note tails off into the bar after the singer stops: the signal is
+    still there, fading, which is exactly the near-miss a "vocal-free" claim
+    must not swallow.
+    """
+    env = np.zeros(len(y), dtype=np.float64)
+    ramp = max(1, int(round(sr * ramp_ms / 1000.0)))
+    for start_s, end_s in spans_s:
+        a = max(0, int(round(start_s * sr)))
+        b = min(len(y), int(round(end_s * sr)))
+        if b <= a:
+            continue
+        env[a:b] = np.maximum(env[a:b], 1.0)
+        n_in = min(ramp, b - a)
+        env[a:a + n_in] = np.maximum(env[a:a + n_in], np.linspace(0.0, 1.0, n_in))
+        if release_s > 0:
+            n_rel = min(len(y) - b, int(round(release_s * sr)))
+            if n_rel > 0:
+                t = np.arange(n_rel) / sr
+                env[b:b + n_rel] = np.maximum(env[b:b + n_rel], np.exp(-6.907755 * t / release_s))
+        else:
+            n_out = min(ramp, b - a)
+            env[b - n_out:b] = np.minimum(env[b - n_out:b], np.linspace(1.0, 0.0, n_out))
+    return (y * env).astype(np.float32)
+
+
+def _place(y: np.ndarray, sample: np.ndarray, t_s: float, sr: int, gain: float = 1.0) -> None:
+    start = int(round(t_s * sr))
+    if start < 0 or start >= len(y):
+        return
+    seg = sample[: len(y) - start]
+    y[start:start + len(seg)] += (seg * gain).astype(np.float32)
+
+
+def stem_track(bpm: float = 90.0, sr: int = DEFAULT_SR, bars: int = 16,
+               arrangement: dict[str, list[tuple[int, int]]] | None = None, *,
+               vocal_release_s: float = 0.0, adlibs: Sequence[tuple[float, float]] = (),
+               adlib_ms: float = 180.0, seed: int = 0, beats_per_bar: int = 4,
+               ) -> tuple[np.ndarray, dict[str, np.ndarray], dict]:
+    """A track rendered as four separate stems with a known, bar-exact arrangement.
+
+    ``arrangement`` maps a stem name to the bar spans ``[(start_bar, end_bar), ...]``
+    where that part plays (0-based, end exclusive). The default has drums, bass
+    and chords throughout and the vocal entering halfway, so a test can assert
+    that the first half comes back vocal-free and the second does not.
+
+    ``vocal_release_s`` makes the vocal decay past the end of its span instead
+    of stopping dead (a held note tailing off into the next bar).
+    ``adlibs`` are ``(bar, gain)`` pairs placing a short vocal blip at that
+    (possibly fractional) bar, outside the vocal's spans: a background ad-lib
+    in an otherwise clean stretch.
+
+    Returns ``(mix, stems, truth)``. The mix is exactly the sum of the stems
+    scaled by one common gain, so the fixture is a *perfect* separation: any
+    bleed a test wants has to be added on purpose.
+    """
+    beat_s = 60.0 / bpm
+    bar_s = beat_s * beats_per_bar
+    n = int(round(bars * bar_s * sr))
+    default = {"drums": [(0, bars)], "bass": [(0, bars)], "other": [(0, bars)],
+               "vocals": [(bars // 2, bars)]}
+    arr = {k: list(v) for k, v in (arrangement or default).items()}
+    spans_s = {name: [(a * bar_s, b * bar_s) for a, b in spans] for name, spans in arr.items()}
+
+    drums = drum_loop(bpm, bars, Pattern.boom_bap(), sr, seed=seed)
+    bass = silence(bars * bar_s + 1.0, sr)
+    vocals = silence(bars * bar_s + 1.0, sr)
+    for b in range(bars):
+        _place(bass, tone(BASS_ROOTS_MIDI[b % len(BASS_ROOTS_MIDI)], bar_s * 0.9, sr, amplitude=0.55,
+                          harmonics=3, decay_s=bar_s * 0.7), b * bar_s, sr)
+        _place(vocals, tone(VOCAL_MELODY_MIDI[b % len(VOCAL_MELODY_MIDI)], bar_s * 0.8, sr, amplitude=0.5,
+                            harmonics=5, attack_s=0.04, decay_s=bar_s * 1.2), b * bar_s + beat_s * 0.25, sr)
+    chords = [triad("F", "minor", 4), triad("G#", "major", 4), triad("A#", "major", 4), triad("C", "minor", 4)]
+    other = continuous_chord_progression(chords, beats_per_bar, bpm, sr,
+                                         repeats=max(1, bars // len(chords) + 1), amplitude=0.5)
+
+    raw = {"drums": drums, "bass": bass, "other": other, "vocals": vocals}
+    stems: dict[str, np.ndarray] = {}
+    for name, part in raw.items():
+        part = np.asarray(part[:n] if len(part) >= n else np.pad(part, (0, n - len(part))), dtype=np.float32)
+        release = vocal_release_s if name == "vocals" else 0.0
+        stems[name] = _gate(part, sr, spans_s.get(name, []), release_s=release)
+    for bar, gain in adlibs:
+        _place(stems["vocals"], tone(VOCAL_MELODY_MIDI[int(bar) % len(VOCAL_MELODY_MIDI)] + 5,
+                                     adlib_ms / 1000.0, sr, amplitude=0.5, harmonics=5, attack_s=0.01,
+                                     decay_s=adlib_ms / 2000.0), bar * bar_s, sr, gain=gain)
+
+    mix = np.sum(np.stack([stems[k] for k in stems]), axis=0).astype(np.float32)
+    peak = float(np.max(np.abs(mix))) or 1.0
+    gain = 0.9 / peak
+    stems = {k: (v * gain).astype(np.float32) for k, v in stems.items()}
+    mix = (mix * gain).astype(np.float32)
+
+    def _playing(name: str, bar: int) -> bool:
+        return any(a <= bar < b for a, b in arr.get(name, []))
+
+    truth = {
+        "bpm": bpm,
+        "bar_s": bar_s,
+        "bars": bars,
+        "beats_per_bar": beats_per_bar,
+        "beats_s": [i * beat_s for i in range(bars * beats_per_bar)],
+        "downbeats_s": [b * bar_s for b in range(bars)],
+        "arrangement_bars": arr,
+        "arrangement_s": spans_s,
+        "stems": sorted(stems),
+        "vocal_free_bars": [b for b in range(bars)
+                            if not _playing("vocals", b) and not any(int(x) == b for x, _ in adlibs)],
+        "key": {"tonic": "F", "mode": "minor"},
+        "sections": [{"label": "A", "start_bar": 0, "bars": bars, "start_s": 0.0, "end_s": bars * bar_s}],
+        "loop_period_bars": 4,
+    }
+    return mix, stems, truth
