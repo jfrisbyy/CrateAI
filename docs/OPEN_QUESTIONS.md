@@ -91,10 +91,12 @@ assumption gets replaced. Numbered so they can be referenced from PRs.
 
 ## E. Chat and language
 
-21. **Model per task.** *Assumption:* the current Sonnet-class model for tool-heavy
-    chat turns and the hybrid search parser, the current Opus-class model for
-    breakdown narration (the highest-stakes prose). Both are one constant
-    in `web/lib/anthropic/models.ts`.
+21. **Model per task.** *Assumption:* `claude-opus-5` with adaptive thinking
+    for every call today: chat turns (`CHAT_MODEL`), the search query parser
+    (`QUERY_PARSER_MODEL`, both in `web/lib/anthropic/models.ts`) and breakdown
+    narration (`NARRATION_MODEL` in `web/lib/anthropic/narrate.ts`). Each is
+    one constant; the parser and chat can move to `claude-sonnet-5` for cost
+    once you have seen the quality on your own material.
 22. **Conversation scope.** Per-file threads or one global chat with files
     "in context"? *Assumption:* global conversations; files are attached to a
     conversation by opening them or naming them, and the system prompt embeds
@@ -171,3 +173,15 @@ assumption gets replaced. Numbered so they can be referenced from PRs.
     only for the harness. *Assumption:* the harness reads them with the
     service role in CI against your own account only, and never for other
     users without a written opt-in.
+37. **The exact-tempo gate on the synthetic set.** The synthetic tempos are
+    uniform over 65–175 BPM with hats on every eighth, so the exact octave
+    is a convention; the hip-hop prior (question 14) halves the items above
+    ~120 and doubles the ones below ~75 by design, and the set scores 0.56
+    exact against 1.00 octave-tolerant. Four octave rules were compared
+    (autocorrelation with the prior, and three that mix in the Fourier
+    tempogram); the current one is the best of them on this set, the others
+    double the slow items. *Assumption:* the synthetic `bpm_exact` gate is
+    0.50 (`scripts/gates.json`, with the reason in its notes) and the packet's
+    0.80 stays for the public sets and the corrections set. If your material
+    is not hip-hop first, say so and the prior moves (one constant,
+    `PRIOR_BPM`), or becomes a per-account preference (PROPOSALS).

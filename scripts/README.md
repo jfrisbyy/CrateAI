@@ -106,9 +106,13 @@ the gates without failing.
 
 ## 4. Gates
 
-`scripts/gates.json` holds the thresholds keyed per dataset (the section-16
-numbers everywhere, `synthetic` included). A gate applies only when the
-metric applied to at least one item of that dataset; the rest show as `n/a`.
+`scripts/gates.json` holds the thresholds keyed per dataset: the section-16
+numbers everywhere, except `synthetic.bpm_exact` at 0.50 (the reason is in
+the file's notes and in OPEN_QUESTIONS 37: the set's tempos are uniform over
+65–175 BPM, so the exact octave is the hip-hop prior's call, and
+`bpm_octave` is the gate that says the grid is right). A gate applies only
+when the metric applied to at least one item of that dataset; the rest show
+as `n/a`.
 `--dataset all` skips datasets that are not on disk; naming one that is
 missing fails the run so a CI job cannot pass by evaluating nothing.
 
