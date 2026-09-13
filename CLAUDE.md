@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-Working name: **lockedgroove** (placeholder; rename when the product name is final).
+Product name: **Cratebox AI** (decided 2026-09-13). `lockedgroove` remains the
+Python package name; the repo remains `CrateAI`. See `docs/PRODUCT_DIRECTION.md`
+for the direction the finished product takes.
 
 ## What this is
 

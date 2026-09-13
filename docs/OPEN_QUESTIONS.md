@@ -6,11 +6,10 @@ assumption gets replaced. Numbered so they can be referenced from PRs.
 
 ## A. Name, repo, hosting
 
-1. **Product name.** The repo is `CrateAI` and the packet's working name is
-   `lockedgroove`. *Assumption:* "CrateAI" is the product name shown in the
-   UI; `lockedgroove` stays as the Python package and internal code name
-   exactly as the packet spells it, until you say to rename (a mechanical
-   find-and-replace later).
+1. **Product name.** ~~The repo is `CrateAI`~~ **Answered 2026-09-13: the
+   product is Cratebox AI.** The UI, domain and copy say Cratebox; the repo
+   stays `CrateAI` and the Python package stays `lockedgroove` until a
+   mechanical rename is worth the churn. See `docs/PRODUCT_DIRECTION.md`.
 2. **Repository.** The build lives in `jfrisbyy/CrateAI` (was empty). The
    seed commit on `main` holds only your two documents and a `.gitignore`;
    all work is on branch `claude/intelligent-sagan-l0sp03`. `CadenceIOS` was
@@ -192,3 +191,12 @@ assumption gets replaced. Numbered so they can be referenced from PRs.
     0.80 stays for the public sets and the corrections set. If your material
     is not hip-hop first, say so and the prior moves (one constant,
     `PRIOR_BPM`), or becomes a per-account preference (PROPOSALS).
+37. *(see the structure gate question above)*
+38. **Session persistence.** Is a song a first-class library row with its own
+    tables (tracks, regions, edits), or a document blob? *Assumption:* tables,
+    so the chat can answer "what is in bar 17". See PRODUCT_DIRECTION.
+39. **How much of the song does the chat see?** *Assumption:* a compact
+    summary of tracks and regions in the prompt, with a tool to read any
+    region in detail.
+40. **Export target.** *Assumption:* stems plus a tempo map and a readme
+    first; native DAW session formats on request.
