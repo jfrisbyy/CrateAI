@@ -1,46 +1,40 @@
-// POST /api/search { query, limit?, kind? } — library search.
+// POST /api/search { query, limit?, kind?, current_file_id? } — hybrid library
+// search (BUILD_PACKET section 12, Phase 6).
 //
-// Phase 0/1: parse structured filters (lib/search/parse.ts) and call the
-// `library_filter` RPC. `text_query` is returned but not yet used; the hybrid
-// parser and CLAP nearest-neighbour search arrive in Phase 6 (see the SEAM
-// note in lib/search/parse.ts).
+// Returns { results: [{ file, matched, similarity? }], parsed, mode, note,
+// files } where `files` is results[].file for the shell's search state, which
+// reads `res.files` and `res.parsed` (components/shell/searchState.tsx).
+// `mode` is "vector" when the text went through the CLAP embedding and
+// "filters" when it fell back to structured filters plus a name match; `note`
+// says why ("text search needs the embed job / compute").
 
 import { z } from "zod";
-import type { SearchResponse } from "@/lib/api/types";
-import { handle, HttpError, json, parseBody, requireUser } from "@/lib/http";
-import { parseQuery } from "@/lib/search/parse";
+import { handle, json, parseBody, requireUser, UUID_RE } from "@/lib/http";
+import { runLibrarySearch } from "@/lib/search/server";
 import { FILE_KINDS } from "@/lib/types/db";
 
 const schema = z.object({
   query: z.string().max(500),
   limit: z.number().int().min(1).max(200).optional(),
   kind: z.enum(FILE_KINDS).optional(),
+  current_file_id: z.string().regex(UUID_RE).nullable().optional(),
 });
 
 export async function POST(req: Request) {
   return handle(async () => {
-    const { supabase } = await requireUser();
+    const { supabase, user } = await requireUser();
     const body = await parseBody(req, schema);
-    const parsed = parseQuery(body.query);
-    const kind = body.kind ?? parsed.kind;
-
-    const { data, error } = await supabase.rpc("library_filter", {
-      p_bpm_min: parsed.bpm_min,
-      p_bpm_max: parsed.bpm_max,
-      p_tonic: parsed.tonic,
-      p_mode: parsed.mode,
-      p_kind: kind,
-      p_limit: body.limit ?? 50,
+    const result = await runLibrarySearch(supabase, user.id, body.query, {
+      limit: body.limit,
+      kind: body.kind,
+      currentFileId: body.current_file_id ?? null,
     });
-    if (error) throw new HttpError(500, `Search failed: ${error.message}`);
-
-    // Until the text embedding exists, a leftover text query narrows by name.
-    const needle = parsed.text_query?.toLowerCase() ?? null;
-    const files = needle
-      ? data.filter((f) => `${f.original_filename} ${f.title ?? ""} ${f.artist ?? ""}`.toLowerCase().includes(needle))
-      : data;
-
-    const response: SearchResponse = { files, parsed: { ...parsed, kind } };
-    return json(response);
+    return json({
+      results: result.results,
+      parsed: result.parsed,
+      mode: result.mode,
+      note: result.note,
+      files: result.results.map((r) => r.file),
+    });
   });
 }

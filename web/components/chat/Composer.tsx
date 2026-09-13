@@ -37,7 +37,7 @@ export function Composer({ disabled, onSend }: { disabled: boolean; onSend: (tex
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={onKeyDown}
-        placeholder="Find the 4-bar loop under the hook. What's the swing on this?"
+        placeholder="Find the 4-bar loop under the hook. Separate the stems. What's the swing on this? Who produced it?"
         className="w-full resize-none bg-transparent text-sm placeholder:text-chalk-faint focus:outline-none"
         disabled={disabled}
       />

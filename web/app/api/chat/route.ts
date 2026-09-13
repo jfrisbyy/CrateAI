@@ -1,85 +1,191 @@
-// POST /api/chat { conversation_id?, content, file_ids? } — streaming chat.
+// POST /api/chat { conversation_id?, message, file_ids?, open_file_id?, batch? }
+// — the chat front door (BUILD_PACKET section 14, Phase 8).
 //
-// Phase 0/1: stores the user message, stores a fixed assistant reply saying
-// the chat tools arrive in Phase 8, and streams that reply as text so the
-// client code is final. Phase 8 replaces the reply generator with the
-// Anthropic call and tool loop; the response shape (a text stream with
-// x-conversation-id / x-message-id headers) does not change.
+// Streams application/x-ndjson, one event per line (lib/chat/protocol.ts):
+// text deltas as they arrive, tool_call / tool_result with the card the pane
+// renders, citations, then done with the stored message id. Persists the user
+// message and one assistant message whose content is the final text, whose
+// tool_calls carry every call with its input and summarized result, and whose
+// citations are every web citation used.
 //
-// Message content is stored as Anthropic-style content blocks:
-//   [{ "type": "text", "text": "..." }]
+// `message` is the field name; `content` (the Phase 0 client) is accepted too.
+// `batch` is the confirmation re-send from the confirm card: the batch tool
+// runs when it is called again with those operations.
 
+import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { describeAnthropicError, getAnthropic, hasAnthropicKey } from "@/lib/anthropic/client";
+import { CHAT_MAX_TOKENS, CHAT_MODEL } from "@/lib/anthropic/models";
+import { supabaseChatDb } from "@/lib/chat/db";
+import { batchFingerprint, runTool, type ToolContext } from "@/lib/chat/handlers";
+import { HISTORY_LIMIT, historyFromRows } from "@/lib/chat/history";
+import { CHAT_QUOTA_MESSAGE, chatTurnsLeft, readUsage, supabaseUsageSource, webSearchesLeft } from "@/lib/chat/limits";
+import { runToolLoop, type ChatModel, type ToolLoopResult } from "@/lib/chat/loop";
+import { CHAT_CONTENT_TYPE, encodeEvent, type ChatEvent } from "@/lib/chat/protocol";
+import { buildContextBlock, SYSTEM_PROMPT } from "@/lib/chat/system";
+import { CHAT_TOOLS } from "@/lib/chat/tools";
+import { dispatchJob } from "@/lib/compute/dispatch";
 import { dbError, handle, HttpError, parseBody, requireUser, UUID_RE } from "@/lib/http";
+import { runLibrarySearch } from "@/lib/search/server";
 import type { Json } from "@/lib/types/db";
+import { createWebInfo } from "@/lib/webinfo";
 
-const schema = z.object({
-  conversation_id: z.string().regex(UUID_RE).nullable().optional(),
-  content: z.string().trim().min(1).max(8000),
-  file_ids: z.array(z.string().regex(UUID_RE)).max(50).optional(),
+// A turn with several tool rounds can run past a minute.
+export const maxDuration = 300;
+
+const batchSchema = z.object({
+  operations: z.array(z.object({ tool: z.string().min(1).max(64), input_json: z.string().max(20_000) })).min(1).max(20),
+  confirmed: z.literal(true),
 });
 
-const PHASE_NOTE =
-  "The chat tools arrive in Phase 8. Until then the header strip and the Loops tab are where edits happen, " +
-  "and every change you make there is logged as a correction. I have kept your message; when the tools land, " +
-  "this conversation continues from here.";
+const schema = z
+  .object({
+    conversation_id: z.string().regex(UUID_RE).nullable().optional(),
+    message: z.string().trim().min(1).max(8000).optional(),
+    content: z.string().trim().min(1).max(8000).optional(),
+    file_ids: z.array(z.string().regex(UUID_RE)).max(50).optional(),
+    open_file_id: z.string().regex(UUID_RE).nullable().optional(),
+    batch: batchSchema.optional(),
+  })
+  .refine((b) => Boolean(b.message ?? b.content), { message: "message is required", path: ["message"] });
+
+function unique(ids: string[]): string[] {
+  return [...new Set(ids)];
+}
 
 export async function POST(req: Request) {
   return handle(async () => {
     const { supabase, user } = await requireUser();
     const body = await parseBody(req, schema);
+    const text = (body.message ?? body.content) as string;
+    if (!hasAnthropicKey()) throw new HttpError(503, "Chat needs ANTHROPIC_API_KEY; add it to web/.env.local.");
 
+    const usage = await readUsage(supabaseUsageSource(supabase));
+    if (chatTurnsLeft(usage) <= 0) throw new HttpError(429, CHAT_QUOTA_MESSAGE);
+
+    // ---- conversation ------------------------------------------------------
     let conversationId = body.conversation_id ?? null;
+    let storedFileIds: string[] = [];
     if (conversationId) {
-      const { data, error } = await supabase.from("conversations").select("id").eq("id", conversationId).maybeSingle();
+      const { data, error } = await supabase.from("conversations").select("id, file_ids").eq("id", conversationId).maybeSingle();
       if (error) throw dbError(error, "Loading the conversation");
       if (!data) throw new HttpError(404, "Conversation not found.");
+      storedFileIds = data.file_ids;
     } else {
-      const title = body.content.length > 60 ? `${body.content.slice(0, 57)}...` : body.content;
+      const title = text.length > 60 ? `${text.slice(0, 57)}...` : text;
       const created = await supabase
         .from("conversations")
-        .insert({ user_id: user.id, title, file_ids: body.file_ids ?? [] })
+        .insert({ user_id: user.id, title, file_ids: unique(body.file_ids ?? []) })
         .select("id")
         .single();
       if (created.error) throw dbError(created.error, "Starting the conversation");
       conversationId = created.data.id;
     }
+    const attachedIds = unique(body.file_ids ?? storedFileIds).slice(0, 50);
+    const allIds = unique([...attachedIds, ...storedFileIds]).slice(0, 50);
+    if (allIds.length !== storedFileIds.length || allIds.some((id, i) => storedFileIds[i] !== id)) {
+      await supabase.from("conversations").update({ file_ids: allIds }).eq("id", conversationId);
+    }
+
+    // ---- history, then the new user message --------------------------------
+    const prior = await supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: false })
+      .limit(HISTORY_LIMIT);
+    if (prior.error) throw dbError(prior.error, "Loading messages");
+    const history = historyFromRows([...prior.data].reverse());
 
     const userMessage = await supabase
       .from("messages")
-      .insert({
-        user_id: user.id,
-        conversation_id: conversationId,
-        role: "user",
-        content: [{ type: "text", text: body.content }] as Json,
-      })
+      .insert({ user_id: user.id, conversation_id: conversationId, role: "user", content: [{ type: "text", text }] as Json })
       .select("id")
       .single();
     if (userMessage.error) throw dbError(userMessage.error, "Saving your message");
 
-    const replyText = PHASE_NOTE;
-    const assistantMessage = await supabase
-      .from("messages")
-      .insert({
-        user_id: user.id,
-        conversation_id: conversationId,
-        role: "assistant",
-        content: [{ type: "text", text: replyText }] as Json,
-        tool_calls: null,
-        citations: null,
-      })
-      .select("id")
-      .single();
-    if (assistantMessage.error) throw dbError(assistantMessage.error, "Saving the reply");
+    // ---- context and tools ---------------------------------------------------
+    const db = supabaseChatDb(supabase, user.id);
+    const attached = await db.getFiles(attachedIds);
+    const files = attachedIds.map((id) => attached.find((f) => f.id === id)).filter((f): f is NonNullable<typeof f> => f !== undefined);
+    const openFileId = body.open_file_id && files.some((f) => f.id === body.open_file_id) ? body.open_file_id : (files[0]?.id ?? null);
+    const contextBlock = buildContextBlock(files, openFileId);
+    const confirmedBatch = body.batch ? batchFingerprint(body.batch.operations) : null;
 
-    // touch updated_at so the conversation list reorders
-    await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+    const ctx: ToolContext = {
+      db,
+      userId: user.id,
+      dispatch: (jobId) => dispatchJob(jobId, supabase),
+      web: createWebInfo(),
+      librarySearch: (query, limit) => runLibrarySearch(supabase, user.id, query, { limit, currentFileId: openFileId }),
+      usage: { webSearchesLeft: webSearchesLeft(usage) },
+      now: () => new Date(),
+      currentFileId: openFileId,
+      confirmedBatch,
+    };
 
+    let userText = text;
+    if (body.batch) {
+      userText += `\n\n[The producer pressed Run on the batch confirmation ${confirmedBatch}. Call the batch tool now with confirmed=true and exactly these operations: ${JSON.stringify(body.batch.operations)}]`;
+    }
+    const messages: Anthropic.MessageParam[] = [...history, { role: "user", content: userText }];
+    const system: Anthropic.TextBlockParam[] = [
+      { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+      { type: "text", text: contextBlock },
+    ];
+    const client = getAnthropic();
+    const model: ChatModel = { stream: (params) => client.messages.stream(params) };
+
+    // ---- stream --------------------------------------------------------------
     const encoder = new TextEncoder();
-    const chunks = replyText.match(/\S+\s*/g) ?? [replyText];
+    const convId = conversationId;
     const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
+      async start(controller) {
+        const emit = (event: ChatEvent) => controller.enqueue(encoder.encode(encodeEvent(event)));
+        let result: ToolLoopResult | null = null;
+        let failure: string | null = null;
+        try {
+          result = await runToolLoop({
+            model,
+            modelId: CHAT_MODEL,
+            maxTokens: CHAT_MAX_TOKENS,
+            system,
+            tools: CHAT_TOOLS,
+            messages,
+            execute: (call) => runTool(call.name, call.input, ctx),
+            emit,
+          });
+        } catch (err) {
+          failure = describeAnthropicError(err);
+          console.error("[chat]", err);
+        }
+
+        let messageId = "";
+        try {
+          if (result && (result.text.length > 0 || result.toolCalls.length > 0)) {
+            const saved = await supabase
+              .from("messages")
+              .insert({
+                user_id: user.id,
+                conversation_id: convId,
+                role: "assistant",
+                content: [{ type: "text", text: result.text }] as Json,
+                tool_calls: result.toolCalls.length > 0 ? (result.toolCalls as unknown as Json) : null,
+                citations: result.citations.length > 0 ? (result.citations as unknown as Json) : null,
+              })
+              .select("id")
+              .single();
+            if (saved.error) throw new Error(saved.error.message);
+            messageId = saved.data.id;
+          }
+          await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
+        } catch (err) {
+          failure = failure ?? `The reply could not be saved: ${err instanceof Error ? err.message : String(err)}`;
+        }
+
+        if (result && result.citations.length > 0) emit({ type: "citations", items: result.citations });
+        if (failure) emit({ type: "error", message: failure });
+        emit({ type: "done", message_id: messageId, conversation_id: convId });
         controller.close();
       },
     });
@@ -87,10 +193,9 @@ export async function POST(req: Request) {
     return new Response(stream, {
       status: 200,
       headers: {
-        "content-type": "text/plain; charset=utf-8",
+        "content-type": CHAT_CONTENT_TYPE,
         "cache-control": "no-store",
         "x-conversation-id": conversationId,
-        "x-message-id": assistantMessage.data.id,
         "x-user-message-id": userMessage.data.id,
       },
     });
