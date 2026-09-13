@@ -35,3 +35,19 @@ def test_beatnet_falls_back_when_missing(monkeypatch):
 def test_short_audio_does_not_raise():
     res = track_beats(np.zeros(100, dtype=np.float32), SR, backend="librosa")
     assert res.beats_s == [] and res.notes
+
+
+def test_beats_stage_accepts_the_backend_option_and_falls_back():
+    from lockedgroove.analysis import beats as beats_stage
+    from lockedgroove.pipeline import Context
+    from lockedgroove.report import AnalysisReport, Tempo
+
+    y = click_track(100.0, 6.0, SR)
+    report = AnalysisReport.empty()
+    report.tempo = Tempo(bpm=100.0, confidence=0.9, method="t", alternates_bpm=[50.0, 200.0])
+    ctx = Context(report=report, sr=SR, options={"beat_backend": "beatnet"})
+    out = beats_stage.run(y, SR, ctx)
+    assert len(out.times_s) >= 8
+    if "beatnet" not in available_backends():
+        assert out.notes and "used librosa" in out.notes
+        assert out.method.startswith("librosa")

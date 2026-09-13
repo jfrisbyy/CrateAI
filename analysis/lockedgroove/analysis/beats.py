@@ -172,30 +172,53 @@ def run(y: np.ndarray, sr: int, ctx) -> Beats:
     hint = float(tempo.bpm) if tempo is not None and tempo.bpm > 0 else None
     notes = None if hint else f"no tempo section; beat_track(start_bpm={PRIOR_BPM:g})"
     y = np.asarray(y, dtype=np.float32)
-    try:
-        raw = track_beats(y, sr, hint)
-    except Exception as exc:
-        raw = np.zeros(0)
-        notes = f"beat_track failed: {type(exc).__name__}"
+    # Phase 2: a neural tracker behind the same interface (lockedgroove.analysis.beat_tracking).
+    # BeatNet also returns downbeats; when it ran, those decide the phase instead of the low band.
+    from . import beat_tracking
+
+    backend = str(ctx.options.get("beat_backend") or beat_tracking.default_backend())
+    neural = None
+    method = METHOD
+    downbeat_method = DOWNBEAT_METHOD
+    if backend == "beatnet":
+        neural = beat_tracking.track_beats(y, sr, backend="beatnet", start_bpm=hint or PRIOR_BPM)
+        if neural.method != "beatnet":
+            notes = "; ".join(n for n in [notes, *neural.notes] if n) or None
+            neural = None
+    if neural is not None:
+        raw = np.asarray(neural.beats_s, dtype=float)
+        method = "beatnet (DBN, offline); onset-anchored refinement"
+    else:
+        try:
+            raw = track_beats(y, sr, hint)
+        except Exception as exc:
+            raw = np.zeros(0)
+            notes = f"beat_track failed: {type(exc).__name__}"
     onsets = detect_onsets(y, sr)
     try:
         beats = refine_beats(raw, onsets) if raw.size else raw
     except Exception:
         beats = raw
     confidence = onset_agreement(beats, onsets)
-    try:
-        phase, dconf = downbeat_phase(y, sr, beats, bpb)
-    except Exception:
-        phase, dconf = 0, 0.0
+    if neural is not None and neural.downbeats_s and beats.size:
+        first = neural.downbeats_s[0]
+        phase = int(np.argmin(np.abs(beats - first))) % bpb
+        dconf = 0.8
+        downbeat_method = "beatnet downbeats"
+    else:
+        try:
+            phase, dconf = downbeat_phase(y, sr, beats, bpb)
+        except Exception:
+            phase, dconf = 0, 0.0
     downbeats = beats[phase::bpb] if beats.size else np.zeros(0)
     return Beats(
         times_s=[round(float(t), 4) for t in beats],
         confidence=round(float(np.clip(confidence, 0.0, 1.0)), 4),
-        method=METHOD,
+        method=method,
         downbeats_s=[round(float(t), 4) for t in downbeats],
         downbeat_phase=int(phase),
         downbeat_confidence=round(float(np.clip(dconf, 0.0, 1.0)), 4),
-        downbeat_method=DOWNBEAT_METHOD,
+        downbeat_method=downbeat_method,
         meter=meter,
         notes=notes,
     )
