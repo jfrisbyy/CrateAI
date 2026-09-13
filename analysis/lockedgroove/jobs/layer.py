@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..combine.align import AlignItem, ItemPlan, apply_plan, plan_alignment
+from ..combine.align import AlignItem, ItemPlan, apply_plan, plan_alignment, stretch_engine
 from ..combine.layer import Lane, render_layer
 from ..db import Database
 from ..storage import Storage
@@ -109,7 +109,8 @@ def run(job: dict, db: Database, storage: Storage, ctx: JobContext) -> dict:
     db.update_rows("layers", {"id": layer_id}, patch)
     analyze = queue_analyze(db, ctx, layer["user_id"], row["id"])
     return {"layer_id": layer_id, "render_file_id": row["id"], "analyze_job_id": analyze["id"],
-            "plan": plan.to_json(), "applied": applied, "sample_rate": RENDER_SR}
+            "plan": plan.to_json(), "applied": applied, "sample_rate": RENDER_SR,
+            "stretch_engine": stretch_engine()}
 
 
 __all__ = ["run"]

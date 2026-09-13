@@ -1,7 +1,11 @@
-"""Spectral: centroid, mid/side stereo width, low/high band ratio.
+"""Spectral: centroid, mid/side stereo width, low/high band ratio, true bandwidth.
 
 Runs on the native signal (``ctx.native``) so the centroid sees content above the
-analysis rate's 11 kHz and the width reads the real channels.
+analysis rate's 11 kHz and the width reads the real channels. Bandwidth *depends*
+on that: the analysis rate's ceiling is 11.025 kHz and every real upload measured
+so far sits above it, so measured on the working copy the answer would always be
+the same wrong number. When the native signal is missing the estimate says so and
+drops its confidence rather than reporting the working copy's Nyquist as a fact.
 
 - ``centroid_hz_mean``: mean of the per-frame spectral centroid (magnitude STFT, 2048 /
   512) over frames with energy within ``SILENCE_DB`` of the loudest frame, so silence
@@ -11,15 +15,21 @@ analysis rate's 11 kHz and the width reads the real channels.
   level give 1 (the same quantity as ``1 - correlation(L, R)`` for balanced channels).
 - ``low_high_ratio_db``: ``10 * log10(energy below 250 Hz / energy above 4 kHz)`` from the
   summed power spectrum, clamped to ±``RATIO_CLAMP_DB``; 0 when either band is empty.
+- ``bandwidth``: the highest frequency still carrying real energy, with the method
+  and confidence every estimated value carries (``quality.bandwidth``). This is
+  what lets the product say "this flip is limited by the record, not by us".
 
-``Spectral`` carries no confidence field; the measurement is deterministic.
+The first three carry no confidence; those measurements are deterministic.
 """
 
 from __future__ import annotations
 
+from typing import Optional
+
 import numpy as np
 
-from ..report import Spectral
+from ..quality.bandwidth import measure_bandwidth
+from ..report import Estimate, Spectral
 
 N_FFT = 2048
 HOP_LENGTH = 512
@@ -78,9 +88,19 @@ def centroid_and_ratio(mono: np.ndarray, rate: int) -> tuple[float, float]:
     return centroid, ratio
 
 
+def bandwidth_estimate(channels: np.ndarray, rate: int, *, native: bool) -> Optional[Estimate]:
+    """``quality.bandwidth`` as the report's ``Estimate``; ``None`` if it cannot run at all."""
+    try:
+        measured = measure_bandwidth(channels.mean(axis=0), rate, rate_is_native=native)
+    except Exception:
+        return None
+    return Estimate(**measured.to_json())
+
+
 def run(y: np.ndarray, sr: int, ctx) -> Spectral:
-    """Spectral section (no confidence field in the schema; see the module docstring)."""
-    signal, rate = ctx.native if ctx.native is not None else (y, sr)
+    """Spectral section (see the module docstring for what does and does not carry confidence)."""
+    native = ctx.native is not None
+    signal, rate = ctx.native if native else (y, sr)
     rate = int(rate) if rate else int(sr)
     channels = _as_channels_first(signal)
     if channels.shape[1] == 0 or rate <= 0:
@@ -94,7 +114,9 @@ def run(y: np.ndarray, sr: int, ctx) -> Spectral:
     except Exception:
         centroid, ratio = 0.0, 0.0
     return Spectral(centroid_hz_mean=round(float(centroid), 2), stereo_width=round(float(width), 4),
-                    low_high_ratio_db=round(float(ratio), 2), method=METHOD)
+                    low_high_ratio_db=round(float(ratio), 2), method=METHOD,
+                    bandwidth=bandwidth_estimate(channels, rate, native=native))
 
 
-__all__ = ["HIGH_HZ", "LOW_HZ", "METHOD", "RATIO_CLAMP_DB", "centroid_and_ratio", "run", "stereo_width"]
+__all__ = ["HIGH_HZ", "LOW_HZ", "METHOD", "RATIO_CLAMP_DB", "bandwidth_estimate", "centroid_and_ratio",
+           "run", "stereo_width"]

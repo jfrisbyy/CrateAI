@@ -38,8 +38,10 @@ def run(job: dict, db: Database, storage: Storage, ctx: JobContext) -> dict:
     reports = stem_reports(db, file_id, params.get("model"))
     if not rows:
         if not pending_job(db, file_id, "stems"):
+            # No model named means "the best one installed"; the stems job resolves it.
+            stem_params = {"model": params["model"]} if params.get("model") else {}
             j = db.insert_job({"user_id": file["user_id"], "file_id": file_id, "kind": "stems", "status": "queued",
-                               "params": {"model": params.get("model") or "htdemucs_ft"}})
+                               "params": stem_params})
             ctx.queued_job_ids.append(j["id"])
             queued["stems"] = j["id"]
     else:

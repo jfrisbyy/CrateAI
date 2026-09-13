@@ -81,6 +81,29 @@ def bar_number(bar_index: int) -> int:
     return bar_index + 1
 
 
+# Above this the file has everything a 44.1 kHz container can hold; below the
+# second, the record is the ceiling and no processing will get past it.
+FULL_BANDWIDTH_HZ = 19000.0
+LIMITED_BANDWIDTH_HZ = 16000.0
+
+
+def khz(hz: float) -> str:
+    return f"{hz / 1000:.1f} kHz"
+
+
+def bandwidth_text(hz: Optional[float]) -> str:
+    """What the file's true bandwidth means for a flip, in a producer's terms."""
+    if hz is None:
+        return "I haven't measured how far up this file actually goes."
+    if hz >= FULL_BANDWIDTH_HZ:
+        return f"The top end runs all the way to {khz(hz)}, so there's nothing missing up there."
+    if hz >= LIMITED_BANDWIDTH_HZ:
+        return (f"The file stops at {khz(hz)} - a little shy of the full top end, though you'd have to "
+                "listen for it.")
+    return (f"The file itself stops at {khz(hz)}: there is no air above that to bring back, so anything "
+            "cut from this will sound as dark as the record does. That's the source, not the processing.")
+
+
 def with_hedge(hedge: str, sentence: str) -> str:
     """Prefix a sentence with the hedge in the way a mentor would say it."""
     if not hedge:
@@ -93,5 +116,5 @@ def with_hedge(hedge: str, sentence: str) -> str:
     return f"{hedge.capitalize()} {sentence[0].lower() + sentence[1:]}"
 
 
-__all__ = ["bar_number", "bpm_text", "db", "key_display", "key_token", "pct", "seconds", "step_name",
-           "steps_phrase", "with_hedge"]
+__all__ = ["FULL_BANDWIDTH_HZ", "LIMITED_BANDWIDTH_HZ", "bandwidth_text", "bar_number", "bpm_text", "db",
+           "key_display", "key_token", "khz", "pct", "seconds", "step_name", "steps_phrase", "with_hedge"]
