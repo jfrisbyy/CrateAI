@@ -362,4 +362,35 @@ Template:
 **Principle it risks:** None.
 **What it takes:** Harness: a handful of separated records with hand-marked vocal-free, drums-free and break bars, and a scorer that counts claim accuracy and calibration (does a 0.7 confidence mean 70 % right?). Search: `vocal_free`, `drums_free`, `drums_only`, `min_stems` in the hybrid parser's tool schema and in `library_filter`, reading the jsonb path the migration indexes.
 **Where it belongs:** Harness in Phase 2; search in Phase 6.
+
+## A `compatible` chat tool
+**What it does for a producer:** "what have I got that works with this?" typed instead of clicked, and answered the same way: "Your Rhodes loop is the relative minor at 2 % faster, and three of your breaks sit on this grid; the 170 one is double-time." The chat can already layer (`layer(items[])`), so the answer and the action are one sentence apart.
+**Principle it serves:** 2 and 5; the chat states musical facts only from measurements, and this is measurement.
+**Principle it risks:** 2, if the narration drops the hedge. Mitigated because every match already carries `confidence`, `confidence_reason` and a `reason` string written for a human — the tool returns them and the grounding contract forbids adding to them.
+**What it takes:** one strict tool in `web/lib/chat/tools.ts` calling the same `/api/compat` path, and a result card reusing `CompatRow`. Half a day.
+**Where it belongs:** Phase 8.
+**Status:** proposed.
+
+## Compatibility as a library sort, not only a panel
+**What it does for a producer:** Open the library with a beat selected and sort the whole crate by "works with this", the way it can already be sorted by name or date. The panel answers for one file; this makes the whole library answer at once.
+**Principle it serves:** 5, the library is the product.
+**Principle it risks:** None. The RPC is capped and already the caller's rows only.
+**What it takes:** `compatible_files` already returns what a sort needs; the library pane needs a sort mode that calls it with the open file and orders `FileRow`s by the returned score, with the `reason` on the `matched` line `FileRow` already takes. A day.
+**Where it belongs:** Phase 6 or 7 hardening.
+**Status:** proposed.
+
+## Compatibility against a loop region, not the whole file
+**What it does for a producer:** "What works with this" usually means the two-bar chop, not the seven-minute record — and a record's key and tempo are the average of everything in it. Asking from a selected loop would match on the material actually being used.
+**Principle it serves:** 4 and 5.
+**Principle it risks:** None; it is the same arithmetic on a narrower measurement.
+**What it takes:** Today: render the loop (a `loop_render` file gets its own analysis) and ask from that, which works. Direct: per-loop tempo and key on the `loops` row, or a `p_loop_id` on `compatible_files` reading the loop's own analysis. Overlaps with "A loop region as a lane".
+**Where it belongs:** Phase 7 hardening.
+**Status:** proposed.
+
+## Measure the stretch thresholds instead of inheriting them
+**What it does for a producer:** The line between "you will not hear this stretch" and "you will" is currently 6 % and 14 % on the brief's authority. A producer who disagrees with where a match stops being offered has no way to be right.
+**Principle it serves:** 2, measure don't guess, applied to our own constants; 7, corrections are ground truth.
+**Principle it risks:** None.
+**What it takes:** The panel's Stretch control is already a correction: log which tolerance a user picks, and whether a match at 9 % became a layer or was passed over, into the accuracy dataset. Then `TRANSPARENT_MAX` and `USABLE_MAX` are numbers with evidence behind them. Alternatively an offline measurement: transient-preservation of the stretch engines across ratios on the fixture set, which would also tell us whether the band should differ per engine and per `stretch_mode`.
+**Where it belongs:** Phase 9, with the accuracy harness.
 **Status:** proposed.

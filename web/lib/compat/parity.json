@@ -1,0 +1,1382 @@
+{
+  "version": 1,
+  "note": "Generated from analysis/lockedgroove/analysis/compat.py; both test suites assert against it.",
+  "cases": [
+    {
+      "name": "same key, same tempo",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.8
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.8
+      },
+      "options": {},
+      "expected": {
+        "score": 1.0,
+        "confidence": 0.8,
+        "confidence_bound_by": "source_key",
+        "confidence_reason": "this file's key was measured at 0.80, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "same key, same tempo",
+        "tempo": {
+          "source_bpm": 90.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.0000 onto 90 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "minor",
+          "candidate_tonic": "C",
+          "candidate_mode": "minor",
+          "relationship": "same",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.8,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "C minor is the same key of C minor"
+        }
+      }
+    },
+    {
+      "name": "relative minor, a touch faster",
+      "source": {
+        "bpm": 92,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "major",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "A",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.910318,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "relative minor, 2.2% faster",
+        "tempo": {
+          "source_bpm": 92.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0222222222222221,
+          "percent": 2.2222222222222143,
+          "distance": 0.022222222222222143,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 0.920635,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.0222 onto 92 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "major",
+          "candidate_tonic": "A",
+          "candidate_mode": "minor",
+          "relationship": "relative",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 0.9,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "A minor is the relative minor of C major"
+        }
+      }
+    },
+    {
+      "name": "relative major",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "A",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "major",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.95,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "relative major, same tempo",
+        "tempo": {
+          "source_bpm": 90.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.0000 onto 90 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "A",
+          "source_mode": "minor",
+          "candidate_tonic": "C",
+          "candidate_mode": "major",
+          "relationship": "relative",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 0.9,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "C major is the relative major of A minor"
+        }
+      }
+    },
+    {
+      "name": "a fifth up",
+      "source": {
+        "bpm": 88,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 88,
+        "bpm_confidence": 0.9,
+        "tonic": "G",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.9,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "a fifth up, same tempo",
+        "tempo": {
+          "source_bpm": 88.0,
+          "candidate_bpm": 88.0,
+          "folded_bpm": 88.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "88 BPM, stretched x1.0000 onto 88 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "minor",
+          "candidate_tonic": "G",
+          "candidate_mode": "minor",
+          "relationship": "dominant",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 0.8,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "G minor is the a fifth up of C minor"
+        }
+      }
+    },
+    {
+      "name": "a fifth down",
+      "source": {
+        "bpm": 88,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 88,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.9,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "a fifth down, same tempo",
+        "tempo": {
+          "source_bpm": 88.0,
+          "candidate_bpm": 88.0,
+          "folded_bpm": 88.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "88 BPM, stretched x1.0000 onto 88 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "minor",
+          "candidate_tonic": "F",
+          "candidate_mode": "minor",
+          "relationship": "subdominant",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 0.8,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "F minor is the a fifth down of C minor"
+        }
+      }
+    },
+    {
+      "name": "parallel minor",
+      "source": {
+        "bpm": 100,
+        "bpm_confidence": 0.8,
+        "tonic": "C",
+        "mode": "major",
+        "key_confidence": 0.7
+      },
+      "candidate": {
+        "bpm": 100,
+        "bpm_confidence": 0.8,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.7
+      },
+      "options": {},
+      "expected": {
+        "score": 0.85,
+        "confidence": 0.7,
+        "confidence_bound_by": "source_key",
+        "confidence_reason": "this file's key was measured at 0.70, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "parallel minor, same tempo",
+        "tempo": {
+          "source_bpm": 100.0,
+          "candidate_bpm": 100.0,
+          "folded_bpm": 100.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.8,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "100 BPM, stretched x1.0000 onto 100 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "major",
+          "candidate_tonic": "C",
+          "candidate_mode": "minor",
+          "relationship": "parallel",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 0.7,
+          "confidence": 0.7,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "C minor is the parallel minor of C major"
+        }
+      }
+    },
+    {
+      "name": "double-time break",
+      "source": {
+        "bpm": 170,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 85,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.985,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "same key, needs double-time",
+        "tempo": {
+          "source_bpm": 170.0,
+          "candidate_bpm": 85.0,
+          "folded_bpm": 170.0,
+          "octave_factor": 2.0,
+          "fold": "double",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 0.97,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "85 BPM counted double-time as 170, stretched x1.0000 onto 170 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "F",
+          "source_mode": "minor",
+          "candidate_tonic": "F",
+          "candidate_mode": "minor",
+          "relationship": "same",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "F minor is the same key of F minor"
+        }
+      }
+    },
+    {
+      "name": "half-time",
+      "source": {
+        "bpm": 85,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 170,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.985,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "same key, needs half-time",
+        "tempo": {
+          "source_bpm": 85.0,
+          "candidate_bpm": 170.0,
+          "folded_bpm": 85.0,
+          "octave_factor": 0.5,
+          "fold": "half",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 0.97,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "170 BPM counted half-time as 85, stretched x1.0000 onto 85 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "F",
+          "source_mode": "minor",
+          "candidate_tonic": "F",
+          "candidate_mode": "minor",
+          "relationship": "same",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "F minor is the same key of F minor"
+        }
+      }
+    },
+    {
+      "name": "keyless break at the same tempo",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.85
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": null,
+        "mode": null,
+        "key_confidence": null
+      },
+      "options": {},
+      "expected": {
+        "score": 1.0,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; no key on one side, so tempo alone",
+        "compatible": true,
+        "reason": "no key detected, tempo only",
+        "tempo": {
+          "source_bpm": 90.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.0000 onto 90 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "F",
+          "source_mode": "minor",
+          "candidate_tonic": null,
+          "candidate_mode": null,
+          "relationship": "unknown",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": null,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "no key measured on the other file; nothing to clash, so it fits anything on that axis"
+        }
+      }
+    },
+    {
+      "name": "keyless break needing a stretch",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.85
+      },
+      "candidate": {
+        "bpm": 87,
+        "bpm_confidence": 0.9,
+        "tonic": null,
+        "mode": null,
+        "key_confidence": null
+      },
+      "options": {},
+      "expected": {
+        "score": 0.876847,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; no key on one side, so tempo alone",
+        "compatible": true,
+        "reason": "no key detected, 3.4% faster",
+        "tempo": {
+          "source_bpm": 90.0,
+          "candidate_bpm": 87.0,
+          "folded_bpm": 87.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0344827586206897,
+          "percent": 3.4482758620689724,
+          "distance": 0.034482758620689724,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 0.876847,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "87 BPM, stretched x1.0345 onto 90 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "F",
+          "source_mode": "minor",
+          "candidate_tonic": null,
+          "candidate_mode": null,
+          "relationship": "unknown",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": null,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "no key measured on the other file; nothing to clash, so it fits anything on that axis"
+        }
+      }
+    },
+    {
+      "name": "no tempo on the candidate",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.8
+      },
+      "candidate": {
+        "bpm": null,
+        "bpm_confidence": null,
+        "tonic": "G#",
+        "mode": "major",
+        "key_confidence": 0.8
+      },
+      "options": {},
+      "expected": {
+        "score": 0.9,
+        "confidence": 0.8,
+        "confidence_bound_by": "source_key",
+        "confidence_reason": "this file's key was measured at 0.80, and no claim built on it can be surer than that",
+        "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones; no tempo on one side, so key alone",
+        "compatible": true,
+        "reason": "relative major, no tempo detected",
+        "tempo": {
+          "source_bpm": 90,
+          "candidate_bpm": null,
+          "folded_bpm": null,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": null,
+          "percent": null,
+          "distance": null,
+          "quality": "unknown",
+          "compatible": true,
+          "score": 0.5,
+          "confidence": null,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "no tempo measured on the other file; tempo says nothing either way"
+        },
+        "key": {
+          "source_tonic": "F",
+          "source_mode": "minor",
+          "candidate_tonic": "G#",
+          "candidate_mode": "major",
+          "relationship": "relative",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 0.9,
+          "confidence": 0.8,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "G# major is the relative major of F minor"
+        }
+      }
+    },
+    {
+      "name": "a key measured at 0.42 caps the claim",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": 0.95,
+        "tonic": "C",
+        "mode": "major",
+        "key_confidence": 0.42
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.93,
+        "tonic": "A",
+        "mode": "minor",
+        "key_confidence": 0.88
+      },
+      "options": {},
+      "expected": {
+        "score": 0.95,
+        "confidence": 0.42,
+        "confidence_bound_by": "source_key",
+        "confidence_reason": "this file's key was measured at 0.42, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "relative minor, same tempo",
+        "tempo": {
+          "source_bpm": 90.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.93,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.0000 onto 90 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "major",
+          "candidate_tonic": "A",
+          "candidate_mode": "minor",
+          "relationship": "relative",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 0.9,
+          "confidence": 0.42,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "A minor is the relative minor of C major"
+        }
+      }
+    },
+    {
+      "name": "out of the usable band",
+      "source": {
+        "bpm": 100,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 83,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.634251,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": false,
+        "reason": "same key, 20.5% faster",
+        "tempo": {
+          "source_bpm": 100.0,
+          "candidate_bpm": 83.0,
+          "folded_bpm": 83.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.2048192771084338,
+          "percent": 20.481927710843383,
+          "distance": 0.20481927710843384,
+          "quality": "out_of_range",
+          "compatible": false,
+          "score": 0.268503,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "83 BPM, stretched x1.2048 onto 100 BPM (out of range)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "minor",
+          "candidate_tonic": "C",
+          "candidate_mode": "minor",
+          "relationship": "same",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "C minor is the same key of C minor"
+        }
+      }
+    },
+    {
+      "name": "two semitones down into the same key",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "D",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.88,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "same key down 2 semitones, same tempo",
+        "tempo": {
+          "source_bpm": 90.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.0000 onto 90 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "minor",
+          "candidate_tonic": "D",
+          "candidate_mode": "minor",
+          "relationship": "same",
+          "semitone_shift": -2,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 0.76,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "D minor shifted -2 semitones is the same key of C minor"
+        }
+      }
+    },
+    {
+      "name": "four semitones up, a character change",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "major",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.734,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "relative minor up 4 semitones, same tempo",
+        "tempo": {
+          "source_bpm": 90.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.0000 onto 90 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "major",
+          "candidate_tonic": "F",
+          "candidate_mode": "minor",
+          "relationship": "relative",
+          "semitone_shift": 4,
+          "shifts_character": true,
+          "compatible": true,
+          "score": 0.468,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "F minor shifted +4 semitones is the relative minor of C major"
+        }
+      }
+    },
+    {
+      "name": "nothing measured at all",
+      "source": {
+        "bpm": null,
+        "bpm_confidence": null,
+        "tonic": null,
+        "mode": null,
+        "key_confidence": null
+      },
+      "candidate": {
+        "bpm": null,
+        "bpm_confidence": null,
+        "tonic": null,
+        "mode": null,
+        "key_confidence": null
+      },
+      "options": {},
+      "expected": {
+        "score": 0.5,
+        "confidence": 0.0,
+        "confidence_bound_by": "",
+        "confidence_reason": "nothing was measured on either file, so this is a guess and not offered as more",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; no key on one side, so tempo alone",
+        "compatible": true,
+        "reason": "no key detected, no tempo detected",
+        "tempo": {
+          "source_bpm": null,
+          "candidate_bpm": null,
+          "folded_bpm": null,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": null,
+          "percent": null,
+          "distance": null,
+          "quality": "unknown",
+          "compatible": true,
+          "score": 0.5,
+          "confidence": null,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "no tempo measured on neither file; tempo says nothing either way"
+        },
+        "key": {
+          "source_tonic": null,
+          "source_mode": null,
+          "candidate_tonic": null,
+          "candidate_mode": null,
+          "relationship": "unknown",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": null,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "no key measured on neither file; nothing to clash, so it fits anything on that axis"
+        }
+      }
+    },
+    {
+      "name": "folded to half then stretched, both keyless",
+      "source": {
+        "bpm": 92,
+        "bpm_confidence": 0.8,
+        "tonic": null,
+        "mode": null,
+        "key_confidence": null
+      },
+      "candidate": {
+        "bpm": 180,
+        "bpm_confidence": 0.8,
+        "tonic": null,
+        "mode": null,
+        "key_confidence": null
+      },
+      "options": {},
+      "expected": {
+        "score": 0.893016,
+        "confidence": 0.8,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.80, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; no key on one side, so tempo alone",
+        "compatible": true,
+        "reason": "no key detected, needs half-time and 2.2% faster",
+        "tempo": {
+          "source_bpm": 92.0,
+          "candidate_bpm": 180.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 0.5,
+          "fold": "half",
+          "ratio": 1.0222222222222221,
+          "percent": 2.2222222222222143,
+          "distance": 0.022222222222222143,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 0.893016,
+          "confidence": 0.8,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "180 BPM counted half-time as 90, stretched x1.0222 onto 92 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": null,
+          "source_mode": null,
+          "candidate_tonic": null,
+          "candidate_mode": null,
+          "relationship": "unknown",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": null,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "no key measured on neither file; nothing to clash, so it fits anything on that axis"
+        }
+      }
+    },
+    {
+      "name": "a tempo with no recorded confidence",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": null,
+        "tonic": "C",
+        "mode": "major",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "major",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 1.0,
+        "confidence": 0.0,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.00, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "same key, same tempo",
+        "tempo": {
+          "source_bpm": 90.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.0000 onto 90 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "major",
+          "candidate_tonic": "C",
+          "candidate_mode": "major",
+          "relationship": "same",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "C major is the same key of C major"
+        }
+      }
+    },
+    {
+      "name": "the far edge of usable",
+      "source": {
+        "bpm": 100,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 89.28571428571428,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.785714,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "same key, 12% faster",
+        "tempo": {
+          "source_bpm": 100.0,
+          "candidate_bpm": 89.28571428571428,
+          "folded_bpm": 89.28571428571428,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.12,
+          "percent": 12.00000000000001,
+          "distance": 0.1200000000000001,
+          "quality": "usable",
+          "compatible": true,
+          "score": 0.571429,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "89.2857 BPM, stretched x1.1200 onto 100 BPM (usable)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "minor",
+          "candidate_tonic": "C",
+          "candidate_mode": "minor",
+          "relationship": "same",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "C minor is the same key of C minor"
+        }
+      }
+    },
+    {
+      "name": "transparent only",
+      "source": {
+        "bpm": 100,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {
+        "stretch_tolerance": 0.06
+      },
+      "expected": {
+        "score": 0.801588,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": false,
+        "reason": "same key, 11.1% faster",
+        "tempo": {
+          "source_bpm": 100.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.1111111111111112,
+          "percent": 11.111111111111116,
+          "distance": 0.11111111111111116,
+          "quality": "out_of_range",
+          "compatible": false,
+          "score": 0.603175,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.1111 onto 100 BPM (out of range)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "minor",
+          "candidate_tonic": "C",
+          "candidate_mode": "minor",
+          "relationship": "same",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "C minor is the same key of C minor"
+        }
+      }
+    },
+    {
+      "name": "the caller will not pitch past two",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "C",
+        "mode": "major",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {
+        "max_semitones": 2
+      },
+      "expected": {
+        "score": 0.5,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": false,
+        "reason": "F minor does not fit, same tempo",
+        "tempo": {
+          "source_bpm": 90.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.0000 onto 90 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "C",
+          "source_mode": "major",
+          "candidate_tonic": "F",
+          "candidate_mode": "minor",
+          "relationship": "unknown",
+          "semitone_shift": 4,
+          "shifts_character": true,
+          "compatible": false,
+          "score": 0.0,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "F minor against C major needs 4 semitones to reach relative, past the 2 allowed"
+        }
+      }
+    },
+    {
+      "name": "no fold allowed",
+      "source": {
+        "bpm": 170,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 85,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {
+        "max_octaves": 0
+      },
+      "expected": {
+        "score": 0.5,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": false,
+        "reason": "same key, 100% faster",
+        "tempo": {
+          "source_bpm": 170.0,
+          "candidate_bpm": 85.0,
+          "folded_bpm": 85.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 2.0,
+          "percent": 100.0,
+          "distance": 1.0,
+          "quality": "out_of_range",
+          "compatible": false,
+          "score": 0.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "85 BPM, stretched x2.0000 onto 170 BPM (out of range)"
+        },
+        "key": {
+          "source_tonic": "F",
+          "source_mode": "minor",
+          "candidate_tonic": "F",
+          "candidate_mode": "minor",
+          "relationship": "same",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "F minor is the same key of F minor"
+        }
+      }
+    },
+    {
+      "name": "two octaves allowed",
+      "source": {
+        "bpm": 160,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 40,
+        "bpm_confidence": 0.9,
+        "tonic": "F",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {
+        "max_octaves": 2
+      },
+      "expected": {
+        "score": 0.97045,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "same key, needs double-time",
+        "tempo": {
+          "source_bpm": 160.0,
+          "candidate_bpm": 40.0,
+          "folded_bpm": 160.0,
+          "octave_factor": 4.0,
+          "fold": "double",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 0.9409,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "40 BPM counted double-time as 160, stretched x1.0000 onto 160 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "F",
+          "source_mode": "minor",
+          "candidate_tonic": "F",
+          "candidate_mode": "minor",
+          "relationship": "same",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "F minor is the same key of F minor"
+        }
+      }
+    },
+    {
+      "name": "flat spelling on the candidate",
+      "source": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "Bb",
+        "mode": "major",
+        "key_confidence": 0.9
+      },
+      "candidate": {
+        "bpm": 90,
+        "bpm_confidence": 0.9,
+        "tonic": "G",
+        "mode": "minor",
+        "key_confidence": 0.9
+      },
+      "options": {},
+      "expected": {
+        "score": 0.95,
+        "confidence": 0.9,
+        "confidence_bound_by": "source_tempo",
+        "confidence_reason": "this file's tempo was measured at 0.90, and no claim built on it can be surer than that",
+        "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave; key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+        "compatible": true,
+        "reason": "relative minor, same tempo",
+        "tempo": {
+          "source_bpm": 90.0,
+          "candidate_bpm": 90.0,
+          "folded_bpm": 90.0,
+          "octave_factor": 1.0,
+          "fold": "none",
+          "ratio": 1.0,
+          "percent": 0.0,
+          "distance": 0.0,
+          "quality": "transparent",
+          "compatible": true,
+          "score": 1.0,
+          "confidence": 0.9,
+          "method": "octave-folded tempo ratio, transparent <= 6%, usable <= 14%, fold up to 1 octave",
+          "note": "90 BPM, stretched x1.0000 onto 90 BPM (transparent)"
+        },
+        "key": {
+          "source_tonic": "Bb",
+          "source_mode": "major",
+          "candidate_tonic": "G",
+          "candidate_mode": "minor",
+          "relationship": "relative",
+          "semitone_shift": 0,
+          "shifts_character": false,
+          "compatible": true,
+          "score": 0.9,
+          "confidence": 0.9,
+          "method": "key relationship (same, relative, fifth up or down, parallel), smallest pitch shift up to 6 semitones",
+          "note": "G minor is the relative minor of Bb major"
+        }
+      }
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CompatTab } from "@/components/compat/CompatTab";
 import { cx } from "@/components/ui";
 import { BreakdownTab } from "./BreakdownTab";
 import { ChopsTab } from "./ChopsTab";
@@ -11,13 +12,14 @@ import { ReportTab } from "./ReportTab";
 import { RevoiceTab } from "./RevoiceTab";
 import { StemsTab } from "./StemsTab";
 
-type TabId = "loops" | "stems" | "chops" | "layers" | "revoice" | "breakdown" | "compare" | "report";
+type TabId = "loops" | "stems" | "chops" | "layers" | "compat" | "revoice" | "breakdown" | "compare" | "report";
 
 const TABS: ReadonlyArray<{ id: TabId; label: string }> = [
   { id: "loops", label: "Loops" },
   { id: "stems", label: "Stems" },
   { id: "chops", label: "Chops" },
   { id: "layers", label: "Layers" },
+  { id: "compat", label: "Fits with" },
   { id: "revoice", label: "Re-voice" },
   { id: "breakdown", label: "Breakdown" },
   { id: "compare", label: "Compare" },
@@ -66,6 +68,7 @@ export function SurfaceTabs() {
         {tab === "stems" && <StemsTab />}
         {tab === "chops" && <ChopsTab />}
         {tab === "layers" && <LayersTab />}
+        {tab === "compat" && <CompatTab />}
         {tab === "revoice" && <RevoiceTab />}
         {tab === "breakdown" && <BreakdownTab />}
         {tab === "compare" && <CompareTab />}
