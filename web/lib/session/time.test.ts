@@ -160,3 +160,63 @@ group("bars", () => {
     expect(barAt(17, tempo)).toBe(9);
   });
 });
+
+// --- the wrap the prototype found ------------------------------------------
+//
+// A loop length that is not a round binary number — four bars at 92 BPM, which
+// is what the demo session runs at — makes the wrap walls themselves sums of
+// repeating fractions. Some of those sums land a float hair *short* of a whole
+// number of passes, and the remainder then reads as very nearly a whole loop:
+// the last nanosecond of pass n rather than the first of pass n + 1.
+//
+// The consequence was not a nanosecond. `segmentsInWindow` walks from one wrap
+// to the next by adding `endS - position`, so a position a hair below the end
+// locator advanced the cursor by 7e-15 of a second; the walk then marked time
+// until its guard stopped it and the segment for the new pass was never
+// produced. Every region on every lane missed that wrap, was noticed on the
+// next 60 ms tick, and joined 6.5 ms into itself with its head cut off — once
+// every few passes, for ever. On a drum break that is the attack of the kick
+// on the one.
+group("wrapping on a loop whose length is not a round number", () => {
+  const length = 4 * ((60 / 92) * 4); // four bars at 92 BPM
+  const t = rolling({ anchorS: 0, anchorWall: 0.03, loop: { startS: 0, endS: length } });
+
+  it("reads an exact wrap wall as the start of the next pass, not the end of the last", () => {
+    for (let pass = 1; pass <= 200; pass++) {
+      const wall = 0.03 + pass * length;
+      expect(positionAt(t, wall), `pass ${pass}`).toBeCloseTo(0, 9);
+      expect(passAt(t, wall), `pass ${pass}`).toBe(pass);
+    }
+  });
+
+  it("produces the segment after every wrap, so nothing is scheduled late", () => {
+    for (let pass = 1; pass <= 200; pass++) {
+      const wrap = 0.03 + pass * length;
+      // a window that straddles the wrap, the way a 60 ms tick with a 250 ms
+      // lookahead does
+      const segments = segmentsInWindow(t, wrap - 0.05, wrap + 0.2);
+      expect(segments.length, `pass ${pass}`).toBe(2);
+      expect(segments[0]!.pass, `pass ${pass}`).toBe(pass - 1);
+      expect(segments[1]!.pass, `pass ${pass}`).toBe(pass);
+      expect(segments[1]!.startS, `pass ${pass}`).toBeCloseTo(0, 9);
+      expect(segments[1]!.startWall - wrap, `pass ${pass}`).toBeLessThan(1e-9);
+    }
+  });
+
+  it("tiles every window exactly, with no gap at the seam", () => {
+    for (let pass = 1; pass <= 50; pass++) {
+      const from = 0.03 + pass * length - 0.07;
+      const segments = segmentsInWindow(t, from, from + 0.25);
+      expect(segments[0]!.startWall).toBeCloseTo(from, 12);
+      for (let i = 1; i < segments.length; i++) expect(segments[i]!.startWall).toBeCloseTo(segments[i - 1]!.endWall, 12);
+      expect(segments[segments.length - 1]!.endWall).toBeCloseTo(from + 0.25, 12);
+    }
+  });
+
+  it("never spins: a window is walked in one segment per pass, however long it is", () => {
+    // exactly six passes, so the window ends on the sixth wrap
+    expect(segmentsInWindow(t, 0.03, 0.03 + length * 6).length).toBe(6);
+    // a hair past it, so the seventh has started
+    expect(segmentsInWindow(t, 0.03, 0.03 + length * 6 + 0.01).length).toBe(7);
+  });
+});

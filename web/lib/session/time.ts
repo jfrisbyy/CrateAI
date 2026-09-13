@@ -35,6 +35,23 @@ export function elapsedAt(transport: TransportState, wall: number): number {
   return Math.max(0, wall - transport.anchorWall);
 }
 
+/**
+ * How far into a pass a time `over` seconds past the end locator is.
+ *
+ * `over % length` is the answer except at a wrap, where the arithmetic that
+ * produced `over` — a sum of loop lengths — can land a float hair *short* of a
+ * whole number of passes. The remainder then comes back as very nearly a whole
+ * loop, which reads as the last nanosecond of the old pass instead of the first
+ * of the new one. That is the difference between the segment walk in
+ * `segmentsInWindow` advancing a whole loop and advancing 7e-15 of a second,
+ * and it is why a wrap could be missed entirely (see `wrapsExactly` in the
+ * tests). A remainder within EPS of the length is a wrap that has happened.
+ */
+function restOfPass(over: number, length: number): number {
+  const rest = over % length;
+  return length - rest < EPS ? 0 : rest;
+}
+
 /** Session position at a clock time. Paused transports sit on their anchor. */
 export function positionAt(transport: TransportState, wall: number): number {
   if (!transport.playing) return transport.anchorS;
@@ -49,7 +66,7 @@ export function positionAt(transport: TransportState, wall: number): number {
   // the start locator instead of a hair below the end one, which would leave
   // the walk in `segmentsInWindow` making 1e-14 of progress at a time.
   const over = Math.max(0, linear - loop.endS);
-  return loop.startS + (over % length);
+  return loop.startS + restOfPass(over, length);
 }
 
 /** How many times the loop has wrapped at a clock time. 0 on the first pass. */
@@ -60,7 +77,15 @@ export function passAt(transport: TransportState, wall: number): number {
   const linear = transport.anchorS + elapsedAt(transport, wall);
   if (linear < loop.endS - EPS) return 0;
   const length = loop.endS - loop.startS;
-  return Math.floor(Math.max(0, linear - loop.endS) / length) + 1;
+  const over = Math.max(0, linear - loop.endS);
+  // Counted off the remainder rather than off `over / length`, and for the
+  // same reason `positionAt` snaps: `%` is an exact remainder while a division
+  // can round *up* to a whole number the remainder says was not reached. Mixing
+  // the two numbers a wrap boundary as the pass after the one `positionAt`
+  // puts it in, and the piece scheduled for that pass is then never planned.
+  const rest = over % length;
+  const whole = Math.round((over - rest) / length);
+  return whole + 1 + (length - rest < EPS ? 1 : 0);
 }
 
 /**
@@ -117,8 +142,11 @@ export function segmentsInWindow(transport: TransportState, fromWall: number, to
       segments.push({ pass, startWall: cursor, endWall, startS, endS: startS + (endWall - cursor), limitS });
     }
     if (endWall >= toWall - EPS) break;
-    if (endWall <= cursor) break; // cannot happen with a valid loop; never spin if it does
-    cursor = endWall;
+    // Always advance. `positionAt` snaps a hair-short wrap to the start of the
+    // next pass, so this should already be a whole loop; the floor is here so
+    // that no arrangement of floats can leave the walk marking time and
+    // burning its guard instead of reaching the rest of the window.
+    cursor = Math.max(endWall, cursor + EPS);
   }
   return segments;
 }

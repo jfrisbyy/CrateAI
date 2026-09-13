@@ -7,7 +7,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { hasPublicEnv, publicEnv } from "@/lib/env";
 import type { Database } from "@/lib/types/db";
 
-const PUBLIC_PREFIXES = ["/login", "/auth/"];
+// `/demo` is the clickable prototype (app/demo): it signs nobody in, touches
+// no table and needs no keys, so it must be reachable on a configured
+// deployment as well as an unconfigured one.
+const PUBLIC_PREFIXES = ["/login", "/auth/", "/demo"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p));

@@ -33,19 +33,10 @@ import { SongSurface } from "@/components/timeline/SongSurface";
 import { emitTimelineView } from "@/components/timeline/timelineEvents";
 import { btnQuiet, cx } from "@/components/ui";
 import { handleKeydown, onCommand, onPad } from "@/lib/keys/commands";
-import {
-  deleteRegion,
-  duplicateRegion,
-  regionById,
-  removeTrack as removeTrackFrom,
-  splitRegion,
-  trimTail,
-  type Arrangement,
-} from "@/lib/session/arrangement";
-import { ALL_TRACKS, describeCommand, resolveRegionTarget, resolveTarget, type SessionCommand } from "@/lib/session/commands";
-import { candidateAt, stepCandidate } from "@/lib/session/rack";
-import { barToSeconds, loopForBars, secondsPerBar } from "@/lib/session/time";
+import type { SessionCommand } from "@/lib/session/commands";
 import { useLibrary } from "@/lib/state/LibraryProvider";
+import { applySessionCommand } from "./applyCommand";
+import { Divider } from "./Divider";
 import { KeymapSheet } from "./KeymapSheet";
 import { SearchProvider } from "./searchState";
 import { SessionProvider, useSession } from "./SessionProvider";
@@ -152,149 +143,22 @@ function Shell({ children }: { children: ReactNode }) {
   }, []);
 
   // ---- the chat's command line ---------------------------------------------
+  // The parser is lib/session/commands.ts and the half that moves the controls
+  // is applyCommand.ts. Both are shared with the prototype at /demo, so a
+  // sentence goes through exactly one implementation.
   const apply = useCallback(
     (command: SessionCommand) => {
-      const say = (text: string, ok = true) => emitCommandResult({ text, ok });
-      switch (command.kind) {
-        case "play":
-          session.play();
-          return say(describeCommand(command));
-        case "pause":
-          session.pause();
-          return say(describeCommand(command));
-        case "stop":
-          session.stop();
-          return say(describeCommand(command));
-        case "loop-off":
-          session.setLoop(null);
-          return say(describeCommand(command));
-        case "loop-seconds":
-          session.setLoop({ startS: command.fromS, endS: command.toS });
-          return say(describeCommand(command));
-        case "loop-bars": {
-          const loop = loopForBars(command.fromBar, command.toBar, session.tempo);
-          if (!loop) return say("the session has no measured tempo yet, so it has no bars. Say it in seconds, or commit something with a tempo.", false);
-          session.setLoop(loop);
-          return say(describeCommand(command));
-        }
-        case "mute":
-        case "solo": {
-          const ids = resolveTarget(command.target, session.tracks);
-          if (!ids || ids.length === 0) return say(`nothing in the session is called ${command.target === ALL_TRACKS ? "that" : command.target}.`, false);
-          for (const id of ids) {
-            if (command.kind === "mute") session.setMute(id, command.on);
-            else session.setSolo(id, command.on);
-          }
-          return say(describeCommand(command));
-        }
-        case "gain": {
-          const ids = resolveTarget(command.target, session.tracks);
-          if (!ids || ids.length === 0) return say(`nothing in the session is called ${command.target}.`, false);
-          for (const id of ids) session.nudgeGain(id, command.db);
-          return say(describeCommand(command));
-        }
-        case "audition": {
-          const candidate = candidateAt(rack, command.index);
-          if (!candidate) return say(`there is no candidate ${command.index} in the rack.`, false);
-          void session.audition(candidate);
-          return say(`auditioning ${candidate.title}`);
-        }
-        case "audition-next":
-        case "audition-previous": {
-          const next = stepCandidate(rack, session.auditioning, command.kind === "audition-next" ? 1 : -1);
-          if (!next) return say("that is the end of the rack.", false);
-          void session.audition(next);
-          return say(`auditioning ${next.title}`);
-        }
-        case "audition-off":
-          void session.audition(null);
-          return say(describeCommand(command));
-        case "commit": {
-          const candidate = session.auditioning;
-          if (!candidate) return say("nothing is auditioning, so there is nothing to keep.", false);
-          void session.commit(candidate);
-          return say(`kept ${candidate.title}`);
-        }
-        case "rack":
-          openRack({ source: "search", query: command.query });
-          return say(describeCommand(command));
-        case "rack-fits":
-        case "rack-loops":
-          if (!openFileId) return say("no file is open, so there is nothing to rack against.", false);
-          openRack(command.kind === "rack-fits" ? { source: "compat", fileId: openFileId } : { source: "loops", fileId: openFileId });
-          return say(describeCommand(command));
-        case "panel":
-          setStack((prev) => (command.action === "close" ? closePanel(prev) : goBack(prev)));
-          return say(describeCommand(command));
-
-        // --- the song ---
-        // Every one of these runs the same function the mouse runs, on the same
-        // grid, through the same undo stack. There is no second code path by
-        // which a sentence can change the arrangement.
-        case "song":
-          showSession();
-          return say(describeCommand(command));
-        case "undo":
-          if (!session.canUndo) return say("there is nothing to undo yet.", false);
-          session.undo();
-          return say(describeCommand(command));
-        case "redo":
-          if (!session.canRedo) return say("there is nothing to redo.", false);
-          session.redo();
-          return say(describeCommand(command));
-        case "snap":
-          session.setSnap(command.unit);
-          return say(describeCommand(command));
-        case "zoom":
-          showSession();
-          emitTimelineView({ kind: "zoom", direction: command.direction });
-          return say(describeCommand(command));
-        case "move-region":
-        case "trim-region":
-        case "duplicate-region":
-        case "split-region":
-        case "delete-region": {
-          const arrangement = session.arrangement;
-          const found = resolveRegionTarget(command.target, arrangement.tracks, arrangement.regions, session.selectedRegionId);
-          if (!found.regionId) return say(found.note ?? "there is no region to change.", false);
-          const regionId = found.regionId;
-          const region = regionById(arrangement, regionId);
-          if (!region) return say("that region is no longer in the song.", false);
-          const grid = session.grid;
-          const barS = session.tempo ? secondsPerBar(session.tempo) : 0;
-          let next: Arrangement = arrangement;
-          if (command.kind === "move-region") {
-            if (command.toBar !== null && !session.tempo) return say("the session has no measured tempo yet, so it has no bars. Say it in seconds.", false);
-            const toS = command.toBar !== null && session.tempo ? barToSeconds(command.toBar, session.tempo) : (command.toS ?? region.startS);
-            next = { tracks: arrangement.tracks, regions: arrangement.regions.map((r) => (r.id === regionId ? { ...r, startS: Math.max(0, toS) } : r)) };
-          } else if (command.kind === "trim-region") {
-            if (command.bars !== null && barS <= 0) return say("the session has no measured tempo yet, so it has no bars. Say it in seconds.", false);
-            const lengthS = command.bars !== null ? command.bars * barS : (command.seconds ?? region.durationS);
-            next = trimTail(arrangement, regionId, region.startS + lengthS, { grid });
-          } else if (command.kind === "duplicate-region") {
-            next = duplicateRegion(arrangement, regionId, { grid });
-          } else if (command.kind === "split-region") {
-            if (command.atBar !== null && !session.tempo) return say("the session has no measured tempo yet, so it has no bars. Split it at the playhead instead.", false);
-            const atS = command.atBar !== null && session.tempo ? barToSeconds(command.atBar, session.tempo) : session.position();
-            next = splitRegion(arrangement, regionId, atS, { grid });
-            if (next === arrangement) return say("that cut is outside the region, so there is nothing to split.", false);
-          } else {
-            next = deleteRegion(arrangement, regionId);
-            session.selectRegion(null);
-          }
-          session.edit(next, describeCommand(command));
-          showSession();
-          return say(describeCommand(command));
-        }
-        case "remove-track": {
-          const ids = resolveTarget(command.target, session.tracks);
-          if (!ids || ids.length === 0) return say(`nothing in the session is called ${command.target}.`, false);
-          let next = session.arrangement;
-          for (const id of ids) next = removeTrackFrom(next, id);
-          session.edit(next, describeCommand(command));
-          return say(describeCommand(command));
-        }
-      }
+      emitCommandResult(
+        applySessionCommand(command, {
+          session,
+          rack,
+          openFileId,
+          showSong: showSession,
+          panel: (action) => setStack((prev) => (action === "close" ? closePanel(prev) : goBack(prev))),
+          openRack,
+          zoom: (direction) => emitTimelineView({ kind: "zoom", direction }),
+        }),
+      );
     },
     [session, rack, openFileId, showSession],
   );
@@ -460,37 +324,4 @@ function titleForPath(pathname: string): string {
   const segment = pathname.split("/").filter(Boolean)[0] ?? "";
   if (segment === "") return "Workspace";
   return segment.charAt(0).toUpperCase() + segment.slice(1);
-}
-
-/** The draggable divider. Keyboard-reachable, because the mouse is not the only way in. */
-function Divider({ split, onDrag, onCommit, onSet }: { split: number; onDrag: (clientX: number) => void; onCommit: (value: number) => void; onSet: (value: number) => void }) {
-  return (
-    <div
-      role="separator"
-      aria-orientation="vertical"
-      aria-label="Resize the panel"
-      aria-valuenow={Math.round(split * 100)}
-      aria-valuemin={28}
-      aria-valuemax={74}
-      tabIndex={0}
-      className="w-1 shrink-0 cursor-col-resize bg-transparent hover:bg-rule focus-visible:bg-pad"
-      onPointerDown={(e) => {
-        e.currentTarget.setPointerCapture(e.pointerId);
-        onDrag(e.clientX);
-      }}
-      onPointerMove={(e) => {
-        if (e.currentTarget.hasPointerCapture(e.pointerId)) onDrag(e.clientX);
-      }}
-      onPointerUp={(e) => {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-        onCommit(split);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "ArrowLeft") onSet(clampSplit(split + 0.04));
-        else if (e.key === "ArrowRight") onSet(clampSplit(split - 0.04));
-        else return;
-        e.preventDefault();
-      }}
-    />
-  );
 }
