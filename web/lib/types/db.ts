@@ -645,6 +645,105 @@ export type VectorMatch = {
   similarity: number;
 }
 
+
+// ---------------------------------------------------------------------------
+// profiles, usage_events, takedowns (Phase 10)
+// ---------------------------------------------------------------------------
+
+export type Plan = "free" | "pro";
+export type PlanStatus = "active" | "past_due" | "canceled" | "trialing";
+export type UsageKind = "gpu_seconds" | "cpu_seconds" | "chat_turn" | "web_search" | "stem_job";
+export type TakedownStatus = "received" | "reviewing" | "removed" | "counter_noticed" | "restored" | "rejected";
+
+export type ProfileRow = {
+  id: string;
+  email: string | null;
+  plan: Plan;
+  plan_status: PlanStatus;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  corrections_opt_in: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProfileInsert = {
+  id: string;
+  email?: string | null;
+  plan?: Plan;
+  plan_status?: PlanStatus;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+  corrections_opt_in?: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type ProfileUpdate = Partial<ProfileInsert>;
+
+export type UsageEventRow = {
+  id: string;
+  user_id: string;
+  kind: UsageKind;
+  amount: number;
+  job_id: string | null;
+  created_at: string;
+};
+
+export type UsageEventInsert = {
+  id?: string;
+  user_id: string;
+  kind: UsageKind;
+  amount?: number;
+  job_id?: string | null;
+  created_at?: string;
+};
+
+export type UsageEventUpdate = Partial<UsageEventInsert>;
+
+export type TakedownRow = {
+  id: string;
+  claimant_name: string;
+  claimant_email: string;
+  claimant_address: string | null;
+  work_description: string;
+  infringing_description: string;
+  good_faith: boolean;
+  accuracy_sworn: boolean;
+  signature: string;
+  file_id: string | null;
+  user_id: string | null;
+  status: TakedownStatus;
+  notes: string | null;
+  source_ip: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TakedownInsert = {
+  id?: string;
+  claimant_name: string;
+  claimant_email: string;
+  claimant_address?: string | null;
+  work_description: string;
+  infringing_description: string;
+  good_faith?: boolean;
+  accuracy_sworn?: boolean;
+  signature: string;
+  file_id?: string | null;
+  user_id?: string | null;
+  status?: TakedownStatus;
+  notes?: string | null;
+  source_ip?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type TakedownUpdate = Partial<TakedownInsert>;
+
+export type UsageSummaryArgs = { p_since?: string };
+export type UsageSummaryRow = { kind: string; total: number };
+
 export type Database = {
   public: {
     Tables: {
@@ -675,6 +774,9 @@ export type Database = {
         Update: BeatboxProfileUpdate;
         Relationships: [];
       };
+      profiles: { Row: ProfileRow; Insert: ProfileInsert; Update: ProfileUpdate; Relationships: [] };
+      usage_events: { Row: UsageEventRow; Insert: UsageEventInsert; Update: UsageEventUpdate; Relationships: [] };
+      takedowns: { Row: TakedownRow; Insert: TakedownInsert; Update: TakedownUpdate; Relationships: [] };
     };
     Views: Record<string, never>;
     Functions: {
@@ -689,6 +791,10 @@ export type Database = {
       similar_files: {
         Args: SimilarFilesArgs;
         Returns: VectorMatch[];
+      };
+      usage_summary: {
+        Args: UsageSummaryArgs;
+        Returns: UsageSummaryRow[];
       };
     };
     Enums: Record<string, never>;

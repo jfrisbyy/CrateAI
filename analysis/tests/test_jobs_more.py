@@ -248,3 +248,13 @@ def test_beatbox_train_then_transcribe(world):
     assert len(row["notes"]["hits"]) == 8 and row["notes"]["step_view"]
     rejected = run_job(world.job("beatbox_transcribe", None, recording_path=f"library/{uuid.uuid4()}/x.wav")["id"], world.db, world.storage)
     assert rejected["status"] == "failed"
+
+
+def test_usage_events_are_recorded_per_job(world, monkeypatch):
+    monkeypatch.setenv("LOCKEDGROOVE_FAKE_STEMS", "1")
+    run_job(world.job("stems", world.beat["id"], model="htdemucs_ft")["id"], world.db, world.storage)
+    run_job(world.job("chop", world.beat["id"], mode="grid", start_bar=0, end_bar=0, divisions=2)["id"], world.db, world.storage)
+    events = world.db.select("usage_events", {"user_id": USER})
+    kinds = sorted(e["kind"] for e in events)
+    assert kinds == ["cpu_seconds", "gpu_seconds", "stem_job"]
+    assert all(e["amount"] >= 0 for e in events)

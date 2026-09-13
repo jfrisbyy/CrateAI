@@ -4,6 +4,8 @@
 
 import { z } from "zod";
 import type { PrepareResponse } from "@/lib/api/types";
+import { checkStorageQuota } from "@/lib/billing/quota";
+import { getUsage } from "@/lib/billing/usage";
 import { handle, HttpError, json, parseBody, requireUser } from "@/lib/http";
 import { extensionOf, libraryPath, SHA256_RE } from "@/lib/storage/paths";
 import { AUDIO_EXTENSIONS } from "@/lib/upload/fs";
@@ -32,6 +34,10 @@ export async function POST(req: Request) {
       .maybeSingle();
     if (error) throw new HttpError(500, `Could not check the library: ${error.message}`);
 
+    if (!existing) {
+      const decision = checkStorageQuota(await getUsage(supabase, user.id), body.size_bytes);
+      if (!decision.ok) throw new HttpError(413, decision.reason);
+    }
     const response: PrepareResponse = existing
       ? { status: "exists", file: existing }
       : { status: "upload", storage_path: libraryPath(user.id, body.sha256, ext) };

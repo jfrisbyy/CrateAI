@@ -83,3 +83,29 @@ set whenever `analysis/` or `scripts/` change.
 - Storage is a single private bucket `audio`; nothing in it is public.
 - The compute dispatcher rejects any job whose params carry a URL; there is no
   code path from a URL to a library file.
+
+## 6. Billing, quotas, and takedowns (Phase 10)
+
+- Plan limits are constants in `web/lib/billing/limits.ts` (free: 2 GB, 5 stem
+  jobs/month, 30 GPU minutes/month, 50 chat turns/day, 20 web searches/day).
+  Quotas are enforced once, at the dispatch step (`web/lib/compute/dispatch.ts`)
+  and at upload prepare; an over-quota job is marked failed with the reason.
+- Usage: compute writes one `usage_events` row per finished job (CPU or GPU
+  seconds, plus `stem_job`); storage is summed from `files.size_bytes`. The
+  account page (`/account`) shows usage against the limits.
+- Stripe: create a recurring price for Pro, set `STRIPE_SECRET_KEY`,
+  `STRIPE_PRICE_ID`, `NEXT_PUBLIC_APP_URL`, and a webhook endpoint at
+  `POST {app}/api/billing/webhook` for `checkout.session.completed`,
+  `customer.subscription.created|updated|deleted`; put its signing secret in
+  `STRIPE_WEBHOOK_SECRET`. Profiles carry the plan; the webhook updates them.
+- Takedowns: `/legal/dmca` posts to `POST /api/takedown` (rate limited, service
+  role). Review rows in the `takedowns` table (SQL editor or the Supabase
+  dashboard); set `status` as you act (`reviewing`, `removed`, `counter_noticed`,
+  `restored`, `rejected`). Removal is manual: delete the file through the app
+  as the owner, or with the service role, and email both parties. Register the
+  agent at dmca.copyright.gov and fill the `TODO(owner)` lines in
+  `web/app/legal/*`.
+- Health: `GET /api/health` reports the database, compute, and whether the
+  Anthropic key is set.
+- Rate limits: `web/lib/ratelimit.ts` is a per-instance token bucket for public
+  routes; durable limits are the quotas above.

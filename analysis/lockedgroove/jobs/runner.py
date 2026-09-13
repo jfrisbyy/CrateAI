@@ -46,6 +46,23 @@ KIND_PHASE: dict[str, int] = {
     "beatbox_transcribe": 9,  # Beatbox
 }
 
+# Job kinds metered as GPU time (BUILD_PACKET section 19); everything else is CPU time.
+GPU_METERED_KINDS = {"stems", "embed", "beatbox_train"}
+
+
+def _record_usage(db: Database, job: Mapping[str, Any], seconds: float) -> None:
+    """One usage_events row per finished job (best effort; never fails the job)."""
+    kind = str(job.get("kind"))
+    rows = [{"user_id": job.get("user_id"), "kind": "gpu_seconds" if kind in GPU_METERED_KINDS else "cpu_seconds",
+             "amount": round(max(seconds, 0.0), 3), "job_id": job.get("id")}]
+    if kind == "stems":
+        rows.append({"user_id": job.get("user_id"), "kind": "stem_job", "amount": 1, "job_id": job.get("id")})
+    try:
+        db.insert_rows("usage_events", rows)
+    except Exception:
+        log.debug("usage_events write skipped", exc_info=True)
+
+
 # Param names that would carry a location instead of user material. Checked
 # recursively and case-insensitively; suffix forms (``source_url``) count too.
 FORBIDDEN_PARAM_KEYS = ("url", "href", "link", "uri")
@@ -135,6 +152,7 @@ def run_job(
     ctx = JobContext(job_id=job_id, db=db, storage=storage, progress=progress)
     kind = str(job.get("kind"))
     log.info("job %s (%s) running", job_id, kind)
+    t_start = clock()
 
     try:
         assert_no_url_params(params_of(job))
@@ -145,11 +163,13 @@ def run_job(
             result["queued_job_ids"] = list(ctx.queued_job_ids)
         final = db.update_job(job_id, {"status": "done", "result": result, "finished_at": now_iso(), "progress": 1.0})
         log.info("job %s (%s) done", job_id, kind)
+        _record_usage(db, job, clock() - t_start)
     except Exception as exc:  # the row carries the failure; the host does not need the traceback
         message = str(exc).strip() or type(exc).__name__
         log.exception("job %s (%s) failed: %s", job_id, kind, message)
         final = db.update_job(job_id, {"status": "failed", "error": message, "finished_at": now_iso()})
         _mark_file_after_failure(db, job)
+        _record_usage(db, job, clock() - t_start)
         return final
     finally:
         ctx.cleanup()
@@ -163,5 +183,5 @@ def run_job(
     return final
 
 
-__all__ = ["FORBIDDEN_PARAM_KEYS", "KIND_PHASE", "assert_no_url_params", "is_primary_analysis",
+__all__ = ["FORBIDDEN_PARAM_KEYS", "GPU_METERED_KINDS", "KIND_PHASE", "assert_no_url_params", "is_primary_analysis",
            "resolve_handler", "run_job"]

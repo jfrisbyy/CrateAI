@@ -11,6 +11,8 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { checkJobQuota } from "@/lib/billing/quota";
+import { getUsage } from "@/lib/billing/usage";
 import { serverEnv } from "@/lib/env";
 import { tryAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/types/db";
@@ -29,6 +31,22 @@ export async function dispatchJob(jobId: string, userClient: SupabaseClient<Data
   // The dispatch step may use the service role (CONTRACTS section 7); fall
   // back to the caller's client, which RLS also allows for the caller's jobs.
   const writer = tryAdminClient() ?? userClient;
+
+  // Quotas (Phase 10): every job passes through here, so the plan limits are
+  // enforced once. An over-quota job is marked failed with the reason.
+  const { data: jobRow } = await userClient.from("jobs").select("kind, user_id").eq("id", jobId).maybeSingle();
+  if (jobRow) {
+    try {
+      const usage = await getUsage(userClient, jobRow.user_id);
+      const decision = checkJobQuota(usage, jobRow.kind);
+      if (!decision.ok) {
+        await writer.from("jobs").update({ status: "failed", error: decision.reason, finished_at: new Date().toISOString() }).eq("id", jobId);
+        return { ok: false, reason: decision.reason };
+      }
+    } catch (err) {
+      console.warn("[dispatch] quota check skipped:", err instanceof Error ? err.message : err);
+    }
+  }
 
   let result: DispatchResult;
   try {
