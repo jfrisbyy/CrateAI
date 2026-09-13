@@ -197,6 +197,21 @@ route anywhere that turns a URL into a `files` row.
 `note` says why. Rules parse BPM, key, kind, tags and negations first; the
 model parser only sees what is left, and rules win on merge.
 
+### Compatibility (Phase 7)
+
+| Route | Method | Does |
+|---|---|---|
+| `/api/compat` | POST | `{ file_id, limit?, stretch_tolerance?, max_semitones?, max_octaves?, kind?, include_keyless? }` → `{ source, matches: [{ file, score, confidence, confidence_bound_by, confidence_reason, method, compatible, reason, tempo, key, timbre }], considered, note, method }` |
+
+"What in my crate works with this?": the caller's files whose grid and harmony
+meet this one's. The `compatible_files` RPC (section 11) does the coarse
+filtering under RLS; the route scores what comes back with `web/lib/compat/theory.ts`,
+the TypeScript mirror of `analysis/lockedgroove/analysis/compat.py`, and uses the
+CLAP embeddings both files already carry to break ties by timbre. `reason` is the
+row's plain line ("relative minor, 2% faster"); `confidence` is bounded by the
+weakest measurement the claim uses and `confidence_bound_by` names it. A match is
+one `POST /api/layers { file_ids: [open, match] }` from being a layer lane.
+
 ### Layers and re-voice (Phase 7)
 
 | Route | Method | Does |
@@ -277,3 +292,44 @@ characters) returns `{ "ok": true, "model": "<clap model name>", "dim": 512,
 space as the `embeddings.vector` column written by the `embed` job, so the
 web passes them to the `search_embeddings` RPC with `p_model` set to the
 returned model name. 503 means no embedder is installed on that runner.
+
+## 11. Compatibility (`compatible_files`)
+
+`supabase/migrations/20260913000500_compat.sql`. The coarse candidate set behind
+`POST /api/compat`, shaped like `library_filter` and `similar_files`: `security
+invoker` so RLS applies, `set search_path = public, extensions`, effective values
+(a `user_edits` correction wins over the prediction), capped limit.
+
+```sql
+compatible_files(
+  p_file_id            uuid,
+  p_limit              integer          default 20,
+  p_stretch_tolerance  double precision default 0.14,  -- max(r, 1/r) - 1; 0.06 transparent
+  p_max_semitones      integer          default 2,     -- how far the caller will pitch a file
+  p_kind               text             default null,
+  p_max_octaves        integer          default 1,     -- 1 = half-time and double-time
+  p_include_keyless    boolean          default true
+) returns table (file_id uuid, octave_factor double precision, folded_bpm double precision,
+                 stretch_ratio double precision, stretch_distance double precision,
+                 key_relation text, semitone_shift integer)
+```
+
+Tempo is compared octave-folded (170 and 85 BPM are one grid); `stretch_ratio` is
+`source / folded candidate`, the same direction and meaning as
+`combine/align.py`'s `stretch_ratio`. `key_relation` is one of `same`,
+`relative`, `dominant`, `subdominant`, `parallel`, or null when either side has no
+key. Non-tonal material (`file_is_tonal`: the `NON_TONAL_TAGS` of `align.py`, or a
+stem named drums) has no key here whatever its chroma read, matching what the
+layer render does with it.
+
+The theory lives in three places that must agree, and two test suites hold them
+to it via `web/lib/compat/parity.json`:
+
+| | |
+|---|---|
+| `analysis/lockedgroove/analysis/compat.py` | the source of truth: thresholds, relationships, scores, confidence rule |
+| `web/lib/compat/theory.ts` | the port the API and the panel use |
+| `20260913000500_compat.sql` | `pitch_class_index`, `key_direct_relation`, `key_relation_strength`, `key_match_shift`, `key_match_relation`, `file_is_tonal` |
+
+The same migration adds `files_effective_bpm_idx` on `(user_id, coalesce(user_edits
+tempo, tempo))`, which `library_filter` and `search_embeddings` also filter on.

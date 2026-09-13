@@ -661,6 +661,36 @@ export type SimilarFilesArgs = {
   p_limit?: number;
 }
 
+// ---------------------------------------------------------------------------
+// compatible_files (20260913000500_compat.sql): the coarse candidate set behind
+// the Fits with panel. The exact arithmetic and the wording live in
+// web/lib/compat/theory.ts, mirroring analysis/lockedgroove/analysis/compat.py.
+// ---------------------------------------------------------------------------
+
+export type CompatibleFilesArgs = {
+  p_file_id: string;
+  p_limit?: number | null;
+  /** widest stretch offered, as max(r, 1/r) - 1: 0.06 transparent, 0.14 usable */
+  p_stretch_tolerance?: number | null;
+  p_max_semitones?: number | null;
+  p_kind?: FileKind | null;
+  /** halvings or doublings the fold may use; 1 is half-time and double-time */
+  p_max_octaves?: number | null;
+  p_include_keyless?: boolean | null;
+}
+
+export type CompatibleFileRow = {
+  file_id: string;
+  /** the power of two the candidate's tempo is counted at: 0.5 half-time, 2 double-time */
+  octave_factor: number | null;
+  folded_bpm: number | null;
+  stretch_ratio: number | null;
+  stretch_distance: number | null;
+  /** 'same' | 'relative' | 'dominant' | 'subdominant' | 'parallel', null when either side has no key */
+  key_relation: string | null;
+  semitone_shift: number | null;
+}
+
 export type VectorMatch = {
   file_id: string;
   similarity: number;
@@ -813,6 +843,10 @@ export type Database = {
       similar_files: {
         Args: SimilarFilesArgs;
         Returns: VectorMatch[];
+      };
+      compatible_files: {
+        Args: CompatibleFilesArgs;
+        Returns: CompatibleFileRow[];
       };
       usage_summary: {
         Args: UsageSummaryArgs;
