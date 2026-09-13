@@ -24,6 +24,7 @@ compute = [
   "fastapi>=0.110",
   "uvicorn>=0.29",
   "python-dotenv>=1.0",
+  "pyfluidsynth>=1.3",
 ]
 gpu = [
   "torch>=2.2",

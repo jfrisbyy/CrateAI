@@ -44,7 +44,7 @@ SECRET_KEYS = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "COMPUTE_DISPATCH_SE
 VOLUME_NAME = "lockedgroove-model-cache"
 CACHE_MOUNT = "/cache"
 PYTHON_VERSION = "3.11"
-APT_PACKAGES = ["ffmpeg", "libsndfile1"]
+APT_PACKAGES = ["ffmpeg", "libsndfile1", "fluidsynth", "fluid-soundfont-gm"]
 GPU_TYPE = "A10G"
 CPU_SPEC: dict[str, Any] = {"cpu": 4, "memory": 8192, "timeout": 900}
 GPU_SPEC: dict[str, Any] = {"gpu": GPU_TYPE, "timeout": 1800}
@@ -72,6 +72,7 @@ PIP_COMPUTE = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
     "python-dotenv>=1.0",
+    "pyfluidsynth>=1.3",
 ]
 # Phase 2+ (separation, embeddings, transcription). Heavy; included in the GPU
 # image only when LOCKEDGROOVE_GPU_EXTRAS=1 is set at deploy time until the
@@ -88,6 +89,7 @@ IMAGE_ENV = {
     "TORCH_HOME": f"{CACHE_MOUNT}/torch",
     "AUDIO_SEPARATOR_MODEL_DIR": f"{CACHE_MOUNT}/audio-separator",
     "NUMBA_CACHE_DIR": "/tmp/numba-cache",
+    "LOCKEDGROOVE_SOUNDFONT": "/usr/share/sounds/sf2/FluidR3_GM.sf2",
 }
 
 
