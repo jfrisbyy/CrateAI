@@ -20,6 +20,7 @@ import { STEM_MODELS, type StemModelId } from "@/lib/api/stems";
 import { compareTempo, foldTempo, type Mode, type TrackVitals } from "@/lib/compat/theory";
 import type { CompatMatch } from "@/lib/compat/matches";
 import { effective } from "@/lib/report/effective";
+import { lineageFrom, type RegionLineage } from "./lineage";
 import type { FileKind, FileRow, LoopRow, Peaks, StemRow } from "@/lib/types/db";
 import type { SessionRegion, SessionTrack } from "./types";
 
@@ -81,6 +82,13 @@ export interface RackCandidate {
   peaks: Peaks | null;
   /** the whole file's duration, so the span can be drawn in context */
   fileDurationS: number | null;
+  /**
+   * The record's own measured tempo, null when it has none. Carried so that a
+   * region committed to the timeline can name the record's own bars ("bars
+   * 9-16 of Masquerade") instead of only its seconds - see lib/session/lineage.
+   * Never derived from the fit ratio: a tempo nobody measured is not a tempo.
+   */
+  sourceBpm: number | null;
   fit: CandidateFit | null;
   /** where the machine put it, 1-based. A suggestion; the ear decides. */
   rank: number;
@@ -168,6 +176,7 @@ export function candidateFromLoop(file: FileRow, loop: LoopRow, rank: number, se
     provenance: provenanceOf(file, loop.start_s, loop.end_s, stem),
     peaks: file.peaks,
     fileDurationS: file.duration_s,
+    sourceBpm: vitals.bpm,
     fit,
     rank,
   };
@@ -217,6 +226,7 @@ export function candidateFromMatch(match: CompatMatch, rank: number, stem: StemR
     provenance: provenanceOf(file, downbeat, end, stem),
     peaks: file.peaks,
     fileDurationS: file.duration_s,
+    sourceBpm: tempo.candidate_bpm,
     fit: { rate: tempo.ratio ?? 1, note: tempo.note, quality: tempo.quality, semitones: key.semitone_shift, confidence: tempo.confidence },
     rank,
   };
@@ -271,6 +281,19 @@ function componentPairs(components: LoopRow["components"]): Array<[string, numbe
 
 // --- laying a candidate under the session ------------------------------------
 
+/**
+ * What every region tiled from this candidate knows about itself: which record,
+ * which separation, which span, which transform. Attached at tiling time so a
+ * region is never on the timeline without it, and never rewritten by an edit
+ * (lib/session/lineage.ts, lib/session/arrangement.ts).
+ *
+ * `beatsPerBar` is four, which is the assumption the whole product makes about
+ * metre; nothing measures it yet, and the handoff says so.
+ */
+export function lineageOfCandidate(candidate: RackCandidate): RegionLineage {
+  return lineageFrom(candidate, { sourceBpm: candidate.sourceBpm });
+}
+
 /** The lane the rack auditions into. One lane, replaced in place, so A/B never adds tracks. */
 export const AUDITION_TRACK_ID = "audition";
 
@@ -313,6 +336,7 @@ export function tileCandidate(options: {
   const prefix = options.idPrefix ?? `${trackId}:${candidate.id}`;
   if (cycleS <= 0 || length <= 0) return { regions: [], cycleS: 0, repeats: 0 };
   const regions: SessionRegion[] = [];
+  const lineage = lineageOfCandidate(candidate);
   let at = span.startS;
   let i = 0;
   while (at < span.endS - 1e-6 && i < 512) {
@@ -326,6 +350,7 @@ export function tileCandidate(options: {
       offsetS: candidate.audio.downbeatS,
       gain,
       rate,
+      lineage,
     });
     at += cycleS;
     i++;
@@ -494,6 +519,7 @@ export function candidateFromHit(hit: SearchHitLike, rank: number, session: Trac
     provenance: provenanceOf(file, 0, end, stem),
     peaks: file.peaks,
     fileDurationS: file.duration_s,
+    sourceBpm: vitals.bpm,
     fit,
     rank,
   };

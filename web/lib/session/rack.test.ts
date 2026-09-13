@@ -96,6 +96,7 @@ function candidate(partial: Partial<RackCandidate> = {}): RackCandidate {
     provenance: { fileId: "rec", fileName: "rec", startS: 0, endS: 8, kind: "original", stem: null, separationModel: null, separationModelLabel: null, parentFileId: null },
     peaks: null,
     fileDurationS: 180,
+    sourceBpm: null,
     fit: null,
     rank: 1,
     ...partial,

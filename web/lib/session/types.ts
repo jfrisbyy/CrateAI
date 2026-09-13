@@ -11,6 +11,8 @@
 // browser, a number a test controls in node). Suffix `S` for session seconds,
 // `Wall` for clock seconds. Gains are linear, never dB.
 
+import type { RegionLineage } from "./lineage";
+
 /** A region's audio, addressed by id; the decode cache turns one into samples. */
 export type SourceId = string;
 
@@ -78,6 +80,15 @@ export interface SessionRegion {
    * handoff. Optional; absent means 1.
    */
   rate?: number;
+  /**
+   * Where this audio came from and what was done to it: which record, which
+   * separation, which span, which transform. A normal DAW throws this away at
+   * import; here it is what makes the breakdown honest and principle 1
+   * enforceable, so every edit in `arrangement.ts` carries it through
+   * untouched (`lineage.ts`). Optional only because a region can be built by
+   * hand in a test.
+   */
+  lineage?: RegionLineage;
 }
 
 /**

@@ -54,8 +54,8 @@ export function TransportBar({ onOpenSession }: { onOpenSession: () => void }) {
         </span>
       )}
 
-      <button type="button" className={btnQuiet} onClick={onOpenSession} title="The lanes in the session, with mute, solo and level">
-        {lanes === 0 ? "No lanes yet" : `${lanes} ${lanes === 1 ? "lane" : "lanes"}`}
+      <button type="button" className={btnQuiet} onClick={onOpenSession} title="The song: regions on a timeline, with mute, solo, level and the lineage of every region">
+        {lanes === 0 ? "No lanes yet" : `Song · ${lanes} ${lanes === 1 ? "lane" : "lanes"}`}
       </button>
 
       {session.waiting.length > 0 && (
