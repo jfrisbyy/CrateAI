@@ -36,10 +36,14 @@ Vercel: project root `web/`, framework Next.js, the same env vars. Set
 
 ```bash
 cd analysis
-uv sync --extra compute --extra dev
-cp .env.example .env         # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, COMPUTE_DISPATCH_SECRET
-uv run lockedgroove-server   # http://127.0.0.1:8787  (set COMPUTE_DISPATCH_URL to this in web/.env.local)
+uv sync --extra compute                      # the dev group (pytest, ruff) is installed by default
+cp .env.example .env                         # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, COMPUTE_DISPATCH_SECRET
+uv run --extra compute lockedgroove-server   # http://127.0.0.1:8787  (set COMPUTE_DISPATCH_URL to this in web/.env.local)
 ```
+
+`uv run` syncs the environment to exactly what it was asked for, so a plain
+`uv run ...` removes the `compute` extra again; pass `--extra compute` to
+every command that needs the server or Modal.
 
 Development stand-ins when the models aren't installed:
 `LOCKEDGROOVE_FAKE_STEMS=1` (band-split "separation"),
@@ -50,16 +54,16 @@ labeled so they can be re-run with the real models.
 
 ```bash
 cd analysis && uv sync --extra compute
-uv run modal token new
-uv run modal secret create lockedgroove \
+uv run --extra compute modal token new
+uv run --extra compute modal secret create lockedgroove \
     SUPABASE_URL=https://ufmpwtjtyzmfucjyuhqo.supabase.co \
     SUPABASE_SERVICE_ROLE_KEY=<service role key> \
     COMPUTE_DISPATCH_SECRET=<same value as the web env>
-LOCKEDGROOVE_GPU_EXTRAS=1 uv run modal deploy lockedgroove/modal_app.py
+LOCKEDGROOVE_GPU_EXTRAS=1 uv run --extra compute modal deploy lockedgroove/modal_app.py
 ```
 
 The deploy prints the dispatcher URL (`https://<workspace>--lockedgroove-web.modal.run`).
-Check it with `curl $URL/health`. Logs: `uv run modal app logs lockedgroove`.
+Check it with `curl $URL/health`. Logs: `uv run --extra compute modal app logs lockedgroove`.
 Model weights are cached on the `lockedgroove-model-cache` volume.
 
 ## 4. Tests and the harness
@@ -76,6 +80,19 @@ python scripts/fetch_public_datasets.py --list        # then --dataset all
 CI (`.github/workflows/ci.yml`) runs the Python suite, ruff, the web
 typecheck/lint/test/build, the schema check, and the harness on the synthetic
 set whenever `analysis/` or `scripts/` change.
+
+If a test or a harness worker dies with `Segmentation fault` inside
+`numba/np/ufunc/gufunc.py` (from `librosa.beat.beat_track`), the shared numba
+cache is torn (several fresh processes compiled the same kernel at once).
+Delete it and run once single-process:
+
+```bash
+find analysis/.venv -name '*.nbi' -delete -o -name '*.nbc' -delete
+cd analysis && uv run python -c "import librosa, numpy as np; librosa.beat.beat_track(y=librosa.clicks(times=np.arange(0, 4, 0.5), sr=22050, length=88200), sr=22050)"
+```
+
+The harness warms this cache in the parent process before it starts workers,
+and records an item as lost instead of hanging if a worker still dies.
 
 ## 5. Operations notes
 

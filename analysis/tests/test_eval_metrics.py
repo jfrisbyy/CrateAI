@@ -428,3 +428,23 @@ def test_public_dataset_loaders_on_fake_layouts(tmp_path):
     assert H.load_dataset("giantsteps_key", tmp_path / "nowhere").note.startswith("not found")
     with pytest.raises(ValueError):
         H.load_dataset("nope", tmp_path)
+
+
+def test_parallel_run_records_a_crashed_worker_instead_of_hanging(tmp_path):
+    # Items on disk so the spawn pool is used; the worker dies without ever
+    # sending a result, the way a native crash does. The run must still finish.
+    import soundfile as sf
+
+    sr = 22050
+    y = click_track(120.0, 1.0, sr)
+    items = []
+    for i in range(2):
+        path = tmp_path / f"c{i}.wav"
+        sf.write(path, y, sr)
+        items.append(H.Item(f"c{i}", _truth(bpm=120.0), path=str(path)))
+    ds = H.Dataset("crash", items)
+    results = H.run_dataset(ds, workers=2, worker_fn=H._crash_worker, stall_timeout_s=2.0)
+    assert [r.id for r in results] == ["c0", "c1"]
+    for r in results:
+        assert "lost" in r.prediction.errors["analysis"]
+        assert r.scores["bpm_exact"].value == 0.0

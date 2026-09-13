@@ -49,6 +49,21 @@ dev = [
 [project.scripts]
 lockedgroove-server = "lockedgroove.server:main"
 
+# The same list as the `dev` extra above. The group is what `uv sync` and
+# `uv run` install by default (so `uv run pytest` works and a plain `uv run`
+# never prunes pytest); the extra is what CI's `pip install -e .[dev]` uses.
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "jsonschema>=4.21",
+  "httpx>=0.27",
+  "fastapi>=0.110",
+  "python-dotenv>=1.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

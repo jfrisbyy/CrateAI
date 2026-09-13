@@ -9,6 +9,8 @@ they're scheduled and out of here when they ship.
 - [ ] Files longer than 20 minutes: vitals only on the first 20 minutes, note in the job result and the header.
 - [ ] Public datasets could not be downloaded in the build environment (egress policy); the fetcher's tarball extraction, md5 checks, and resume are code-reviewed but unexercised. First real run: `python scripts/fetch_public_datasets.py --dataset all`.
 - [ ] Follow-up jobs (a stem's analyze, a render's analyze) are dispatched in-process; see the durable dispatch proposal.
+- [ ] CI installs `analysis[dev]` with `uv pip install` rather than from `analysis/uv.lock`; switch it to `uv sync --frozen` so CI runs the locked versions (numba 0.67, numpy 1.26, librosa 0.11 today).
+- [ ] The synthetic gates for `bpm_exact` sit below the packet's 0.80 by design (the hip-hop tempo prior on a set whose tempos are uniform over 65–175 BPM; OPEN_QUESTIONS L.37). Re-raise them once the corrections set or the public sets show what real material scores.
 
 ## Phase 1
 - [ ] Loop finder in beats mode (downbeat confidence under 0.5): hats on every 8th make `onset_lock` unable to prefer the downbeat; see the downbeat-likelihood proposal.
@@ -38,5 +40,10 @@ they're scheduled and out of here when they ship.
 - [ ] Signalsmith Stretch bindings are optional; the librosa phase-vocoder fallback is lower quality on transients. Confirm the licensing decision in OPEN_QUESTIONS H.27.
 - [ ] FluidSynth and a General MIDI soundfont must be in the compute image for sampled re-voice renders; the additive fallback is preview quality and says so.
 
+## Phase 8
+- [ ] The chat's turn and web-search caps count from `messages` and recorded tool calls; move them onto `usage_events` / `usage_summary` (the table every compute job already meters into) so `/api/web/search` called directly is counted too. See "Usage events behind every quota" in PROPOSALS.
+- [ ] Not exercised without an API key: a real model turn through `/api/chat`, the strict tool schemas against the live API, and incremental NDJSON delivery through Vercel. First signed-in run with `ANTHROPIC_API_KEY` set should watch these.
+
 ## Phase 10
 - [ ] Backups: point-in-time recovery is a Supabase plan setting, not code; documented in the runbook.
+- [ ] Stripe, the DMCA agent registration and the legal pages' company details are placeholders until the owner fills them (RUNBOOK section 6).

@@ -521,10 +521,44 @@ def _run_from_callable(item: Item, analyze_fn: Callable[[Item], Any]) -> ItemRun
     return ItemRun(item.id, pred, time.perf_counter() - t0)
 
 
+def _warm_numba_cache(stages: list[str] | None) -> None:
+    """Compile librosa's numba kernels once, in this process, before the pool starts.
+
+    Workers share the on-disk numba cache (``site-packages/librosa/**/__pycache__/*.nbi``).
+    Several fresh workers compiling and writing the same kernels at once has
+    left a torn cache that segfaulted every later process (the beat tracker's
+    gufunc); one warm run here fills the cache so the workers only read it.
+    """
+    try:
+        from lockedgroove.pipeline import analyze_array
+        from lockedgroove.testing.synth import click_track
+
+        sr = 22050
+        analyze_array(click_track(120.0, 6.0, sr), sr, stages=stages)
+    except Exception as exc:  # the real items report their own errors
+        logging.getLogger(__name__).warning("numba warm-up failed: %s", exc)
+
+
+def _crash_worker(item: Item, stages: list[str] | None = None) -> ItemRun:  # pragma: no cover - runs in a child
+    """A worker function for the tests: dies the way a native crash does, without a result."""
+    import os
+
+    os._exit(3)
+
+
 def run_dataset(dataset: Dataset, stages: list[str] | None = None, workers: int = 1,
                 analyze_fn: Callable[[Item], Any] | None = None,
-                on_progress: Callable[[str, int, int, ItemResult], None] | None = None) -> list[ItemResult]:
-    """Analyze and score every item; results come back in the dataset's item order."""
+                on_progress: Callable[[str, int, int, ItemResult], None] | None = None,
+                stall_timeout_s: float = 600.0,
+                worker_fn: Callable[..., ItemRun] | None = None) -> list[ItemResult]:
+    """Analyze and score every item; results come back in the dataset's item order.
+
+    With workers > 1 the items run in a spawn pool. A worker that dies mid-item
+    (a crash inside a native library) is replaced by the pool but its result
+    never arrives, and ``imap`` would wait forever; so after ``stall_timeout_s``
+    without any item finishing, the items still pending are recorded as errors
+    and the run completes.
+    """
     items = list(dataset.items)
     by_id = {it.id: it for it in items}
     if len(by_id) != len(items):
@@ -543,12 +577,37 @@ def run_dataset(dataset: Dataset, stages: list[str] | None = None, workers: int 
 
     parallel = workers > 1 and analyze_fn is None and all(it.audio is None for it in items) and len(items) > 1
     if parallel:
+        if worker_fn is None:
+            _warm_numba_cache(stages)
         ctx = multiprocessing.get_context("spawn")
-        fn = functools.partial(analyze_item, stages=stages)
+        fn = functools.partial(worker_fn or analyze_item, stages=stages)
         level = logging.getLogger().getEffectiveLevel()
         with ctx.Pool(min(workers, len(items)), initializer=_worker_init, initargs=(level,)) as pool:
-            for run in pool.imap_unordered(fn, items, chunksize=1):
-                finish(run)
+            pending = {it.id: pool.apply_async(fn, (it,)) for it in items}
+            last_progress = time.monotonic()
+            while pending:
+                ready = [iid for iid, ar in pending.items() if ar.ready()]
+                for iid in ready:
+                    ar = pending.pop(iid)
+                    try:
+                        run = ar.get()
+                    except Exception as exc:  # raised outside analyze_item's own guard
+                        run = ItemRun(iid, Prediction(errors={"analysis": f"{type(exc).__name__}: {exc}"}))
+                    finish(run)
+                    last_progress = time.monotonic()
+                if not pending:
+                    break
+                if not ready:
+                    if time.monotonic() - last_progress > stall_timeout_s:
+                        logging.getLogger(__name__).error(
+                            "no item finished in %.0fs; recording %d pending item(s) as lost",
+                            stall_timeout_s, len(pending))
+                        for iid in list(pending):
+                            pending.pop(iid)
+                            msg = f"lost: no result within {stall_timeout_s:.0f}s (worker crash?)"
+                            finish(ItemRun(iid, Prediction(errors={"analysis": msg})))
+                        break
+                    time.sleep(0.25)
     else:
         for item in items:
             finish(_run_from_callable(item, analyze_fn) if analyze_fn else analyze_item(item, stages))

@@ -42,6 +42,9 @@ export function TopBar({
         <Link href="/beatbox" className={btn} title="Enroll your kick, snare and hat; beatbox a pattern to MIDI">
           Beatbox
         </Link>
+        <Link href="/account" className={btn} title="Plan, usage this month, billing">
+          Account
+        </Link>
         <button type="button" onClick={onKeymap} className={btn} title="Keyboard map (?)" aria-label="Keyboard map">
           <span className="font-mono">?</span>
         </button>
