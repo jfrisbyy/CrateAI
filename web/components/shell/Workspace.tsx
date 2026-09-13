@@ -29,15 +29,25 @@ import { LibraryPane } from "@/components/library/LibraryPane";
 import { RackPanel } from "@/components/rack/RackPanel";
 import { openRack, rackKey } from "@/components/rack/rackEvents";
 import { useRack } from "@/components/rack/useRack";
+import { SongSurface } from "@/components/timeline/SongSurface";
+import { emitTimelineView } from "@/components/timeline/timelineEvents";
 import { btnQuiet, cx } from "@/components/ui";
 import { handleKeydown, onCommand, onPad } from "@/lib/keys/commands";
-import { ALL_TRACKS, describeCommand, resolveTarget, type SessionCommand } from "@/lib/session/commands";
+import {
+  deleteRegion,
+  duplicateRegion,
+  regionById,
+  removeTrack as removeTrackFrom,
+  splitRegion,
+  trimTail,
+  type Arrangement,
+} from "@/lib/session/arrangement";
+import { ALL_TRACKS, describeCommand, resolveRegionTarget, resolveTarget, type SessionCommand } from "@/lib/session/commands";
 import { candidateAt, stepCandidate } from "@/lib/session/rack";
-import { loopForBars } from "@/lib/session/time";
+import { barToSeconds, loopForBars, secondsPerBar } from "@/lib/session/time";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 import { KeymapSheet } from "./KeymapSheet";
 import { SearchProvider } from "./searchState";
-import { SessionPanel } from "./SessionPanel";
 import { SessionProvider, useSession } from "./SessionProvider";
 import { emitCommandResult, onSessionCommand } from "./sessionCommands";
 import {
@@ -117,7 +127,7 @@ function Shell({ children }: { children: ReactNode }) {
     if (sourceBpm) adoptTempo(sourceBpm);
   }, [sourceBpm, adoptTempo]);
 
-  const showSession = useCallback(() => setStack((prev) => pushSurface(prev, { kind: "session", id: "session", title: "The session" })), []);
+  const showSession = useCallback(() => setStack((prev) => pushSurface(prev, { kind: "session", id: "session", title: "The song" })), []);
 
   // ---- the divider ---------------------------------------------------------
   useEffect(() => {
@@ -216,9 +226,77 @@ function Shell({ children }: { children: ReactNode }) {
         case "panel":
           setStack((prev) => (command.action === "close" ? closePanel(prev) : goBack(prev)));
           return say(describeCommand(command));
+
+        // --- the song ---
+        // Every one of these runs the same function the mouse runs, on the same
+        // grid, through the same undo stack. There is no second code path by
+        // which a sentence can change the arrangement.
+        case "song":
+          showSession();
+          return say(describeCommand(command));
+        case "undo":
+          if (!session.canUndo) return say("there is nothing to undo yet.", false);
+          session.undo();
+          return say(describeCommand(command));
+        case "redo":
+          if (!session.canRedo) return say("there is nothing to redo.", false);
+          session.redo();
+          return say(describeCommand(command));
+        case "snap":
+          session.setSnap(command.unit);
+          return say(describeCommand(command));
+        case "zoom":
+          showSession();
+          emitTimelineView({ kind: "zoom", direction: command.direction });
+          return say(describeCommand(command));
+        case "move-region":
+        case "trim-region":
+        case "duplicate-region":
+        case "split-region":
+        case "delete-region": {
+          const arrangement = session.arrangement;
+          const found = resolveRegionTarget(command.target, arrangement.tracks, arrangement.regions, session.selectedRegionId);
+          if (!found.regionId) return say(found.note ?? "there is no region to change.", false);
+          const regionId = found.regionId;
+          const region = regionById(arrangement, regionId);
+          if (!region) return say("that region is no longer in the song.", false);
+          const grid = session.grid;
+          const barS = session.tempo ? secondsPerBar(session.tempo) : 0;
+          let next: Arrangement = arrangement;
+          if (command.kind === "move-region") {
+            if (command.toBar !== null && !session.tempo) return say("the session has no measured tempo yet, so it has no bars. Say it in seconds.", false);
+            const toS = command.toBar !== null && session.tempo ? barToSeconds(command.toBar, session.tempo) : (command.toS ?? region.startS);
+            next = { tracks: arrangement.tracks, regions: arrangement.regions.map((r) => (r.id === regionId ? { ...r, startS: Math.max(0, toS) } : r)) };
+          } else if (command.kind === "trim-region") {
+            if (command.bars !== null && barS <= 0) return say("the session has no measured tempo yet, so it has no bars. Say it in seconds.", false);
+            const lengthS = command.bars !== null ? command.bars * barS : (command.seconds ?? region.durationS);
+            next = trimTail(arrangement, regionId, region.startS + lengthS, { grid });
+          } else if (command.kind === "duplicate-region") {
+            next = duplicateRegion(arrangement, regionId, { grid });
+          } else if (command.kind === "split-region") {
+            if (command.atBar !== null && !session.tempo) return say("the session has no measured tempo yet, so it has no bars. Split it at the playhead instead.", false);
+            const atS = command.atBar !== null && session.tempo ? barToSeconds(command.atBar, session.tempo) : session.position();
+            next = splitRegion(arrangement, regionId, atS, { grid });
+            if (next === arrangement) return say("that cut is outside the region, so there is nothing to split.", false);
+          } else {
+            next = deleteRegion(arrangement, regionId);
+            session.selectRegion(null);
+          }
+          session.edit(next, describeCommand(command));
+          showSession();
+          return say(describeCommand(command));
+        }
+        case "remove-track": {
+          const ids = resolveTarget(command.target, session.tracks);
+          if (!ids || ids.length === 0) return say(`nothing in the session is called ${command.target}.`, false);
+          let next = session.arrangement;
+          for (const id of ids) next = removeTrackFrom(next, id);
+          session.edit(next, describeCommand(command));
+          return say(describeCommand(command));
+        }
       }
     },
-    [session, rack, openFileId],
+    [session, rack, openFileId, showSession],
   );
   useEffect(() => onSessionCommand(apply), [apply]);
 
@@ -360,8 +438,8 @@ function Shell({ children }: { children: ReactNode }) {
                     </div>
                   )}
                   {current.kind === "session" && (
-                    <div className="absolute inset-0 flex flex-col overflow-y-auto">
-                      <SessionPanel />
+                    <div className="absolute inset-0 flex flex-col">
+                      <SongSurface />
                     </div>
                   )}
                 </div>

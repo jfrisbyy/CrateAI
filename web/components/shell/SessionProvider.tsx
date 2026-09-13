@@ -15,9 +15,25 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, errorMessage } from "@/lib/api/client";
 import { fetchAndDecode } from "@/lib/audio/decode";
+import { arrangementOf, ephemeralOf, sameArrangement, type Arrangement } from "@/lib/session/arrangement";
 import { DecodeCache, DEFAULT_BUDGET_BYTES, decodedBytes, type DecodedSource } from "@/lib/session/decodeCache";
 import { SessionEngine, type EngineSnapshot } from "@/lib/session/engine";
+import {
+  canRedo as historyCanRedo,
+  canUndo as historyCanUndo,
+  initHistory,
+  present as presentOf,
+  record as recordHistory,
+  redo as redoHistory,
+  redoLabel as redoLabelOf,
+  replacePresent,
+  undo as undoHistory,
+  undoLabel as undoLabelOf,
+  type History,
+} from "@/lib/session/history";
 import { clampGain, dbFromGain, gainFromDb } from "@/lib/session/mix";
+import { planReconcile } from "@/lib/session/reconcile";
+import type { Grid, SnapUnit } from "@/lib/session/snap";
 import {
   AUDITION_TRACK_ID,
   auditionTrack,
@@ -80,6 +96,39 @@ export interface SessionState {
   /** picks the ranking should learn from; nothing writes them yet */
   corrections: RankCorrection[];
 
+  // --- the song (Surface 2) ---
+  /**
+   * The song without the audition lane: the lanes and regions the timeline
+   * draws and the undo stack remembers. Auditioning is not an edit, so it is
+   * held out here and put back when the engine is handed the result.
+   */
+  arrangement: Arrangement;
+  /**
+   * Make an edit. The difference against what is playing is worked out by
+   * `planReconcile` and applied lane by lane, so an edit on one lane cannot
+   * interrupt another; the result goes on the undo stack under `label`.
+   * `coalesceKey` folds a run of edits — a held arrow key — into one step.
+   */
+  edit: (next: Arrangement, label: string, options?: { coalesceKey?: string }) => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  undoLabel: string | null;
+  redoLabel: string | null;
+  /** the division a drag, a nudge and a sentence all land on */
+  snap: SnapUnit;
+  setSnap: (unit: SnapUnit) => void;
+  /**
+   * The region under the producer's hand. It lives here rather than in the
+   * timeline because "move it to bar 17" has to mean the same region the mouse
+   * has selected — the sentence and the pointer move one control, not two.
+   */
+  selectedRegionId: string | null;
+  selectRegion: (regionId: string | null) => void;
+  /** the grid every edit is measured against: the session's tempo and that division */
+  grid: Grid;
+
   /** decode this file now (a hover, a first play) */
   warm: (fileId: string) => void;
   decodeStateOf: (fileId: string) => DecodeState;
@@ -113,6 +162,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [memory, setMemory] = useState({ bytes: 0, maxBytes: DEFAULT_BUDGET_BYTES, overBudget: false });
   const [tempo, setTempo] = useState<SessionTempo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [snap, setSnap] = useState<SnapUnit>("bar");
+  const [selectedRegionId, selectRegion] = useState<string | null>(null);
+  // The undo stack is a ref because it must be written from callbacks that are
+  // also reading it; `historyTick` is what makes the buttons re-render.
+  const historyRef = useRef<History<Arrangement>>(initHistory({ tracks: [], regions: [] }, "empty session"));
+  const [historyTick, setHistoryTick] = useState(0);
 
   const readMemory = useCallback(() => {
     const cache = cacheRef.current;
@@ -229,13 +284,90 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     engine.setGain(trackId, clampGain(gainFromDb(dbFromGain(track.gain) + db)));
   }, []);
   const setMasterGain = useCallback((gain: number) => ensure()?.engine.setMasterGain(clampGain(gain)), [ensure]);
-  const removeTrack = useCallback(
-    (trackId: string) => {
-      engineRef.current?.removeTrack(trackId);
-      if (trackId === AUDITION_TRACK_ID) setAuditioning(null);
+
+  // --- the song -----------------------------------------------------------
+
+  const arrangement = useMemo(() => arrangementOf(snapshot), [snapshot]);
+
+  /**
+   * Hand an arrangement to the engine, lane by lane. `planReconcile` decides
+   * what actually has to move; everything it leaves out keeps playing
+   * untouched, which is why dragging a region on one lane cannot interrupt
+   * another. The audition lane is put back on top, because it is the rack's
+   * and not the song's.
+   */
+  const applyArrangement = useCallback(
+    (next: Arrangement) => {
+      const parts = ensure();
+      if (!parts) return;
+      const { engine } = parts;
+      const live = engine.snapshot();
+      const previous = arrangementOf(live);
+      const plan = planReconcile(previous, next, { playing: live.transport.playing, positionS: engine.position(), loop: live.transport.loop });
+      if (plan.empty) return;
+      if (plan.tracks) engine.setTracks([...plan.tracks, ...ephemeralOf(live).tracks]);
+      for (const lane of plan.lanes) engine.setTrackRegions(lane.trackId, lane.regions);
       sync();
     },
-    [sync],
+    [ensure, sync],
+  );
+
+  const edit = useCallback(
+    (next: Arrangement, label: string, options: { coalesceKey?: string } = {}) => {
+      const previous = presentOf(historyRef.current);
+      if (sameArrangement(previous, next)) return;
+      applyArrangement(next);
+      historyRef.current = recordHistory(historyRef.current, next, label, { coalesceKey: options.coalesceKey ?? null });
+      setHistoryTick((n) => n + 1);
+    },
+    [applyArrangement],
+  );
+
+  const undo = useCallback(() => {
+    if (!historyCanUndo(historyRef.current)) return;
+    historyRef.current = undoHistory(historyRef.current);
+    applyArrangement(presentOf(historyRef.current));
+    setHistoryTick((n) => n + 1);
+  }, [applyArrangement]);
+
+  const redo = useCallback(() => {
+    if (!historyCanRedo(historyRef.current)) return;
+    historyRef.current = redoHistory(historyRef.current);
+    applyArrangement(presentOf(historyRef.current));
+    setHistoryTick((n) => n + 1);
+  }, [applyArrangement]);
+
+  /**
+   * Keep the stack's idea of "now" honest when the song changed for a reason
+   * that is not an edit: a lane arriving from the rack, a decode landing. Undo
+   * still walks back past it; it just does not record the engine's echo of an
+   * edit that has already been recorded.
+   */
+  useEffect(() => {
+    if (!sameArrangement(presentOf(historyRef.current), arrangement)) {
+      historyRef.current = replacePresent(historyRef.current, arrangement);
+      setHistoryTick((n) => n + 1);
+    }
+  }, [arrangement]);
+
+  const removeTrack = useCallback(
+    (trackId: string) => {
+      if (trackId === AUDITION_TRACK_ID) {
+        engineRef.current?.removeTrack(trackId);
+        setAuditioning(null);
+        sync();
+        return;
+      }
+      const engine = engineRef.current;
+      if (!engine) return;
+      const current = arrangementOf(engine.snapshot());
+      const track = current.tracks.find((t) => t.id === trackId);
+      if (!track) return;
+      // Through the arrangement rather than straight to the engine, so taking a
+      // lane out is one press of undo away from coming back.
+      edit({ tracks: current.tracks.filter((t) => t.id !== trackId), regions: current.regions.filter((r) => r.trackId !== trackId) }, `remove ${track.name}`);
+    },
+    [edit, sync],
   );
 
   // --- the rack -----------------------------------------------------------
@@ -292,6 +424,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setAuditioning(null);
       }
       setCorrections((prev) => [...prev, correctionFor(candidate, "commit")]);
+      // Committing is an edit to the song, so it goes on the undo stack: a
+      // candidate kept by mistake is one press away from being gone again.
+      historyRef.current = recordHistory(historyRef.current, arrangementOf(engine.snapshot()), `keep ${candidate.title}`);
+      setHistoryTick((n) => n + 1);
       sync();
       if (!engine.isPlaying) engine.play();
     },
@@ -308,6 +444,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const contentEndS = useMemo(() => snapshot.regions.reduce((end, r) => Math.max(end, r.startS + r.durationS), 0), [snapshot.regions]);
+  const grid = useMemo<Grid>(() => ({ tempo, snap }), [tempo, snap]);
+  // historyTick is the re-render signal; the stack itself lives in a ref so the
+  // callbacks that write it can also read it without going stale.
+  const history = useMemo(
+    () => ({
+      canUndo: historyCanUndo(historyRef.current),
+      canRedo: historyCanRedo(historyRef.current),
+      undoLabel: undoLabelOf(historyRef.current),
+      redoLabel: redoLabelOf(historyRef.current),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [historyTick],
+  );
 
   const value: SessionState = {
     tracks: snapshot.tracks,
@@ -337,6 +486,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     audition,
     commit,
     corrections,
+    arrangement,
+    edit,
+    undo,
+    redo,
+    canUndo: history.canUndo,
+    canRedo: history.canRedo,
+    undoLabel: history.undoLabel,
+    redoLabel: history.redoLabel,
+    snap,
+    setSnap,
+    selectedRegionId,
+    selectRegion,
+    grid,
     warm,
     decodeStateOf,
     decodeErrorOf,

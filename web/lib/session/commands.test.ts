@@ -3,7 +3,7 @@
 // model still gets the conversation.
 
 import { describe as group, expect, it } from "vitest";
-import { ALL_TRACKS, describeCommand, parseSessionCommand, resolveTarget } from "./commands";
+import { ALL_TRACKS, describeCommand, parseSessionCommand, resolveRegionTarget, resolveTarget, SELECTION } from "./commands";
 import type { SessionTrack } from "./types";
 
 function track(id: string, name: string, provenance: string | null = null): SessionTrack {
@@ -152,5 +152,134 @@ group("saying what happened", () => {
     for (const command of commands) expect(describeCommand(command).length).toBeGreaterThan(0);
     expect(describeCommand({ kind: "loop-bars", fromBar: 9, toBar: 16 })).toBe("looping bars 9–16");
     expect(describeCommand({ kind: "solo", target: ALL_TRACKS, on: false })).toBe("unsoloed everything");
+  });
+});
+
+group("the song by sentence", () => {
+  it("opens the surface, and moves through the history of edits", () => {
+    expect(parseSessionCommand("show the song")).toEqual({ kind: "song" });
+    expect(parseSessionCommand("open the timeline")).toEqual({ kind: "song" });
+    expect(parseSessionCommand("undo")).toEqual({ kind: "undo" });
+    expect(parseSessionCommand("take that back")).toEqual({ kind: "undo" });
+    expect(parseSessionCommand("redo")).toEqual({ kind: "redo" });
+  });
+
+  it("sets the grid a drag lands on", () => {
+    expect(parseSessionCommand("snap to bars")).toEqual({ kind: "snap", unit: "bar" });
+    expect(parseSessionCommand("snap to 16ths")).toEqual({ kind: "snap", unit: "sixteenth" });
+    expect(parseSessionCommand("snap off")).toEqual({ kind: "snap", unit: "off" });
+    expect(parseSessionCommand("no snap")).toEqual({ kind: "snap", unit: "off" });
+  });
+
+  it("zooms", () => {
+    expect(parseSessionCommand("zoom in")).toEqual({ kind: "zoom", direction: "in" });
+    expect(parseSessionCommand("zoom out")).toEqual({ kind: "zoom", direction: "out" });
+    expect(parseSessionCommand("fit the song")).toEqual({ kind: "zoom", direction: "fit" });
+  });
+
+  it("moves a region the way a drag would, by bar or by second", () => {
+    expect(parseSessionCommand("move the drums to bar 17")).toEqual({ kind: "move-region", target: "drums", toBar: 17, toS: null });
+    expect(parseSessionCommand("put the horns at bar 9")).toEqual({ kind: "move-region", target: "horns", toBar: 9, toS: null });
+    expect(parseSessionCommand("move it to 12s")).toEqual({ kind: "move-region", target: SELECTION, toBar: null, toS: 12 });
+  });
+
+  it("trims a region the way dragging its edge would", () => {
+    expect(parseSessionCommand("trim the drums to 4 bars")).toEqual({ kind: "trim-region", target: "drums", bars: 4, seconds: null });
+    expect(parseSessionCommand("make it 8 bars long")).toEqual({ kind: "trim-region", target: SELECTION, bars: 8, seconds: null });
+    expect(parseSessionCommand("trim the break to 2.5s")).toEqual({ kind: "trim-region", target: "break", bars: null, seconds: 2.5 });
+  });
+
+  it("copies, splits and removes", () => {
+    expect(parseSessionCommand("duplicate the drums")).toEqual({ kind: "duplicate-region", target: "drums" });
+    expect(parseSessionCommand("repeat it")).toEqual({ kind: "duplicate-region", target: SELECTION });
+    expect(parseSessionCommand("split the drums at bar 9")).toEqual({ kind: "split-region", target: "drums", atBar: 9 });
+    expect(parseSessionCommand("split it here")).toEqual({ kind: "split-region", target: SELECTION, atBar: null });
+    expect(parseSessionCommand("delete it")).toEqual({ kind: "delete-region", target: SELECTION });
+    expect(parseSessionCommand("remove the horns")).toEqual({ kind: "remove-track", target: "horns" });
+    expect(parseSessionCommand("take the bass out")).toEqual({ kind: "remove-track", target: "bass" });
+  });
+
+  it("leaves a request that only looks like an edit to the model", () => {
+    const conversation = [
+      "why did you move the drums to bar 17",
+      "remove the vocals from this record",
+      "can you split the stems and tell me which is which",
+      "what's in bar 17",
+      "move the drums somewhere that works",
+      "duplicate this and change the key",
+      "trim the fat from this arrangement please",
+      "undo the damage to the low end",
+    ];
+    for (const text of conversation) expect(parseSessionCommand(text), text).toBeNull();
+  });
+
+  it("has a line for every arrangement command too", () => {
+    const commands = [
+      { kind: "song" as const },
+      { kind: "undo" as const },
+      { kind: "redo" as const },
+      { kind: "snap" as const, unit: "bar" as const },
+      { kind: "snap" as const, unit: "beat" as const },
+      { kind: "snap" as const, unit: "eighth" as const },
+      { kind: "snap" as const, unit: "sixteenth" as const },
+      { kind: "snap" as const, unit: "off" as const },
+      { kind: "zoom" as const, direction: "in" as const },
+      { kind: "zoom" as const, direction: "fit" as const },
+      { kind: "move-region" as const, target: "drums", toBar: 17, toS: null },
+      { kind: "move-region" as const, target: SELECTION, toBar: null, toS: 12 },
+      { kind: "trim-region" as const, target: "drums", bars: 4, seconds: null },
+      { kind: "trim-region" as const, target: "drums", bars: null, seconds: 2.5 },
+      { kind: "duplicate-region" as const, target: "drums" },
+      { kind: "split-region" as const, target: "drums", atBar: 9 },
+      { kind: "split-region" as const, target: SELECTION, atBar: null },
+      { kind: "delete-region" as const, target: SELECTION },
+      { kind: "remove-track" as const, target: "horns" },
+    ];
+    for (const command of commands) expect(describeCommand(command).length, command.kind).toBeGreaterThan(0);
+    expect(describeCommand({ kind: "move-region", target: "drums", toBar: 17, toS: null })).toBe("moved drums to bar 17");
+    expect(describeCommand({ kind: "trim-region", target: SELECTION, bars: 1, seconds: null })).toBe("trimmed the region to 1 bar");
+    expect(describeCommand({ kind: "snap", unit: "sixteenth" })).toBe("snapping to sixteenths");
+  });
+});
+
+group("which region a sentence means", () => {
+  const tracks = [track("t1", "Masquerade drums"), track("t2", "Horns"), track("t3", "Bass")];
+  const regions = [
+    { id: "r1", trackId: "t1" },
+    { id: "r2", trackId: "t2" },
+    { id: "r3", trackId: "t2" },
+  ];
+
+  it("means the selection when the sentence says it", () => {
+    expect(resolveRegionTarget(SELECTION, tracks, regions, "r3")).toEqual({ regionId: "r3", note: null });
+  });
+
+  it("says nothing is selected rather than picking one", () => {
+    const out = resolveRegionTarget(SELECTION, tracks, regions, null);
+    expect(out.regionId).toBeNull();
+    expect(out.note).toContain("nothing is selected");
+  });
+
+  it("takes a lane's only region when the sentence names the lane", () => {
+    expect(resolveRegionTarget("drums", tracks, regions, null)).toEqual({ regionId: "r1", note: null });
+  });
+
+  it("asks which one when a named lane has several, instead of guessing", () => {
+    const out = resolveRegionTarget("horns", tracks, regions, null);
+    expect(out.regionId).toBeNull();
+    expect(out.note).toContain("2 regions");
+  });
+
+  it("uses the selection when it is already on the lane the sentence named", () => {
+    expect(resolveRegionTarget("horns", tracks, regions, "r3")).toEqual({ regionId: "r3", note: null });
+  });
+
+  it("says so when the lane is empty, or is not there at all", () => {
+    expect(resolveRegionTarget("bass", tracks, regions, null).note).toContain("nothing on it yet");
+    expect(resolveRegionTarget("strings", tracks, regions, null).note).toContain("nothing in the session is called strings");
+  });
+
+  it("does not resolve a selection that is no longer in the song", () => {
+    expect(resolveRegionTarget(SELECTION, tracks, regions, "gone").regionId).toBeNull();
   });
 });
