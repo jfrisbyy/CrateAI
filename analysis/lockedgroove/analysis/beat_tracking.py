@@ -52,9 +52,13 @@ def _librosa(y: np.ndarray, sr: int, start_bpm: float, hop: int) -> BeatTrack:
     onset_env = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop)
     tempo, frames = librosa.beat.beat_track(onset_envelope=onset_env, sr=sr, hop_length=hop, start_bpm=start_bpm,
                                             units="frames")
-    bpm = float(np.atleast_1d(tempo)[0])
-    beats = librosa.frames_to_time(frames, sr=sr, hop_length=hop).tolist()
-    return BeatTrack(bpm=bpm, beats_s=[float(b) for b in beats], downbeats_s=None, method="librosa.beat_track")
+    beats = [float(b) for b in librosa.frames_to_time(frames, sr=sr, hop_length=hop)]
+    # the tempogram's tempo is quantized by the hop; the tracked beats themselves are finer
+    if len(beats) >= 4:
+        bpm = float(60.0 / np.median(np.diff(beats)))
+    else:
+        bpm = float(np.atleast_1d(tempo)[0])
+    return BeatTrack(bpm=bpm, beats_s=beats, downbeats_s=None, method="librosa.beat_track")
 
 
 def _beatnet(y: np.ndarray, sr: int) -> BeatTrack:
