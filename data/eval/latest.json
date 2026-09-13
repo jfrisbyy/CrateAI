@@ -1,825 +1,6968 @@
 {
  "schema": 1,
- "created_at": "2026-09-13T14:21:05Z",
+ "created_at": "2026-09-13T09:12:01Z",
  "analysis_version": 1,
  "stages": null,
  "meta": {
   "datasets": [
-   "harmonix"
+   "synthetic"
   ],
   "limit": null,
-  "workers": 4,
+  "workers": 3,
   "git_sha": null,
   "ci": false
  },
  "datasets": {
-  "harmonix": {
-   "n_items": 0,
-   "n_skipped": 179,
-   "skipped": [
-    {
-     "id": "0001_12step",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0003_6foot7foot",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0006_aint2proud2beg",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0015_babygotback",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0020_becauseofyou",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0024_billionaire",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0026_blackandyellow",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0030_bodymovin",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0032_boomboompow",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0040_bustamove",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0048_chingaling",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0049_closer",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0054_conceited",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0057_crankthat",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0059_cupidshuffle",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0061_dabutt",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0070_dipitlow",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0072_discoinferno",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0075_dontcha",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0077_dontsweat",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0078_donttouchme",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0081_downonme",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0084_dropitlikeitshot",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0099_forgetyou",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0102_gangstaluv",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0105_getdownonit",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0106_getitshawty",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0107_getlow",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0108_getup",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0109_geturfreakon",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0116_goodies",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0125_hellogoodmorning",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0126_heymami",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0129_hotinherre",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0130_hotstuff",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0132_iceicebaby",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0133_ifeellove",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0136_igotyoudancing",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0139_imcomingout",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0141_indaclub",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0152_kingofrock",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0155_lapdance",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0156_lastnight",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0157_leanwitit",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0158_letitrock",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0164_low",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0167_makesomenoise",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0173_massiveattack",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0177_milkshake",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0184_myprerogative",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0197_nothinonyou",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0198_nowthatwefoundlove",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0207_oopsohmy",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0208_opp",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0214_planetrock",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0216_poison",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0220_promiscuous",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0231_rightthurr",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0236_rumpshaker",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0246_scenario",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0249_sensualseduction",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0267_superfreak",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0268_supersonic",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0271_teachmehowtodougie",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0272_teachmehowtojerk",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0277_thashiznit",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0278_thatsthahomie",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0279_thebreaks",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0283_thehumptydance",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0284_thehustle",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0290_thisishowwedoit",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0299_turnthebeataround",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0306_werunthis",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0314_whoomp",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0316_wildones",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0322_wordup",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0323_yeah",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0325_ymca",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0329_youreajerk",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0340_backintime",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0346_birthdaydress",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0351_blowup",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0352_boogiewonderland",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0353_bottomsup",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0357_cheers",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0358_children",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0359_cominghome",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0364_deuces",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0370_downonme",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0379_et",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0390_getyourselfbackhome",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0396_goodfeeling",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0407_humpinaround",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0418_inthedark",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0421_ittakestwo",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0424_justadream",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0426_justcantgetenough",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0435_lookatmenow",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0439_lovethewayyoulie",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0447_mindyourmanners",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0452_myfirstkiss",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0453_mygirl",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0456_nohands",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0458_notorious",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0477_poundthealarm",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0486_rundatback",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0489_shakeyourbody",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0512_theshowgoeson",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0513_thetime",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0516_thisorthat",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0523_ucanttouchthis",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0527_wantuback",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0532_whistle",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0536_workout",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0537_writteninthestars",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0548_2getherextended",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0561_alorsondanse",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0572_awake",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0586_bed",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0587_bedrock",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0589_bestieverhad",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0593_blameitradioedit",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0597_boomboomguetta",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0598_boomboompow",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0604_bustitbabypart2",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0607_cantholdus",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0608_canttellmenothing",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0610_castle",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0619_closer",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0627_cowboyboots",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0628_crankthatsouljaboy",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0632_cyclone",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0634_dangerous",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0635_daynnite",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0636_daynnitecrookersremix",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0637_daynniteremix",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0638_deadandgone",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0640_disturbia2",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0649_down",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0651_doyouremember",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0657_enursbonfire",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0666_fallin",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0677_fireburning",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0681_flashinglights",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0693_gold",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0699_gotmoney",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0710_hardjeezy",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0712_heartless",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0723_hotelroomservice",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0744_immabe",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0747_imreal",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0760_iwannarock",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0771_kisskissmainversion",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0773_kissmethruthephone",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0774_knockyoudown",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0776_krazy",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0787_liveyourlife",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0791_lollipop",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0807_makemebetter",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0813_missindependent",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0820_mychickbad",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0828_neoncathedral",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0831_noair",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0839_nowyouseeit",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0868_puton",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0880_righthere",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0889_samelove",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0899_sexycani",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0921_stronger",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0922_suffocate",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0927_swing",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0938_thebusiness",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0943_thetheayer",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0949_throwitinthebag",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0960_umbrella",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0968_walltowall",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0972_whatchasay",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0974_whateveryoulike",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    },
-    {
-     "id": "0986_winner",
-     "reason": "missing audio (the Harmonix Set ships no audio)"
-    }
-   ],
-   "note": "annotations present under /home/user/crateai/data/harmonix but no audio matched (179 tracks); put your own copies in /home/user/crateai/data/harmonix/audio named <track>.<ext>, e.g. /home/user/crateai/data/harmonix/audio/0001_12step.mp3",
+  "synthetic": {
+   "n_items": 48,
+   "n_skipped": 0,
+   "skipped": [],
+   "note": null,
    "requested": true,
-   "elapsed_s": 0.0,
+   "elapsed_s": 118.07,
    "metrics": {
     "bpm_exact": {
      "metric": "bpm_exact",
-     "n": 0,
-     "score": null,
-     "reasons": {}
+     "n": 48,
+     "score": 0.5625,
+     "reasons": {
+      "off by -75.0 BPM": 2,
+      "off by -87.5 BPM": 2,
+      "off by +64.7 BPM": 1,
+      "off by +71.8 BPM": 1,
+      "off by -61.9 BPM": 1,
+      "off by -69.0 BPM": 1,
+      "off by -72.0 BPM": 1,
+      "off by -77.9 BPM": 1,
+      "off by -81.1 BPM": 1,
+      "off by -84.0 BPM": 1,
+      "off by -86.0 BPM": 1,
+      "off by -63.0 BPM": 1,
+      "off by -85.1 BPM": 1,
+      "off by +67.9 BPM": 1,
+      "off by -73.0 BPM": 1,
+      "off by -82.5 BPM": 1,
+      "off by -70.0 BPM": 1,
+      "off by +69.8 BPM": 1,
+      "off by -80.0 BPM": 1
+     }
     },
     "bpm_octave": {
      "metric": "bpm_octave",
-     "n": 0,
-     "score": null,
+     "n": 48,
+     "score": 1.0,
      "reasons": {}
     },
     "key_exact": {
      "metric": "key_exact",
-     "n": 0,
-     "score": null,
-     "reasons": {}
+     "n": 48,
+     "score": 0.8333333333333334,
+     "reasons": {
+      "predicted F# major": 2,
+      "predicted G major": 1,
+      "predicted A# major": 1,
+      "predicted C major": 1,
+      "predicted C# major": 1,
+      "predicted E major": 1,
+      "predicted B major": 1
+     }
     },
     "key_relative": {
      "metric": "key_relative",
-     "n": 0,
-     "score": null,
+     "n": 48,
+     "score": 1.0,
      "reasons": {}
     },
     "downbeat": {
      "metric": "downbeat",
-     "n": 0,
-     "score": null,
-     "reasons": {}
+     "n": 48,
+     "score": 0.7916666666666666,
+     "reasons": {
+      "median offset 675 ms": 1,
+      "median offset 476 ms": 1,
+      "median offset 432 ms": 1,
+      "median offset 386 ms": 1,
+      "median offset 355 ms": 1,
+      "median offset 474 ms": 1,
+      "median offset 1448 ms": 1,
+      "median offset 812 ms": 1,
+      "median offset 431 ms": 1,
+      "median offset 345 ms": 1
+     }
     },
     "structure_f": {
      "metric": "structure_f",
-     "n": 0,
-     "score": null,
-     "reasons": {}
+     "n": 48,
+     "score": 0.6765873015873017,
+     "reasons": {
+      "P=1.00 R=0.67": 17,
+      "P=0.00 R=0.00": 8,
+      "P=0.33 R=0.33": 4,
+      "P=0.50 R=0.33": 1,
+      "P=0.09 R=0.33": 1
+     }
     }
    },
-   "items": []
+   "items": [
+    {
+     "id": "key00_C_major_65bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by +64.7 BPM",
+       "detail": {
+        "pred": 129.727,
+        "true": 65.0,
+        "alternates": [
+         64.8635,
+         259.454
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 129.727,
+        "true": 65.0,
+        "alternates": [
+         64.8635,
+         259.454
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C",
+         "major"
+        ],
+        "true": [
+         "C",
+         "major"
+        ],
+        "alternate": [
+         "A",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C",
+         "major"
+        ],
+        "true": [
+         "C",
+         "major"
+        ],
+        "alternate": [
+         "A",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.0035310000000023933,
+        "bar_s": 3.692307999999997
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 3.692307999999997
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 129.727,
+      "alternates_bpm": [
+       64.8635,
+       259.454
+      ],
+      "key": [
+       "C",
+       "major"
+      ],
+      "key_alternate": [
+       "A",
+       "minor"
+      ],
+      "n_beats": 257,
+      "n_downbeats": 65,
+      "first_downbeat_s": 0.0232,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 14.263,
+     "duration_s": 118.50380952380952,
+     "timings_s": {
+      "tempo": 5.46,
+      "beats": 7.79,
+      "onsets": 0.003,
+      "key": 0.004,
+      "groove": 0.005,
+      "loudness": 0.483,
+      "spectral": 0.247,
+      "structure": 0.162
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 0,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key01_Cs_major_72bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by +71.8 BPM",
+       "detail": {
+        "pred": 143.771,
+        "true": 72.0,
+        "alternates": [
+         71.8855,
+         287.542
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 143.771,
+        "true": 72.0,
+        "alternates": [
+         71.8855,
+         287.542
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "major"
+        ],
+        "true": [
+         "C#",
+         "major"
+        ],
+        "alternate": [
+         "A#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "major"
+        ],
+        "true": [
+         "C#",
+         "major"
+        ],
+        "alternate": [
+         "A#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.003167000000004805,
+        "bar_s": 3.3333329999999997
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "P=0.00 R=0.00",
+       "detail": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "matched": 0,
+        "n_pred": 5,
+        "n_true": 3,
+        "tol_s": 3.3333329999999997
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 143.771,
+      "alternates_bpm": [
+       71.8855,
+       287.542
+      ],
+      "key": [
+       "C#",
+       "major"
+      ],
+      "key_alternate": [
+       "A#",
+       "minor"
+      ],
+      "n_beats": 256,
+      "n_downbeats": 64,
+      "first_downbeat_s": 0.299,
+      "n_sections": 6
+     },
+     "errors": {},
+     "elapsed_s": 14.251,
+     "duration_s": 107.3166439909297,
+     "timings_s": {
+      "tempo": 5.153,
+      "beats": 7.426,
+      "onsets": 0.003,
+      "key": 0.004,
+      "groove": 0.003,
+      "loudness": 0.849,
+      "spectral": 0.316,
+      "structure": 0.21
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 0.3,
+      "pickup_beats": 0,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key02_D_major_78bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 78.069,
+        "true": 78.0,
+        "alternates": [
+         39.0345,
+         156.138
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 78.069,
+        "true": 78.0,
+        "alternates": [
+         39.0345,
+         156.138
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D",
+         "major"
+        ],
+        "true": [
+         "D",
+         "major"
+        ],
+        "alternate": [
+         "B",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D",
+         "major"
+        ],
+        "true": [
+         "D",
+         "major"
+        ],
+        "alternate": [
+         "B",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.0023460000000012915,
+        "bar_s": 3.0769230000000007
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 3.0769230000000007
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 78.069,
+      "alternates_bpm": [
+       39.0345,
+       156.138
+      ],
+      "key": [
+       "D",
+       "major"
+      ],
+      "key_alternate": [
+       "B",
+       "minor"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 33,
+      "first_downbeat_s": 0.9027,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 13.765,
+     "duration_s": 99.71151927437641,
+     "timings_s": {
+      "tempo": 5.168,
+      "beats": 7.15,
+      "onsets": 0.007,
+      "key": 0.004,
+      "groove": 0.003,
+      "loudness": 0.766,
+      "spectral": 0.268,
+      "structure": 0.17
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 0.9,
+      "pickup_beats": 0,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key03_Ds_major_84bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 83.912,
+        "true": 84.0,
+        "alternates": [
+         41.956,
+         167.824
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 83.912,
+        "true": 84.0,
+        "alternates": [
+         41.956,
+         167.824
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D#",
+         "major"
+        ],
+        "true": [
+         "D#",
+         "major"
+        ],
+        "alternate": [
+         "C",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D#",
+         "major"
+        ],
+        "true": [
+         "D#",
+         "major"
+        ],
+        "alternate": [
+         "C",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.010385500000001713,
+        "bar_s": 2.8571430000000007
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 2.8571430000000007
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 83.912,
+      "alternates_bpm": [
+       41.956,
+       167.824
+      ],
+      "key": [
+       "D#",
+       "major"
+      ],
+      "key_alternate": [
+       "C",
+       "minor"
+      ],
+      "n_beats": 128,
+      "n_downbeats": 32,
+      "first_downbeat_s": 1.5935,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 8.023,
+     "duration_s": 93.37854875283446,
+     "timings_s": {
+      "tempo": 1.136,
+      "beats": 6.267,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.336,
+      "spectral": 0.142,
+      "structure": 0.124
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 1.6,
+      "pickup_beats": 0,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key04_E_major_88bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 87.912,
+        "true": 88.0,
+        "alternates": [
+         43.956,
+         175.824
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 87.912,
+        "true": 88.0,
+        "alternates": [
+         43.956,
+         175.824
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "E",
+         "major"
+        ],
+        "true": [
+         "E",
+         "major"
+        ],
+        "alternate": [
+         "C#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "E",
+         "major"
+        ],
+        "true": [
+         "E",
+         "major"
+        ],
+        "alternate": [
+         "C#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "median offset 675 ms",
+       "detail": {
+        "median_offset_s": 0.6746355000000013,
+        "bar_s": 2.7272729999999967
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 2.7272729999999967
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 87.912,
+      "alternates_bpm": [
+       43.956,
+       175.824
+      ],
+      "key": [
+       "E",
+       "major"
+      ],
+      "key_alternate": [
+       "C#",
+       "minor"
+      ],
+      "n_beats": 130,
+      "n_downbeats": 32,
+      "first_downbeat_s": 2.0376,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 7.849,
+     "duration_s": 88.9863492063492,
+     "timings_s": {
+      "tempo": 0.972,
+      "beats": 5.852,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.639,
+      "spectral": 0.216,
+      "structure": 0.114
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 2,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key05_F_major_92bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 92.054,
+        "true": 92.0,
+        "alternates": [
+         46.027,
+         184.108
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 92.054,
+        "true": 92.0,
+        "alternates": [
+         46.027,
+         184.108
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F",
+         "major"
+        ],
+        "true": [
+         "F",
+         "major"
+        ],
+        "alternate": [
+         "D",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F",
+         "major"
+        ],
+        "true": [
+         "F",
+         "major"
+        ],
+        "alternate": [
+         "D",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.009705000000000297,
+        "bar_s": 2.6086959999999983
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 2.6086959999999983
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 92.054,
+      "alternates_bpm": [
+       46.027,
+       184.108
+      ],
+      "key": [
+       "F",
+       "major"
+      ],
+      "key_alternate": [
+       "D",
+       "minor"
+      ],
+      "n_beats": 131,
+      "n_downbeats": 33,
+      "first_downbeat_s": 1.5906,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 8.408,
+     "duration_s": 85.4325850340136,
+     "timings_s": {
+      "tempo": 0.732,
+      "beats": 5.535,
+      "onsets": 0.003,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 1.276,
+      "spectral": 0.612,
+      "structure": 0.127
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 0.3,
+      "pickup_beats": 2,
+      "width": 0.6,
+      "sr": 44100
+     }
+    },
+    {
+     "id": "key06_Fs_major_96bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 95.867,
+        "true": 96.0,
+        "alternates": [
+         47.9335,
+         191.734
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 95.867,
+        "true": 96.0,
+        "alternates": [
+         47.9335,
+         191.734
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F#",
+         "major"
+        ],
+        "true": [
+         "F#",
+         "major"
+        ],
+        "alternate": [
+         "D#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F#",
+         "major"
+        ],
+        "true": [
+         "F#",
+         "major"
+        ],
+        "alternate": [
+         "D#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.0048729999999963525,
+        "bar_s": 2.5
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 2.5
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 95.867,
+      "alternates_bpm": [
+       47.9335,
+       191.734
+      ],
+      "key": [
+       "F#",
+       "major"
+      ],
+      "key_alternate": [
+       "D#",
+       "minor"
+      ],
+      "n_beats": 131,
+      "n_downbeats": 33,
+      "first_downbeat_s": 2.1449,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 6.421,
+     "duration_s": 82.5,
+     "timings_s": {
+      "tempo": 0.582,
+      "beats": 5.288,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.005,
+      "loudness": 0.298,
+      "spectral": 0.116,
+      "structure": 0.119
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.9,
+      "pickup_beats": 2,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key07_G_major_100bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 99.877,
+        "true": 100.0,
+        "alternates": [
+         49.9385,
+         199.754
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 99.877,
+        "true": 100.0,
+        "alternates": [
+         49.9385,
+         199.754
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G",
+         "major"
+        ],
+        "true": [
+         "G",
+         "major"
+        ],
+        "alternate": [
+         "E",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G",
+         "major"
+        ],
+        "true": [
+         "G",
+         "major"
+        ],
+        "alternate": [
+         "E",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.0032500000000004192,
+        "bar_s": 2.3999999999999986
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 2.3999999999999986
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 99.877,
+      "alternates_bpm": [
+       49.9385,
+       199.754
+      ],
+      "key": [
+       "G",
+       "major"
+      ],
+      "key_alternate": [
+       "E",
+       "minor"
+      ],
+      "n_beats": 131,
+      "n_downbeats": 33,
+      "first_downbeat_s": 2.7951,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 6.572,
+     "duration_s": 79.94997732426305,
+     "timings_s": {
+      "tempo": 0.675,
+      "beats": 4.948,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.602,
+      "spectral": 0.181,
+      "structure": 0.114
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 1.6,
+      "pickup_beats": 2,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key08_Gs_major_104bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 103.893,
+        "true": 104.0,
+        "alternates": [
+         51.9465,
+         207.786
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 103.893,
+        "true": 104.0,
+        "alternates": [
+         51.9465,
+         207.786
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G#",
+         "major"
+        ],
+        "true": [
+         "G#",
+         "major"
+        ],
+        "alternate": [
+         "F",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G#",
+         "major"
+        ],
+        "true": [
+         "G#",
+         "major"
+        ],
+        "alternate": [
+         "F",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.004042499999998839,
+        "bar_s": 2.307692000000003
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 2.307692000000003
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 103.893,
+      "alternates_bpm": [
+       51.9465,
+       207.786
+      ],
+      "key": [
+       "G#",
+       "major"
+      ],
+      "key_alternate": [
+       "F",
+       "minor"
+      ],
+      "n_beats": 130,
+      "n_downbeats": 33,
+      "first_downbeat_s": 0.5776,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 6.062,
+     "duration_s": 74.77310657596372,
+     "timings_s": {
+      "tempo": 0.537,
+      "beats": 4.595,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.577,
+      "spectral": 0.188,
+      "structure": 0.111
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 1,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key09_A_major_108bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 107.866,
+        "true": 108.0,
+        "alternates": [
+         53.933,
+         215.732
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 107.866,
+        "true": 108.0,
+        "alternates": [
+         53.933,
+         215.732
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A",
+         "major"
+        ],
+        "true": [
+         "A",
+         "major"
+        ],
+        "alternate": [
+         "F#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A",
+         "major"
+        ],
+        "true": [
+         "A",
+         "major"
+        ],
+        "alternate": [
+         "F#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.004594499999999613,
+        "bar_s": 2.222222000000002
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 2.222222000000002
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 107.866,
+      "alternates_bpm": [
+       53.933,
+       215.732
+      ],
+      "key": [
+       "A",
+       "major"
+      ],
+      "key_alternate": [
+       "F#",
+       "minor"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 32,
+      "first_downbeat_s": 0.8446,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 5.791,
+     "duration_s": 72.3166439909297,
+     "timings_s": {
+      "tempo": 0.474,
+      "beats": 4.723,
+      "onsets": 0.003,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.364,
+      "spectral": 0.114,
+      "structure": 0.1
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.3,
+      "pickup_beats": 1,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key10_As_major_112bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 112.072,
+        "true": 112.0,
+        "alternates": [
+         56.036,
+         224.144
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 112.072,
+        "true": 112.0,
+        "alternates": [
+         56.036,
+         224.144
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A#",
+         "major"
+        ],
+        "true": [
+         "A#",
+         "major"
+        ],
+        "alternate": [
+         "G",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A#",
+         "major"
+        ],
+        "true": [
+         "A#",
+         "major"
+        ],
+        "alternate": [
+         "G",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.002621499999997612,
+        "bar_s": 2.1428569999999993
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 2.1428569999999993
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 112.072,
+      "alternates_bpm": [
+       56.036,
+       224.144
+      ],
+      "key": [
+       "A#",
+       "major"
+      ],
+      "key_alternate": [
+       "G",
+       "minor"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 32,
+      "first_downbeat_s": 1.4396,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 6.195,
+     "duration_s": 70.35709750566893,
+     "timings_s": {
+      "tempo": 0.963,
+      "beats": 4.371,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.54,
+      "spectral": 0.161,
+      "structure": 0.108
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 0.9,
+      "pickup_beats": 1,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key11_B_major_116bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 115.891,
+        "true": 116.0,
+        "alternates": [
+         57.9455,
+         231.782
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 115.891,
+        "true": 116.0,
+        "alternates": [
+         57.9455,
+         231.782
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "B",
+         "major"
+        ],
+        "true": [
+         "B",
+         "major"
+        ],
+        "alternate": [
+         "G#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "B",
+         "major"
+        ],
+        "true": [
+         "B",
+         "major"
+        ],
+        "alternate": [
+         "G#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.0031069999999981945,
+        "bar_s": 2.068965999999996
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 2.068965999999996
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 115.891,
+      "alternates_bpm": [
+       57.9455,
+       231.782
+      ],
+      "key": [
+       "B",
+       "major"
+      ],
+      "key_alternate": [
+       "G#",
+       "minor"
+      ],
+      "n_beats": 130,
+      "n_downbeats": 33,
+      "first_downbeat_s": 2.1101,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 6.357,
+     "duration_s": 68.67410430839003,
+     "timings_s": {
+      "tempo": 0.836,
+      "beats": 4.466,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.003,
+      "loudness": 0.69,
+      "spectral": 0.167,
+      "structure": 0.152
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 1.6,
+      "pickup_beats": 1,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key12_C_minor_120bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 119.847,
+        "true": 120.0,
+        "alternates": [
+         59.9235,
+         239.694
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 119.847,
+        "true": 120.0,
+        "alternates": [
+         59.9235,
+         239.694
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C",
+         "minor"
+        ],
+        "true": [
+         "C",
+         "minor"
+        ],
+        "alternate": [
+         "G#",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C",
+         "minor"
+        ],
+        "true": [
+         "C",
+         "minor"
+        ],
+        "alternate": [
+         "G#",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.009499999999999731,
+        "bar_s": 2.0
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "P=0.00 R=0.00",
+       "detail": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "matched": 0,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 2.0
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 119.847,
+      "alternates_bpm": [
+       59.9235,
+       239.694
+      ],
+      "key": [
+       "C",
+       "minor"
+      ],
+      "key_alternate": [
+       "G#",
+       "major"
+      ],
+      "n_beats": 132,
+      "n_downbeats": 33,
+      "first_downbeat_s": 1.4904,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 5.477,
+     "duration_s": 65.84997732426304,
+     "timings_s": {
+      "tempo": 0.627,
+      "beats": 4.4,
+      "onsets": 0.003,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.256,
+      "spectral": 0.093,
+      "structure": 0.082
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 3,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key13_Cs_minor_124bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -61.9 BPM",
+       "detail": {
+        "pred": 62.057,
+        "true": 124.0,
+        "alternates": [
+         31.0285,
+         124.114
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 62.057,
+        "true": 124.0,
+        "alternates": [
+         31.0285,
+         124.114
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "minor"
+        ],
+        "true": [
+         "C#",
+         "minor"
+        ],
+        "alternate": [
+         "E",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "minor"
+        ],
+        "true": [
+         "C#",
+         "minor"
+        ],
+        "alternate": [
+         "E",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "median offset 476 ms",
+       "detail": {
+        "median_offset_s": 0.47649799999999987,
+        "bar_s": 1.9354839999999998
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 1.9354839999999998
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 62.057,
+      "alternates_bpm": [
+       31.0285,
+       124.114
+      ],
+      "key": [
+       "C#",
+       "minor"
+      ],
+      "key_alternate": [
+       "E",
+       "major"
+      ],
+      "n_beats": 66,
+      "n_downbeats": 17,
+      "first_downbeat_s": 0.2932,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 5.456,
+     "duration_s": 64.03705215419501,
+     "timings_s": {
+      "tempo": 0.759,
+      "beats": 3.877,
+      "onsets": 0.004,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.551,
+      "spectral": 0.148,
+      "structure": 0.078
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 0.3,
+      "pickup_beats": 3,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key14_D_minor_128bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 128.087,
+        "true": 128.0,
+        "alternates": [
+         64.0435,
+         256.174
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 128.087,
+        "true": 128.0,
+        "alternates": [
+         64.0435,
+         256.174
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D",
+         "minor"
+        ],
+        "true": [
+         "D",
+         "minor"
+        ],
+        "alternate": [
+         "D",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D",
+         "minor"
+        ],
+        "true": [
+         "D",
+         "minor"
+        ],
+        "alternate": [
+         "D",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.007359000000001004,
+        "bar_s": 1.875
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.875
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 128.087,
+      "alternates_bpm": [
+       64.0435,
+       256.174
+      ],
+      "key": [
+       "D",
+       "minor"
+      ],
+      "key_alternate": [
+       "D",
+       "major"
+      ],
+      "n_beats": 131,
+      "n_downbeats": 32,
+      "first_downbeat_s": 2.293,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 5.285,
+     "duration_s": 62.656235827664396,
+     "timings_s": {
+      "tempo": 0.65,
+      "beats": 3.86,
+      "onsets": 0.003,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.489,
+      "spectral": 0.147,
+      "structure": 0.092
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 0.9,
+      "pickup_beats": 3,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key15_Ds_minor_132bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 131.932,
+        "true": 132.0,
+        "alternates": [
+         65.966,
+         263.864
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 131.932,
+        "true": 132.0,
+        "alternates": [
+         65.966,
+         263.864
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "predicted F# major",
+       "detail": {
+        "pred": [
+         "F#",
+         "major"
+        ],
+        "true": [
+         "D#",
+         "minor"
+        ],
+        "alternate": [
+         "D#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F#",
+         "major"
+        ],
+        "true": [
+         "D#",
+         "minor"
+        ],
+        "alternate": [
+         "D#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.004287500000000222,
+        "bar_s": 1.8181820000000002
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "P=0.00 R=0.00",
+       "detail": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "matched": 0,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.8181820000000002
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 131.932,
+      "alternates_bpm": [
+       65.966,
+       263.864
+      ],
+      "key": [
+       "F#",
+       "major"
+      ],
+      "key_alternate": [
+       "D#",
+       "minor"
+      ],
+      "n_beats": 132,
+      "n_downbeats": 33,
+      "first_downbeat_s": 2.9576,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 4.669,
+     "duration_s": 61.49541950113379,
+     "timings_s": {
+      "tempo": 0.405,
+      "beats": 3.722,
+      "onsets": 0.001,
+      "key": 0.003,
+      "groove": 0.003,
+      "loudness": 0.246,
+      "spectral": 0.192,
+      "structure": 0.091
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 1.6,
+      "pickup_beats": 3,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key16_E_minor_138bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -69.0 BPM",
+       "detail": {
+        "pred": 68.982,
+        "true": 138.0,
+        "alternates": [
+         34.491,
+         137.964
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 68.982,
+        "true": 138.0,
+        "alternates": [
+         34.491,
+         137.964
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "predicted G major",
+       "detail": {
+        "pred": [
+         "G",
+         "major"
+        ],
+        "true": [
+         "E",
+         "minor"
+        ],
+        "alternate": [
+         "E",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G",
+         "major"
+        ],
+        "true": [
+         "E",
+         "minor"
+        ],
+        "alternate": [
+         "E",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "median offset 432 ms",
+       "detail": {
+        "median_offset_s": 0.4318345000000017,
+        "bar_s": 1.739130000000003
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 1.739130000000003
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 68.982,
+      "alternates_bpm": [
+       34.491,
+       137.964
+      ],
+      "key": [
+       "G",
+       "major"
+      ],
+      "key_alternate": [
+       "E",
+       "minor"
+      ],
+      "n_beats": 64,
+      "n_downbeats": 16,
+      "first_downbeat_s": 2.1682,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 4.636,
+     "duration_s": 56.00213151927438,
+     "timings_s": {
+      "tempo": 0.512,
+      "beats": 3.491,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.396,
+      "spectral": 0.114,
+      "structure": 0.081
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 0,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key17_F_minor_144bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -72.0 BPM",
+       "detail": {
+        "pred": 71.989,
+        "true": 144.0,
+        "alternates": [
+         35.9945,
+         143.978
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 71.989,
+        "true": 144.0,
+        "alternates": [
+         35.9945,
+         143.978
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F",
+         "minor"
+        ],
+        "true": [
+         "F",
+         "minor"
+        ],
+        "alternate": [
+         "G#",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F",
+         "minor"
+        ],
+        "true": [
+         "F",
+         "minor"
+        ],
+        "alternate": [
+         "G#",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.004750500000000102,
+        "bar_s": 1.666667
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.3333333333333333,
+       "reason": "P=0.33 R=0.33",
+       "detail": {
+        "precision": 0.3333333333333333,
+        "recall": 0.3333333333333333,
+        "matched": 1,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.666667
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 71.989,
+      "alternates_bpm": [
+       35.9945,
+       143.978
+      ],
+      "key": [
+       "F",
+       "minor"
+      ],
+      "key_alternate": [
+       "G#",
+       "major"
+      ],
+      "n_beats": 65,
+      "n_downbeats": 16,
+      "first_downbeat_s": 1.965,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 5.3,
+     "duration_s": 53.983333333333334,
+     "timings_s": {
+      "tempo": 0.521,
+      "beats": 3.551,
+      "onsets": 0.001,
+      "key": 0.003,
+      "groove": 0.003,
+      "loudness": 0.787,
+      "spectral": 0.279,
+      "structure": 0.085
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 0.3,
+      "pickup_beats": 0,
+      "width": 0.6,
+      "sr": 44100
+     }
+    },
+    {
+     "id": "key18_Fs_minor_150bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -75.0 BPM",
+       "detail": {
+        "pred": 74.978,
+        "true": 150.0,
+        "alternates": [
+         37.489,
+         149.956
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 74.978,
+        "true": 150.0,
+        "alternates": [
+         37.489,
+         149.956
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F#",
+         "minor"
+        ],
+        "true": [
+         "F#",
+         "minor"
+        ],
+        "alternate": [
+         "A",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F#",
+         "minor"
+        ],
+        "true": [
+         "F#",
+         "minor"
+        ],
+        "alternate": [
+         "A",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.003100000000002545,
+        "bar_s": 1.6000000000000014
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.6000000000000014
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 74.978,
+      "alternates_bpm": [
+       37.489,
+       149.956
+      ],
+      "key": [
+       "F#",
+       "minor"
+      ],
+      "key_alternate": [
+       "A",
+       "major"
+      ],
+      "n_beats": 64,
+      "n_downbeats": 16,
+      "first_downbeat_s": 0.8911,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 3.873,
+     "duration_s": 52.44997732426304,
+     "timings_s": {
+      "tempo": 0.343,
+      "beats": 3.073,
+      "onsets": 0.001,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.293,
+      "spectral": 0.074,
+      "structure": 0.078
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.9,
+      "pickup_beats": 0,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key19_G_minor_156bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -77.9 BPM",
+       "detail": {
+        "pred": 78.09,
+        "true": 156.0,
+        "alternates": [
+         39.045,
+         156.18
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 78.09,
+        "true": 156.0,
+        "alternates": [
+         39.045,
+         156.18
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "predicted A# major",
+       "detail": {
+        "pred": [
+         "A#",
+         "major"
+        ],
+        "true": [
+         "G",
+         "minor"
+        ],
+        "alternate": [
+         "G",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A#",
+         "major"
+        ],
+        "true": [
+         "G",
+         "minor"
+        ],
+        "alternate": [
+         "G",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "median offset 386 ms",
+       "detail": {
+        "median_offset_s": 0.3860849999999978,
+        "bar_s": 1.5384619999999956
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 1.5384619999999956
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 78.09,
+      "alternates_bpm": [
+       39.045,
+       156.18
+      ],
+      "key": [
+       "A#",
+       "major"
+      ],
+      "key_alternate": [
+       "G",
+       "minor"
+      ],
+      "n_beats": 64,
+      "n_downbeats": 16,
+      "first_downbeat_s": 4.2928,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 4.197,
+     "duration_s": 51.18072562358277,
+     "timings_s": {
+      "tempo": 0.431,
+      "beats": 3.156,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.381,
+      "spectral": 0.106,
+      "structure": 0.089
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 1.6,
+      "pickup_beats": 0,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key20_Gs_minor_162bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -81.1 BPM",
+       "detail": {
+        "pred": 80.949,
+        "true": 162.0,
+        "alternates": [
+         40.4745,
+         161.898
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 80.949,
+        "true": 162.0,
+        "alternates": [
+         40.4745,
+         161.898
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G#",
+         "minor"
+        ],
+        "true": [
+         "G#",
+         "minor"
+        ],
+        "alternate": [
+         "B",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G#",
+         "minor"
+        ],
+        "true": [
+         "G#",
+         "minor"
+        ],
+        "alternate": [
+         "B",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.0035485000000008426,
+        "bar_s": 1.4814810000000023
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.3333333333333333,
+       "reason": "P=0.33 R=0.33",
+       "detail": {
+        "precision": 0.3333333333333333,
+        "recall": 0.3333333333333333,
+        "matched": 1,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.4814810000000023
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 80.949,
+      "alternates_bpm": [
+       40.4745,
+       161.898
+      ],
+      "key": [
+       "G#",
+       "minor"
+      ],
+      "key_alternate": [
+       "B",
+       "major"
+      ],
+      "n_beats": 66,
+      "n_downbeats": 16,
+      "first_downbeat_s": 2.2146,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 3.794,
+     "duration_s": 48.49814058956916,
+     "timings_s": {
+      "tempo": 0.325,
+      "beats": 2.902,
+      "onsets": 0.001,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.37,
+      "spectral": 0.097,
+      "structure": 0.065
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 2,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key21_A_minor_168bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -84.0 BPM",
+       "detail": {
+        "pred": 83.994,
+        "true": 168.0,
+        "alternates": [
+         41.997,
+         167.988
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 83.994,
+        "true": 168.0,
+        "alternates": [
+         41.997,
+         167.988
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "predicted C major",
+       "detail": {
+        "pred": [
+         "C",
+         "major"
+        ],
+        "true": [
+         "A",
+         "minor"
+        ],
+        "alternate": [
+         "A",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C",
+         "major"
+        ],
+        "true": [
+         "A",
+         "minor"
+        ],
+        "alternate": [
+         "A",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.005321000000000353,
+        "bar_s": 1.4285710000000016
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.3333333333333333,
+       "reason": "P=0.33 R=0.33",
+       "detail": {
+        "precision": 0.3333333333333333,
+        "recall": 0.3333333333333333,
+        "matched": 1,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.4285710000000016
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 83.994,
+      "alternates_bpm": [
+       41.997,
+       167.988
+      ],
+      "key": [
+       "C",
+       "major"
+      ],
+      "key_alternate": [
+       "A",
+       "minor"
+      ],
+      "n_beats": 65,
+      "n_downbeats": 16,
+      "first_downbeat_s": 2.4352,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 3.401,
+     "duration_s": 47.078548752834465,
+     "timings_s": {
+      "tempo": 0.385,
+      "beats": 2.734,
+      "onsets": 0.001,
+      "key": 0.002,
+      "groove": 0.002,
+      "loudness": 0.133,
+      "spectral": 0.066,
+      "structure": 0.072
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.3,
+      "pickup_beats": 2,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key22_As_minor_172bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -86.0 BPM",
+       "detail": {
+        "pred": 86.048,
+        "true": 172.0,
+        "alternates": [
+         43.024,
+         172.096
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 86.048,
+        "true": 172.0,
+        "alternates": [
+         43.024,
+         172.096
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "predicted C# major",
+       "detail": {
+        "pred": [
+         "C#",
+         "major"
+        ],
+        "true": [
+         "A#",
+         "minor"
+        ],
+        "alternate": [
+         "G#",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "major"
+        ],
+        "true": [
+         "A#",
+         "minor"
+        ],
+        "alternate": [
+         "G#",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "median offset 355 ms",
+       "detail": {
+        "median_offset_s": 0.35513249999999896,
+        "bar_s": 1.3953489999999995
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 1.3953489999999995
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 86.048,
+      "alternates_bpm": [
+       43.024,
+       172.096
+      ],
+      "key": [
+       "C#",
+       "major"
+      ],
+      "key_alternate": [
+       "G#",
+       "major"
+      ],
+      "n_beats": 65,
+      "n_downbeats": 17,
+      "first_downbeat_s": 1.2481,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 3.764,
+     "duration_s": 46.598775510204085,
+     "timings_s": {
+      "tempo": 0.295,
+      "beats": 2.636,
+      "onsets": 0.001,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.426,
+      "spectral": 0.302,
+      "structure": 0.074
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 0.9,
+      "pickup_beats": 2,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "key23_B_minor_175bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -87.5 BPM",
+       "detail": {
+        "pred": 87.533,
+        "true": 175.0,
+        "alternates": [
+         43.7665,
+         175.066
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 87.533,
+        "true": 175.0,
+        "alternates": [
+         43.7665,
+         175.066
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "B",
+         "minor"
+        ],
+        "true": [
+         "B",
+         "minor"
+        ],
+        "alternate": [
+         "B",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "B",
+         "minor"
+        ],
+        "true": [
+         "B",
+         "minor"
+        ],
+        "alternate": [
+         "B",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.004314499999999555,
+        "bar_s": 1.3714289999999991
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 1.3714289999999991
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 87.533,
+      "alternates_bpm": [
+       43.7665,
+       175.066
+      ],
+      "key": [
+       "B",
+       "minor"
+      ],
+      "key_alternate": [
+       "B",
+       "major"
+      ],
+      "n_beats": 66,
+      "n_downbeats": 17,
+      "first_downbeat_s": 2.2843,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 3.667,
+     "duration_s": 46.52140589569161,
+     "timings_s": {
+      "tempo": 0.348,
+      "beats": 2.795,
+      "onsets": 0.001,
+      "key": 0.002,
+      "groove": 0.002,
+      "loudness": 0.322,
+      "spectral": 0.107,
+      "structure": 0.065
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 1.6,
+      "pickup_beats": 2,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "loop8_AABA_126bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -63.0 BPM",
+       "detail": {
+        "pred": 63.016,
+        "true": 126.0,
+        "alternates": [
+         31.508,
+         126.032
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 63.016,
+        "true": 126.0,
+        "alternates": [
+         31.508,
+         126.032
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F",
+         "minor"
+        ],
+        "true": [
+         "F",
+         "minor"
+        ],
+        "alternate": [
+         "G#",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F",
+         "minor"
+        ],
+        "true": [
+         "F",
+         "minor"
+        ],
+        "alternate": [
+         "G#",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "median offset 474 ms",
+       "detail": {
+        "median_offset_s": 0.47434800000000044,
+        "bar_s": 1.9047619999999998
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 1.9047619999999998
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 63.016,
+      "alternates_bpm": [
+       31.508,
+       126.032
+      ],
+      "key": [
+       "F",
+       "minor"
+      ],
+      "key_alternate": [
+       "G#",
+       "major"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 32,
+      "first_downbeat_s": 4.4553,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 12.503,
+     "duration_s": 124.33095238095238,
+     "timings_s": {
+      "tempo": 1.624,
+      "beats": 7.978,
+      "onsets": 0.006,
+      "key": 0.004,
+      "groove": 0.004,
+      "loudness": 1.788,
+      "spectral": 0.85,
+      "structure": 0.197
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 8,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 1.6,
+      "pickup_beats": 1,
+      "width": 0.0,
+      "sr": 44100
+     }
+    },
+    {
+     "id": "loop8_ABAB_110bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 109.87,
+        "true": 110.0,
+        "alternates": [
+         54.935,
+         219.74
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 109.87,
+        "true": 110.0,
+        "alternates": [
+         54.935,
+         219.74
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F#",
+         "major"
+        ],
+        "true": [
+         "F#",
+         "major"
+        ],
+        "alternate": [
+         "C#",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F#",
+         "major"
+        ],
+        "true": [
+         "F#",
+         "major"
+        ],
+        "alternate": [
+         "C#",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.005097999999992275,
+        "bar_s": 2.181818
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "P=0.00 R=0.00",
+       "detail": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "matched": 0,
+        "n_pred": 1,
+        "n_true": 3,
+        "tol_s": 2.181818
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 109.87,
+      "alternates_bpm": [
+       54.935,
+       219.74
+      ],
+      "key": [
+       "F#",
+       "major"
+      ],
+      "key_alternate": [
+       "C#",
+       "major"
+      ],
+      "n_beats": 259,
+      "n_downbeats": 65,
+      "first_downbeat_s": 1.9824,
+      "n_sections": 2
+     },
+     "errors": {},
+     "elapsed_s": 15.011,
+     "duration_s": 141.9772335600907,
+     "timings_s": {
+      "tempo": 1.569,
+      "beats": 10.533,
+      "onsets": 0.004,
+      "key": 0.004,
+      "groove": 0.007,
+      "loudness": 1.679,
+      "spectral": 0.955,
+      "structure": 0.183
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 8,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.9,
+      "pickup_beats": 2,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "loop8_ABAB_170bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -85.1 BPM",
+       "detail": {
+        "pred": 84.941,
+        "true": 170.0,
+        "alternates": [
+         42.4705,
+         169.882
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 84.941,
+        "true": 170.0,
+        "alternates": [
+         42.4705,
+         169.882
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "predicted F# major",
+       "detail": {
+        "pred": [
+         "F#",
+         "major"
+        ],
+        "true": [
+         "D#",
+         "minor"
+        ],
+        "alternate": [
+         "D#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F#",
+         "major"
+        ],
+        "true": [
+         "D#",
+         "minor"
+        ],
+        "alternate": [
+         "D#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.006020499999999984,
+        "bar_s": 1.411764999999999
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "P=0.00 R=0.00",
+       "detail": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "matched": 0,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.411764999999999
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 84.941,
+      "alternates_bpm": [
+       42.4705,
+       169.882
+      ],
+      "key": [
+       "F#",
+       "major"
+      ],
+      "key_alternate": [
+       "D#",
+       "minor"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 32,
+      "first_downbeat_s": 1.7009,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 8.226,
+     "duration_s": 91.00290249433107,
+     "timings_s": {
+      "tempo": 1.136,
+      "beats": 6.053,
+      "onsets": 0.003,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.65,
+      "spectral": 0.21,
+      "structure": 0.12
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 8,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.3,
+      "pickup_beats": 0,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "loop8_ABCB_140bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 139.853,
+        "true": 140.0,
+        "alternates": [
+         69.9265,
+         279.706
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 139.853,
+        "true": 140.0,
+        "alternates": [
+         69.9265,
+         279.706
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "E",
+         "major"
+        ],
+        "true": [
+         "E",
+         "major"
+        ],
+        "alternate": [
+         "C#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "E",
+         "major"
+        ],
+        "true": [
+         "E",
+         "major"
+        ],
+        "alternate": [
+         "C#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.00752849999999583,
+        "bar_s": 1.7142860000000013
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 1.7142860000000013
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 139.853,
+      "alternates_bpm": [
+       69.9265,
+       279.706
+      ],
+      "key": [
+       "E",
+       "major"
+      ],
+      "key_alternate": [
+       "C#",
+       "minor"
+      ],
+      "n_beats": 259,
+      "n_downbeats": 64,
+      "first_downbeat_s": 1.2829,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 11.258,
+     "duration_s": 111.34997732426304,
+     "timings_s": {
+      "tempo": 2.221,
+      "beats": 7.317,
+      "onsets": 0.003,
+      "key": 0.003,
+      "groove": 0.007,
+      "loudness": 0.837,
+      "spectral": 0.644,
+      "structure": 0.163
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 8,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 3,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "nodrums0_chords_68bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by +67.9 BPM",
+       "detail": {
+        "pred": 135.921,
+        "true": 68.0,
+        "alternates": [
+         67.9605,
+         271.842
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 135.921,
+        "true": 68.0,
+        "alternates": [
+         67.9605,
+         271.842
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "major"
+        ],
+        "true": [
+         "C#",
+         "major"
+        ],
+        "alternate": [
+         "A#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "major"
+        ],
+        "true": [
+         "C#",
+         "major"
+        ],
+        "alternate": [
+         "A#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.0025705000000009193,
+        "bar_s": 3.5294120000000007
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 3.5294120000000007
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 135.921,
+      "alternates_bpm": [
+       67.9605,
+       271.842
+      ],
+      "key": [
+       "C#",
+       "major"
+      ],
+      "key_alternate": [
+       "A#",
+       "minor"
+      ],
+      "n_beats": 257,
+      "n_downbeats": 65,
+      "first_downbeat_s": 0.0319,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 10.225,
+     "duration_s": 113.29115646258504,
+     "timings_s": {
+      "tempo": 0.752,
+      "beats": 8.479,
+      "onsets": 0.005,
+      "key": 0.004,
+      "groove": 0.004,
+      "loudness": 0.43,
+      "spectral": 0.194,
+      "structure": 0.344
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": false,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 0,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "nodrums1_arpeggio_82bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 82.016,
+        "true": 82.0,
+        "alternates": [
+         41.008,
+         164.032
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 82.016,
+        "true": 82.0,
+        "alternates": [
+         41.008,
+         164.032
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A#",
+         "major"
+        ],
+        "true": [
+         "A#",
+         "major"
+        ],
+        "alternate": [
+         "G",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A#",
+         "major"
+        ],
+        "true": [
+         "A#",
+         "major"
+        ],
+        "alternate": [
+         "G",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "median offset 1448 ms",
+       "detail": {
+        "median_offset_s": 1.4480575000000018,
+        "bar_s": 2.9268289999999997
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 2.9268289999999997
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 82.016,
+      "alternates_bpm": [
+       41.008,
+       164.032
+      ],
+      "key": [
+       "A#",
+       "major"
+      ],
+      "key_alternate": [
+       "G",
+       "minor"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 32,
+      "first_downbeat_s": 1.9534,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 8.803,
+     "duration_s": 94.5085260770975,
+     "timings_s": {
+      "tempo": 0.877,
+      "beats": 6.656,
+      "onsets": 0.003,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.789,
+      "spectral": 0.297,
+      "structure": 0.121
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": false,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.5,
+      "pickup_beats": 0,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "nodrums2_both_95bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 95.064,
+        "true": 95.0,
+        "alternates": [
+         47.532,
+         190.128
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 95.064,
+        "true": 95.0,
+        "alternates": [
+         47.532,
+         190.128
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G",
+         "minor"
+        ],
+        "true": [
+         "G",
+         "minor"
+        ],
+        "alternate": [
+         "A#",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G",
+         "minor"
+        ],
+        "true": [
+         "G",
+         "minor"
+        ],
+        "alternate": [
+         "A#",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.0027685000000001736,
+        "bar_s": 2.526316
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 2.526316
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 95.064,
+      "alternates_bpm": [
+       47.532,
+       190.128
+      ],
+      "key": [
+       "G",
+       "minor"
+      ],
+      "key_alternate": [
+       "A#",
+       "major"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 33,
+      "first_downbeat_s": 0.0319,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 7.012,
+     "duration_s": 81.1920634920635,
+     "timings_s": {
+      "tempo": 0.539,
+      "beats": 5.129,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.967,
+      "spectral": 0.202,
+      "structure": 0.123
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": false,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 0,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "nodrums3_chords_122bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 122.113,
+        "true": 122.0,
+        "alternates": [
+         61.0565,
+         244.226
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 122.113,
+        "true": 122.0,
+        "alternates": [
+         61.0565,
+         244.226
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "E",
+         "major"
+        ],
+        "true": [
+         "E",
+         "major"
+        ],
+        "alternate": [
+         "C#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "E",
+         "major"
+        ],
+        "true": [
+         "E",
+         "major"
+        ],
+        "alternate": [
+         "C#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.007670000000000954,
+        "bar_s": 1.967213000000001
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.967213000000001
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 122.113,
+      "alternates_bpm": [
+       61.0565,
+       244.226
+      ],
+      "key": [
+       "E",
+       "major"
+      ],
+      "key_alternate": [
+       "C#",
+       "minor"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 33,
+      "first_downbeat_s": 0.4992,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 5.695,
+     "duration_s": 63.800816326530615,
+     "timings_s": {
+      "tempo": 0.833,
+      "beats": 4.414,
+      "onsets": 0.007,
+      "key": 0.003,
+      "groove": 0.003,
+      "loudness": 0.251,
+      "spectral": 0.091,
+      "structure": 0.087
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": false,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.5,
+      "pickup_beats": 0,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "nodrums4_arpeggio_146bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -73.0 BPM",
+       "detail": {
+        "pred": 72.955,
+        "true": 146.0,
+        "alternates": [
+         36.4775,
+         145.91
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 72.955,
+        "true": 146.0,
+        "alternates": [
+         36.4775,
+         145.91
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "predicted E major",
+       "detail": {
+        "pred": [
+         "E",
+         "major"
+        ],
+        "true": [
+         "C#",
+         "minor"
+        ],
+        "alternate": [
+         "C#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "E",
+         "major"
+        ],
+        "true": [
+         "C#",
+         "minor"
+        ],
+        "alternate": [
+         "C#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "median offset 812 ms",
+       "detail": {
+        "median_offset_s": 0.811816000000003,
+        "bar_s": 1.6438359999999999
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "P=0.00 R=0.00",
+       "detail": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "matched": 0,
+        "n_pred": 1,
+        "n_true": 3,
+        "tol_s": 1.6438359999999999
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 72.955,
+      "alternates_bpm": [
+       36.4775,
+       145.91
+      ],
+      "key": [
+       "E",
+       "major"
+      ],
+      "key_alternate": [
+       "C#",
+       "minor"
+      ],
+      "n_beats": 65,
+      "n_downbeats": 16,
+      "first_downbeat_s": 0.8156,
+      "n_sections": 2
+     },
+     "errors": {},
+     "elapsed_s": 4.582,
+     "duration_s": 52.95269841269841,
+     "timings_s": {
+      "tempo": 0.361,
+      "beats": 3.416,
+      "onsets": 0.007,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.565,
+      "spectral": 0.127,
+      "structure": 0.073
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": false,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 0,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "nodrums5_both_165bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -82.5 BPM",
+       "detail": {
+        "pred": 82.45,
+        "true": 165.0,
+        "alternates": [
+         41.225,
+         164.9
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 82.45,
+        "true": 165.0,
+        "alternates": [
+         41.225,
+         164.9
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A#",
+         "minor"
+        ],
+        "true": [
+         "A#",
+         "minor"
+        ],
+        "alternate": [
+         "C#",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A#",
+         "minor"
+        ],
+        "true": [
+         "A#",
+         "minor"
+        ],
+        "alternate": [
+         "C#",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.007868000000000208,
+        "bar_s": 1.454545000000003
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.4,
+       "reason": "P=0.50 R=0.33",
+       "detail": {
+        "precision": 0.5,
+        "recall": 0.3333333333333333,
+        "matched": 1,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 1.454545000000003
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 82.45,
+      "alternates_bpm": [
+       41.225,
+       164.9
+      ],
+      "key": [
+       "A#",
+       "minor"
+      ],
+      "key_alternate": [
+       "C#",
+       "major"
+      ],
+      "n_beats": 65,
+      "n_downbeats": 16,
+      "first_downbeat_s": 1.9563,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 3.828,
+     "duration_s": 47.39541950113379,
+     "timings_s": {
+      "tempo": 0.314,
+      "beats": 2.995,
+      "onsets": 0.001,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.292,
+      "spectral": 0.107,
+      "structure": 0.086
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": false,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 0.5,
+      "pickup_beats": 0,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "octave0_double_140bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -70.0 BPM",
+       "detail": {
+        "pred": 69.963,
+        "true": 140.0,
+        "alternates": [
+         34.9815,
+         139.926
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 69.963,
+        "true": 140.0,
+        "alternates": [
+         34.9815,
+         139.926
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "minor"
+        ],
+        "true": [
+         "C#",
+         "minor"
+        ],
+        "alternate": [
+         "E",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "minor"
+        ],
+        "true": [
+         "C#",
+         "minor"
+        ],
+        "alternate": [
+         "E",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "median offset 431 ms",
+       "detail": {
+        "median_offset_s": 0.4313289999999963,
+        "bar_s": 1.7142859999999978
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.7142859999999978
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 69.963,
+      "alternates_bpm": [
+       34.9815,
+       139.926
+      ],
+      "key": [
+       "C#",
+       "minor"
+      ],
+      "key_alternate": [
+       "E",
+       "major"
+      ],
+      "n_beats": 64,
+      "n_downbeats": 16,
+      "first_downbeat_s": 3.2943,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 4.666,
+     "duration_s": 55.507120181405895,
+     "timings_s": {
+      "tempo": 0.37,
+      "beats": 3.604,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.423,
+      "spectral": 0.157,
+      "structure": 0.075
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 0.3,
+      "pickup_beats": 0,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "octave0_half_70bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by +69.8 BPM",
+       "detail": {
+        "pred": 139.824,
+        "true": 70.0,
+        "alternates": [
+         69.912,
+         279.648
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 139.824,
+        "true": 70.0,
+        "alternates": [
+         69.912,
+         279.648
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C",
+         "major"
+        ],
+        "true": [
+         "C",
+         "major"
+        ],
+        "alternate": [
+         "A",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C",
+         "major"
+        ],
+        "true": [
+         "C",
+         "major"
+        ],
+        "alternate": [
+         "A",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.0032500000000030838,
+        "bar_s": 3.428571000000005
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.14285714285714288,
+       "reason": "P=0.09 R=0.33",
+       "detail": {
+        "precision": 0.09090909090909091,
+        "recall": 0.3333333333333333,
+        "matched": 1,
+        "n_pred": 11,
+        "n_true": 3,
+        "tol_s": 3.428571000000005
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 139.824,
+      "alternates_bpm": [
+       69.912,
+       279.648
+      ],
+      "key": [
+       "C",
+       "major"
+      ],
+      "key_alternate": [
+       "A",
+       "minor"
+      ],
+      "n_beats": 257,
+      "n_downbeats": 65,
+      "first_downbeat_s": 0.3019,
+      "n_sections": 12
+     },
+     "errors": {},
+     "elapsed_s": 11.365,
+     "duration_s": 110.36426303854876,
+     "timings_s": {
+      "tempo": 2.01,
+      "beats": 7.454,
+      "onsets": 0.004,
+      "key": 0.003,
+      "groove": 0.003,
+      "loudness": 0.85,
+      "spectral": 0.766,
+      "structure": 0.218
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 0.3,
+      "pickup_beats": 0,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "octave1_double_150bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -75.0 BPM",
+       "detail": {
+        "pred": 74.983,
+        "true": 150.0,
+        "alternates": [
+         37.4915,
+         149.966
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 74.983,
+        "true": 150.0,
+        "alternates": [
+         37.4915,
+         149.966
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "predicted B major",
+       "detail": {
+        "pred": [
+         "B",
+         "major"
+        ],
+        "true": [
+         "G#",
+         "minor"
+        ],
+        "alternate": [
+         "G#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "B",
+         "major"
+        ],
+        "true": [
+         "G#",
+         "minor"
+        ],
+        "alternate": [
+         "G#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.003500000000001169,
+        "bar_s": 1.6000000000000014
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 1.6000000000000014
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 74.983,
+      "alternates_bpm": [
+       37.4915,
+       149.966
+      ],
+      "key": [
+       "B",
+       "major"
+      ],
+      "key_alternate": [
+       "G#",
+       "minor"
+      ],
+      "n_beats": 65,
+      "n_downbeats": 16,
+      "first_downbeat_s": 1.6922,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 4.195,
+     "duration_s": 53.249977324263035,
+     "timings_s": {
+      "tempo": 0.352,
+      "beats": 3.207,
+      "onsets": 0.001,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.41,
+      "spectral": 0.112,
+      "structure": 0.077
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 0.9,
+      "pickup_beats": 2,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "octave1_half_75bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 74.986,
+        "true": 75.0,
+        "alternates": [
+         37.493,
+         149.972
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 74.986,
+        "true": 75.0,
+        "alternates": [
+         37.493,
+         149.972
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G",
+         "major"
+        ],
+        "true": [
+         "G",
+         "major"
+        ],
+        "alternate": [
+         "E",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G",
+         "major"
+        ],
+        "true": [
+         "G",
+         "major"
+        ],
+        "alternate": [
+         "E",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.010400000000004184,
+        "bar_s": 3.200000000000003
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 3.200000000000003
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 74.986,
+      "alternates_bpm": [
+       37.493,
+       149.972
+      ],
+      "key": [
+       "G",
+       "major"
+      ],
+      "key_alternate": [
+       "E",
+       "minor"
+      ],
+      "n_beats": 130,
+      "n_downbeats": 32,
+      "first_downbeat_s": 2.4874,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 10.577,
+     "duration_s": 105.24997732426304,
+     "timings_s": {
+      "tempo": 1.989,
+      "beats": 6.912,
+      "onsets": 0.003,
+      "key": 0.004,
+      "groove": 0.005,
+      "loudness": 0.786,
+      "spectral": 0.681,
+      "structure": 0.142
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "kick_on_one",
+      "swing": 50.0,
+      "lead_s": 0.9,
+      "pickup_beats": 2,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "octave2_double_160bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -80.0 BPM",
+       "detail": {
+        "pred": 79.952,
+        "true": 160.0,
+        "alternates": [
+         39.976,
+         159.904
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 79.952,
+        "true": 160.0,
+        "alternates": [
+         39.976,
+         159.904
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D#",
+         "major"
+        ],
+        "true": [
+         "D#",
+         "major"
+        ],
+        "alternate": [
+         "C",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D#",
+         "major"
+        ],
+        "true": [
+         "D#",
+         "major"
+        ],
+        "alternate": [
+         "C",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.003961000000000325,
+        "bar_s": 1.5
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.5
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 79.952,
+      "alternates_bpm": [
+       39.976,
+       159.904
+      ],
+      "key": [
+       "D#",
+       "major"
+      ],
+      "key_alternate": [
+       "C",
+       "minor"
+      ],
+      "n_beats": 65,
+      "n_downbeats": 16,
+      "first_downbeat_s": 2.3423,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 3.764,
+     "duration_s": 50.32498866213152,
+     "timings_s": {
+      "tempo": 0.58,
+      "beats": 2.89,
+      "onsets": 0.003,
+      "key": 0.003,
+      "groove": 0.002,
+      "loudness": 0.14,
+      "spectral": 0.069,
+      "structure": 0.073
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 1.6,
+      "pickup_beats": 1,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "octave2_half_80bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 79.921,
+        "true": 80.0,
+        "alternates": [
+         39.9605,
+         159.842
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 79.921,
+        "true": 80.0,
+        "alternates": [
+         39.9605,
+         159.842
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D",
+         "minor"
+        ],
+        "true": [
+         "D",
+         "minor"
+        ],
+        "alternate": [
+         "F",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D",
+         "minor"
+        ],
+        "true": [
+         "D",
+         "minor"
+        ],
+        "alternate": [
+         "F",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.0056730000000015934,
+        "bar_s": 3.0
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 3.0
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 79.921,
+      "alternates_bpm": [
+       39.9605,
+       159.842
+      ],
+      "key": [
+       "D",
+       "minor"
+      ],
+      "key_alternate": [
+       "F",
+       "major"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 32,
+      "first_downbeat_s": 2.3394,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 7.989,
+     "duration_s": 98.7,
+     "timings_s": {
+      "tempo": 1.226,
+      "beats": 6.059,
+      "onsets": 0.005,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.37,
+      "spectral": 0.176,
+      "structure": 0.136
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 50.0,
+      "lead_s": 1.6,
+      "pickup_beats": 1,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "octave3_double_175bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "off by -87.5 BPM",
+       "detail": {
+        "pred": 87.536,
+        "true": 175.0,
+        "alternates": [
+         43.768,
+         175.072
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 87.536,
+        "true": 175.0,
+        "alternates": [
+         43.768,
+         175.072
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A#",
+         "major"
+        ],
+        "true": [
+         "A#",
+         "major"
+        ],
+        "alternate": [
+         "G",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A#",
+         "major"
+        ],
+        "true": [
+         "A#",
+         "major"
+        ],
+        "alternate": [
+         "G",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "median offset 345 ms",
+       "detail": {
+        "median_offset_s": 0.3450429999999969,
+        "bar_s": 1.3714289999999991
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.3714289999999991
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 87.536,
+      "alternates_bpm": [
+       43.768,
+       175.072
+      ],
+      "key": [
+       "A#",
+       "major"
+      ],
+      "key_alternate": [
+       "G",
+       "minor"
+      ],
+      "n_beats": 66,
+      "n_downbeats": 17,
+      "first_downbeat_s": 0.6821,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 3.613,
+     "duration_s": 45.264263038548755,
+     "timings_s": {
+      "tempo": 0.286,
+      "beats": 2.705,
+      "onsets": 0.001,
+      "key": 0.002,
+      "groove": 0.002,
+      "loudness": 0.414,
+      "spectral": 0.103,
+      "structure": 0.076
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 3,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "octave3_half_87.5bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 87.533,
+        "true": 87.5,
+        "alternates": [
+         43.7665,
+         175.066
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 87.533,
+        "true": 87.5,
+        "alternates": [
+         43.7665,
+         175.066
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A",
+         "minor"
+        ],
+        "true": [
+         "A",
+         "minor"
+        ],
+        "alternate": [
+         "C",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "A",
+         "minor"
+        ],
+        "true": [
+         "A",
+         "minor"
+        ],
+        "alternate": [
+         "C",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.005078499999998876,
+        "bar_s": 2.7428570000000008
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "P=0.00 R=0.00",
+       "detail": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "matched": 0,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 2.7428570000000008
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 87.533,
+      "alternates_bpm": [
+       43.7665,
+       175.066
+      ],
+      "key": [
+       "A",
+       "minor"
+      ],
+      "key_alternate": [
+       "C",
+       "major"
+      ],
+      "n_beats": 132,
+      "n_downbeats": 33,
+      "first_downbeat_s": 2.0521,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 7.889,
+     "duration_s": 90.17854875283447,
+     "timings_s": {
+      "tempo": 0.901,
+      "beats": 5.806,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.668,
+      "spectral": 0.329,
+      "structure": 0.12
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "four_on_floor",
+      "swing": 50.0,
+      "lead_s": 0.0,
+      "pickup_beats": 3,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "swing0_58pct_programmed_86bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 86.0,
+        "true": 86.0,
+        "alternates": [
+         43.0,
+         172.0
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 86.0,
+        "true": 86.0,
+        "alternates": [
+         43.0,
+         172.0
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D#",
+         "major"
+        ],
+        "true": [
+         "D#",
+         "major"
+        ],
+        "alternate": [
+         "C",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "D#",
+         "major"
+        ],
+        "true": [
+         "D#",
+         "major"
+        ],
+        "alternate": [
+         "C",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.010083499999996803,
+        "bar_s": 2.790697999999999
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 2.790697999999999
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 86.0,
+      "alternates_bpm": [
+       43.0,
+       172.0
+      ],
+      "key": [
+       "D#",
+       "major"
+      ],
+      "key_alternate": [
+       "C",
+       "minor"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 32,
+      "first_downbeat_s": 0.6879,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 7.364,
+     "duration_s": 90.34997732426304,
+     "timings_s": {
+      "tempo": 1.111,
+      "beats": 5.526,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.324,
+      "spectral": 0.258,
+      "structure": 0.119
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 58.0,
+      "lead_s": 0.0,
+      "pickup_beats": 1,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "swing1_62pct_programmed_92bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 91.962,
+        "true": 92.0,
+        "alternates": [
+         45.981,
+         183.924
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 91.962,
+        "true": 92.0,
+        "alternates": [
+         45.981,
+         183.924
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G#",
+         "major"
+        ],
+        "true": [
+         "G#",
+         "major"
+        ],
+        "alternate": [
+         "F",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "G#",
+         "major"
+        ],
+        "true": [
+         "G#",
+         "major"
+        ],
+        "alternate": [
+         "F",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.007607499999999767,
+        "bar_s": 2.608695999999995
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "matched": 3,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 2.608695999999995
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 91.962,
+      "alternates_bpm": [
+       45.981,
+       183.924
+      ],
+      "key": [
+       "G#",
+       "major"
+      ],
+      "key_alternate": [
+       "F",
+       "minor"
+      ],
+      "n_beats": 131,
+      "n_downbeats": 32,
+      "first_downbeat_s": 2.2465,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 8.644,
+     "duration_s": 86.08480725623583,
+     "timings_s": {
+      "tempo": 1.262,
+      "beats": 5.783,
+      "onsets": 0.004,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.919,
+      "spectral": 0.459,
+      "structure": 0.163
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 62.0,
+      "lead_s": 0.3,
+      "pickup_beats": 3,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "swing2_66.7pct_programmed_98bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 97.809,
+        "true": 98.0,
+        "alternates": [
+         48.9045,
+         195.618
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 97.809,
+        "true": 98.0,
+        "alternates": [
+         48.9045,
+         195.618
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "minor"
+        ],
+        "true": [
+         "C#",
+         "minor"
+        ],
+        "alternate": [
+         "E",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "C#",
+         "minor"
+        ],
+        "true": [
+         "C#",
+         "minor"
+        ],
+        "alternate": [
+         "E",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.00492449999999689,
+        "bar_s": 2.448979999999999
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.0,
+       "reason": "P=0.00 R=0.00",
+       "detail": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "matched": 0,
+        "n_pred": 1,
+        "n_true": 3,
+        "tol_s": 2.448979999999999
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 97.809,
+      "alternates_bpm": [
+       48.9045,
+       195.618
+      ],
+      "key": [
+       "C#",
+       "minor"
+      ],
+      "key_alternate": [
+       "E",
+       "major"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 33,
+      "first_downbeat_s": 0.8911,
+      "n_sections": 2
+     },
+     "errors": {},
+     "elapsed_s": 6.98,
+     "duration_s": 79.61732426303855,
+     "timings_s": {
+      "tempo": 0.885,
+      "beats": 4.968,
+      "onsets": 0.009,
+      "key": 0.015,
+      "groove": 0.016,
+      "loudness": 0.69,
+      "spectral": 0.251,
+      "structure": 0.103
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 66.7,
+      "lead_s": 0.9,
+      "pickup_beats": 0,
+      "width": 0.6,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "swing3_58pct_sampled_118bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 117.783,
+        "true": 118.0,
+        "alternates": [
+         58.8915,
+         235.566
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 117.783,
+        "true": 118.0,
+        "alternates": [
+         58.8915,
+         235.566
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F#",
+         "minor"
+        ],
+        "true": [
+         "F#",
+         "minor"
+        ],
+        "alternate": [
+         "F#",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "F#",
+         "minor"
+        ],
+        "true": [
+         "F#",
+         "minor"
+        ],
+        "alternate": [
+         "F#",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.007295500000002342,
+        "bar_s": 2.0338980000000006
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 2.0338980000000006
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 117.783,
+      "alternates_bpm": [
+       58.8915,
+       235.566
+      ],
+      "key": [
+       "F#",
+       "minor"
+      ],
+      "key_alternate": [
+       "F#",
+       "major"
+      ],
+      "n_beats": 130,
+      "n_downbeats": 32,
+      "first_downbeat_s": 2.6064,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 5.414,
+     "duration_s": 68.05165532879819,
+     "timings_s": {
+      "tempo": 0.498,
+      "beats": 4.397,
+      "onsets": 0.002,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.25,
+      "spectral": 0.133,
+      "structure": 0.12
+     },
+     "meta": {
+      "structure": "ABCB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 58.0,
+      "lead_s": 1.6,
+      "pickup_beats": 2,
+      "width": 0.0,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "swing4_62pct_sampled_126bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 125.463,
+        "true": 126.0,
+        "alternates": [
+         62.7315,
+         250.926
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 125.463,
+        "true": 126.0,
+        "alternates": [
+         62.7315,
+         250.926
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "B",
+         "minor"
+        ],
+        "true": [
+         "B",
+         "minor"
+        ],
+        "alternate": [
+         "D",
+         "major"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "B",
+         "minor"
+        ],
+        "true": [
+         "B",
+         "minor"
+        ],
+        "alternate": [
+         "D",
+         "major"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.009259500000002419,
+        "bar_s": 1.9047619999999994
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.3333333333333333,
+       "reason": "P=0.33 R=0.33",
+       "detail": {
+        "precision": 0.3333333333333333,
+        "recall": 0.3333333333333333,
+        "matched": 1,
+        "n_pred": 3,
+        "n_true": 3,
+        "tol_s": 1.9047619999999994
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 125.463,
+      "alternates_bpm": [
+       62.7315,
+       250.926
+      ],
+      "key": [
+       "B",
+       "minor"
+      ],
+      "key_alternate": [
+       "D",
+       "major"
+      ],
+      "n_beats": 129,
+      "n_downbeats": 32,
+      "first_downbeat_s": 0.4702,
+      "n_sections": 4
+     },
+     "errors": {},
+     "elapsed_s": 5.621,
+     "duration_s": 61.77854875283447,
+     "timings_s": {
+      "tempo": 0.403,
+      "beats": 4.525,
+      "onsets": 0.001,
+      "key": 0.003,
+      "groove": 0.004,
+      "loudness": 0.441,
+      "spectral": 0.128,
+      "structure": 0.082
+     },
+     "meta": {
+      "structure": "ABAB",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 62.0,
+      "lead_s": 0.0,
+      "pickup_beats": 1,
+      "width": 0.3,
+      "sr": 22050
+     }
+    },
+    {
+     "id": "swing5_66.7pct_sampled_134bpm",
+     "scores": {
+      "bpm_exact": {
+       "metric": "bpm_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 133.533,
+        "true": 134.0,
+        "alternates": [
+         66.7665,
+         267.066
+        ]
+       }
+      },
+      "bpm_octave": {
+       "metric": "bpm_octave",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": 133.533,
+        "true": 134.0,
+        "alternates": [
+         66.7665,
+         267.066
+        ]
+       }
+      },
+      "key_exact": {
+       "metric": "key_exact",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "E",
+         "major"
+        ],
+        "true": [
+         "E",
+         "major"
+        ],
+        "alternate": [
+         "C#",
+         "minor"
+        ]
+       }
+      },
+      "key_relative": {
+       "metric": "key_relative",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "pred": [
+         "E",
+         "major"
+        ],
+        "true": [
+         "E",
+         "major"
+        ],
+        "alternate": [
+         "C#",
+         "minor"
+        ]
+       }
+      },
+      "downbeat": {
+       "metric": "downbeat",
+       "applicable": true,
+       "value": 1.0,
+       "reason": null,
+       "detail": {
+        "median_offset_s": 0.010320499999998844,
+        "bar_s": 1.7910449999999996
+       }
+      },
+      "structure_f": {
+       "metric": "structure_f",
+       "applicable": true,
+       "value": 0.8,
+       "reason": "P=1.00 R=0.67",
+       "detail": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "matched": 2,
+        "n_pred": 2,
+        "n_true": 3,
+        "tol_s": 1.7910449999999996
+       }
+      }
+     },
+     "prediction": {
+      "bpm": 133.533,
+      "alternates_bpm": [
+       66.7665,
+       267.066
+      ],
+      "key": [
+       "E",
+       "major"
+      ],
+      "key_alternate": [
+       "C#",
+       "minor"
+      ],
+      "n_beats": 132,
+      "n_downbeats": 33,
+      "first_downbeat_s": 1.6312,
+      "n_sections": 3
+     },
+     "errors": {},
+     "elapsed_s": 4.948,
+     "duration_s": 59.30671201814059,
+     "timings_s": {
+      "tempo": 0.612,
+      "beats": 3.638,
+      "onsets": 0.002,
+      "key": 0.004,
+      "groove": 0.005,
+      "loudness": 0.464,
+      "spectral": 0.122,
+      "structure": 0.069
+     },
+     "meta": {
+      "structure": "AABA",
+      "loop_bars": 4,
+      "with_drums": true,
+      "pattern": "boom_bap",
+      "swing": 66.7,
+      "lead_s": 0.3,
+      "pickup_beats": 3,
+      "width": 0.6,
+      "sr": 22050
+     }
+    }
+   ]
   }
  },
  "overall": {
   "bpm_exact": {
    "metric": "bpm_exact",
-   "n": 0,
-   "score": null,
-   "reasons": {}
+   "n": 48,
+   "score": 0.5625,
+   "reasons": {
+    "off by -75.0 BPM": 2,
+    "off by -87.5 BPM": 2,
+    "off by +64.7 BPM": 1,
+    "off by +71.8 BPM": 1,
+    "off by -61.9 BPM": 1,
+    "off by -69.0 BPM": 1,
+    "off by -72.0 BPM": 1,
+    "off by -77.9 BPM": 1,
+    "off by -81.1 BPM": 1,
+    "off by -84.0 BPM": 1,
+    "off by -86.0 BPM": 1,
+    "off by -63.0 BPM": 1,
+    "off by -85.1 BPM": 1,
+    "off by +67.9 BPM": 1,
+    "off by -73.0 BPM": 1,
+    "off by -82.5 BPM": 1,
+    "off by -70.0 BPM": 1,
+    "off by +69.8 BPM": 1,
+    "off by -80.0 BPM": 1
+   }
   },
   "bpm_octave": {
    "metric": "bpm_octave",
-   "n": 0,
-   "score": null,
+   "n": 48,
+   "score": 1.0,
    "reasons": {}
   },
   "key_exact": {
    "metric": "key_exact",
-   "n": 0,
-   "score": null,
-   "reasons": {}
+   "n": 48,
+   "score": 0.8333333333333334,
+   "reasons": {
+    "predicted F# major": 2,
+    "predicted G major": 1,
+    "predicted A# major": 1,
+    "predicted C major": 1,
+    "predicted C# major": 1,
+    "predicted E major": 1,
+    "predicted B major": 1
+   }
   },
   "key_relative": {
    "metric": "key_relative",
-   "n": 0,
-   "score": null,
+   "n": 48,
+   "score": 1.0,
    "reasons": {}
   },
   "downbeat": {
    "metric": "downbeat",
-   "n": 0,
-   "score": null,
-   "reasons": {}
+   "n": 48,
+   "score": 0.7916666666666666,
+   "reasons": {
+    "median offset 675 ms": 1,
+    "median offset 476 ms": 1,
+    "median offset 432 ms": 1,
+    "median offset 386 ms": 1,
+    "median offset 355 ms": 1,
+    "median offset 474 ms": 1,
+    "median offset 1448 ms": 1,
+    "median offset 812 ms": 1,
+    "median offset 431 ms": 1,
+    "median offset 345 ms": 1
+   }
   },
   "structure_f": {
    "metric": "structure_f",
-   "n": 0,
-   "score": null,
-   "reasons": {}
+   "n": 48,
+   "score": 0.6765873015873017,
+   "reasons": {
+    "P=1.00 R=0.67": 17,
+    "P=0.00 R=0.00": 8,
+    "P=0.33 R=0.33": 4,
+    "P=0.50 R=0.33": 1,
+    "P=0.09 R=0.33": 1
+   }
   }
  },
  "gates": {
-  "enforced": false,
-  "results": [],
-  "passed": null,
+  "enforced": true,
+  "results": [
+   {
+    "dataset": "synthetic",
+    "metric": "bpm_exact",
+    "threshold": 0.5,
+    "score": 0.5625,
+    "n": 48,
+    "passed": true
+   },
+   {
+    "dataset": "synthetic",
+    "metric": "bpm_octave",
+    "threshold": 0.95,
+    "score": 1.0,
+    "n": 48,
+    "passed": true
+   },
+   {
+    "dataset": "synthetic",
+    "metric": "key_exact",
+    "threshold": 0.65,
+    "score": 0.8333333333333334,
+    "n": 48,
+    "passed": true
+   },
+   {
+    "dataset": "synthetic",
+    "metric": "key_relative",
+    "threshold": 0.85,
+    "score": 1.0,
+    "n": 48,
+    "passed": true
+   },
+   {
+    "dataset": "synthetic",
+    "metric": "downbeat",
+    "threshold": 0.75,
+    "score": 0.7916666666666666,
+    "n": 48,
+    "passed": true
+   },
+   {
+    "dataset": "synthetic",
+    "metric": "structure_f",
+    "threshold": 0.6,
+    "score": 0.6765873015873017,
+    "n": 48,
+    "passed": true
+   }
+  ],
+  "passed": true,
   "notes": []
  }
 }
