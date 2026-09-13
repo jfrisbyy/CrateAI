@@ -1,9 +1,17 @@
 "use client";
 
-// Right pane: conversations, the files in context, messages with tool cards,
-// the composer. A send streams POST /api/chat's events into the turn in
+// The chat pane: conversations, the files in context, messages with tool
+// cards, the composer. A send streams POST /api/chat's events into the turn in
 // flight, then reloads the stored rows so ids, tool calls and citations are
 // final. The open file (/f/[fileId]) is attached by default.
+//
+// It is also the command line. Before a message is sent to the model it is
+// parsed for a transport or rack command — "solo the drums", "loop bars 9 to
+// 16", "next", "keep it". A sentence that is unmistakably one of those moves
+// the control the mouse would have moved and never reaches the model; anything
+// else, including every question, goes to the model exactly as before. What
+// happened is echoed under the composer in the same words the control uses,
+// so the two halves of the interface can never disagree.
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -12,6 +20,8 @@ import { streamChat } from "@/lib/api/chat";
 import { api, errorMessage } from "@/lib/api/client";
 import type { LoopSummary } from "@/lib/chat/cards";
 import type { ChatEvent } from "@/lib/chat/protocol";
+import { emitSessionCommand, onCommandResult } from "@/components/shell/sessionCommands";
+import { parseSessionCommand } from "@/lib/session/commands";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 import type { ConversationRow, MessageRow } from "@/lib/types/db";
 import { AttachmentChips } from "./AttachmentChips";
@@ -41,7 +51,19 @@ export function ChatPane() {
   const [loading, setLoading] = useState(true);
   const [listOpen, setListOpen] = useState(false);
   const [attached, setAttached] = useState<string[]>([]);
+  const [commandLog, setCommandLog] = useState<Array<{ id: number; said: string; text: string; ok: boolean }>>([]);
+  const pendingCommand = useRef<string | null>(null);
+  const logId = useRef(0);
   const scroller = useRef<HTMLDivElement>(null);
+
+  // The shell applies the command and says what it did; that line is the echo.
+  useEffect(() => {
+    return onCommandResult((result) => {
+      const said = pendingCommand.current ?? "";
+      pendingCommand.current = null;
+      setCommandLog((prev) => [...prev.slice(-3), { id: ++logId.current, said, text: result.text, ok: result.ok }]);
+    });
+  }, []);
 
   // the open file joins the conversation when it changes; detaching it is remembered until the next file opens
   const lastOpen = useRef<string | null>(null);
@@ -114,6 +136,16 @@ export function ChatPane() {
   const send = useCallback(
     async (text: string, batch?: ConfirmCard) => {
       setError(null);
+      // The command line. Only sentences that are unmistakably a transport or
+      // rack command are taken; everything else is a conversation.
+      if (!batch) {
+        const command = parseSessionCommand(text);
+        if (command) {
+          pendingCommand.current = text.trim();
+          emitSessionCommand(command);
+          return;
+        }
+      }
       setLive({ userText: text, text: "", tools: [], citations: [], error: null, streaming: true });
       const onEvent = (e: ChatEvent) => {
         setLive((prev) => {
@@ -231,7 +263,9 @@ export function ChatPane() {
           <p className="px-4 py-3 text-sm text-chalk-dim">
             Ask about the open file or tell the library what to do: find the loop under the hook, separate the stems, put these drums under that
             sample, who produced this. Musical facts come from the analysis, world facts from cited pages, and everything the chat makes lands on the
-            surface where you can change it.
+            panel where you can hear it and change it. The transport answers here too: <span className="text-chalk">play</span>,{" "}
+            <span className="text-chalk">loop bars 9 to 16</span>, <span className="text-chalk">solo the drums</span>,{" "}
+            <span className="text-chalk">next</span>, <span className="text-chalk">keep it</span>.
           </p>
         )}
         <MessageList messages={messages} live={live} actions={actions} />
@@ -241,6 +275,21 @@ export function ChatPane() {
           </p>
         )}
       </div>
+
+      {commandLog.length > 0 && (
+        <ul className="shrink-0 border-t border-rule px-4 py-1" aria-live="polite">
+          {commandLog.map((entry) => (
+            <li key={entry.id} className="text-xs text-chalk-dim flex items-baseline gap-2">
+              <span aria-hidden className={entry.ok ? "text-pad" : "text-chalk-faint"}>
+                ▸
+              </span>
+              <span className="truncate" title={entry.said}>
+                {entry.text}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <Composer disabled={busy} onSend={(text) => send(text)} />
     </div>

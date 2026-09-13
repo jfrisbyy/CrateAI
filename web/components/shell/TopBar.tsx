@@ -6,19 +6,26 @@ import { btn, btnQuiet, cx } from "@/components/ui";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 
 export function TopBar({
-  chatOpen,
-  onToggleChat,
+  panelOpen,
+  canOpenPanel,
+  onTogglePanel,
+  libraryOpen,
+  onToggleLibrary,
   onKeymap,
   padNote,
 }: {
-  chatOpen: boolean;
-  onToggleChat: () => void;
+  panelOpen: boolean;
+  /** false until something has been put on the panel; the toggle has nothing to show */
+  canOpenPanel: boolean;
+  onTogglePanel: () => void;
+  libraryOpen: boolean;
+  onToggleLibrary: () => void;
   onKeymap: () => void;
   padNote: string | null;
 }) {
   const { userEmail, realtime } = useLibrary();
   return (
-    <header className="h-11 shrink-0 border-b border-rule grid grid-cols-[288px_minmax(0,1fr)_auto] items-center">
+    <header className={cx("h-11 shrink-0 border-b border-rule grid items-center", libraryOpen ? "grid-cols-[288px_minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)_auto]")}>
       <div className="px-4 flex items-center gap-3">
         <span className="font-semibold tracking-tight">CrateAI</span>
         <span
@@ -48,8 +55,18 @@ export function TopBar({
         <button type="button" onClick={onKeymap} className={btn} title="Keyboard map (?)" aria-label="Keyboard map">
           <span className="font-mono">?</span>
         </button>
-        <button type="button" onClick={onToggleChat} className={btn} aria-pressed={chatOpen}>
-          {chatOpen ? "Hide chat" : "Chat"}
+        <button type="button" onClick={onToggleLibrary} className={btn} aria-pressed={libraryOpen} title="Show or hide the crate">
+          {libraryOpen ? "Hide library" : "Library"}
+        </button>
+        <button
+          type="button"
+          onClick={onTogglePanel}
+          className={btn}
+          aria-pressed={panelOpen}
+          disabled={!canOpenPanel}
+          title={canOpenPanel ? "Show or dismiss the panel; the chat takes the full width when it is closed" : "Nothing on the panel yet"}
+        >
+          {panelOpen ? "Hide panel" : "Panel"}
         </button>
         <span className="text-xs text-chalk-dim max-w-[180px] truncate" title={userEmail ?? undefined}>
           {userEmail}

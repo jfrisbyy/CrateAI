@@ -17,15 +17,23 @@ export function getAudioContext(): AudioContext {
 const cache = new Map<string, Promise<AudioBuffer>>();
 const MAX_CACHED = 3;
 
+/**
+ * Fetch and decode, with no cache of its own. The session transport keeps its
+ * own cache with a byte budget and an eviction order
+ * (lib/session/decodeCache.ts); it must not be shadowed by the three-item one
+ * below, which exists for the single open file on the loops tab.
+ */
+export async function fetchAndDecode(url: string): Promise<AudioBuffer> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Could not fetch audio (${res.status}).`);
+  const bytes = await res.arrayBuffer();
+  return await getAudioContext().decodeAudioData(bytes);
+}
+
 export function decodeFromUrl(cacheKey: string, url: string): Promise<AudioBuffer> {
   const hit = cache.get(cacheKey);
   if (hit) return hit;
-  const promise = (async () => {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Could not fetch audio (${res.status}).`);
-    const bytes = await res.arrayBuffer();
-    return await getAudioContext().decodeAudioData(bytes);
-  })();
+  const promise = fetchAndDecode(url);
   cache.set(cacheKey, promise);
   promise.catch(() => cache.delete(cacheKey));
   while (cache.size > MAX_CACHED) {
