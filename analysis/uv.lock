@@ -1302,6 +1302,7 @@ dependencies = [
     { name = "pretty-midi" },
     { name = "pydantic" },
     { name = "pyloudnorm" },
+    { name = "python-stretch" },
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "soundfile" },
@@ -1374,6 +1375,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5" },
     { name = "python-dotenv", marker = "extra == 'compute'", specifier = ">=1.0" },
     { name = "python-dotenv", marker = "extra == 'dev'", specifier = ">=1.0" },
+    { name = "python-stretch", specifier = ">=0.3.1" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.5" },
     { name = "scikit-learn", specifier = ">=1.4" },
     { name = "scipy", specifier = ">=1.11" },
@@ -2388,6 +2390,30 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/6a/53/ed9d74092561d4b01a2ef1349d52cdbc135e526c245f366b089cfca6de49/python_dotenv-1.2.3.tar.gz", hash = "sha256:a20a594dabeaa385725aa239d5244871c143ecb356add8a20fcf23773a6c3a35", size = 58945, upload-time = "2026-08-16T16:54:54.067Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0d/17/c5c6b53ddc18f297992099b3d9ec16c855c0ccc83263a21fe4d1c625ec6c/python_dotenv-1.2.3-py3-none-any.whl", hash = "sha256:904552145e8bfed22162c09dab1c2b9b54fefa7b23ba780f4f26ca0316b0f0d9", size = 22780, upload-time = "2026-08-16T16:54:52.473Z" },
+]
+
+[[package]]
+name = "python-stretch"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/41/a3f15025ad52c063c0ac95fdccd64d9f67cffb808af7f8e79f08e564709f/python-stretch-0.3.1.tar.gz", hash = "sha256:df0b1e030ec34cfe3611626152c0236268251e644939154e499888d29b1f54e5", size = 9357270, upload-time = "2025-02-14T14:36:59.726Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/56/99917882cb434f6ed80bc256cc7b6dfd58b54187fbde66adfa57211cd55a/python_stretch-0.3.1-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:578113b84bbc63a531d32a62fc4f473dac969a9000a21873a9ae0832840a9b7a", size = 80447, upload-time = "2025-02-14T14:35:59.566Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/08/12ef004e67737e99b85eab35cf45bdc7b479189064c60cc70699ccd1c970/python_stretch-0.3.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:06a11efc93f59472dac3f6890d982a446966fe25db2afcbb75e235f5c8017f1a", size = 76551, upload-time = "2025-02-14T14:36:01.395Z" },
+    { url = "https://files.pythonhosted.org/packages/64/c1/3c06839b6136f19fb49c57a101f5a0a5f3160cbaaf5051e713c231230c6a/python_stretch-0.3.1-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:78c45082c9cd5f267b41b6541399c7693781c627b590a5faa4feee9cf1d64547", size = 120223, upload-time = "2025-02-14T14:36:03.705Z" },
+    { url = "https://files.pythonhosted.org/packages/92/3b/b8d6da9d81b3b69799ec1ce8221f1908a2514ef64b21b701002518c3cd51/python_stretch-0.3.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5d430c7b873d61e39f73fe58c90baec4a26e087cdbfa4c001959badb608120c0", size = 113378, upload-time = "2025-02-14T14:36:05.514Z" },
+    { url = "https://files.pythonhosted.org/packages/27/01/ef09fd49c3fc7d7ee75b479842ee9453d15f3416739297d62bffe2a06cdf/python_stretch-0.3.1-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:316ae002bc71e487320f2b65d9d0b6f4f824482f6c63ac86a8ff4fc1aaf1d463", size = 597511, upload-time = "2025-02-14T14:36:07.063Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/6d/53f6e63a8846268aea583210e26cc60a86f6036cb918176baee1cddd0375/python_stretch-0.3.1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:cf225e722fb3cf50a7fd9edbff8433a41ea69737127be1149c9dea1e30e82e0e", size = 553910, upload-time = "2025-02-14T14:36:08.415Z" },
+    { url = "https://files.pythonhosted.org/packages/0c/27/99247413e85dfac7c448fba24403ccf32cb06f802b7a2c152444c8e40a19/python_stretch-0.3.1-cp311-cp311-win32.whl", hash = "sha256:a3df71cc990c93c7501cb63786a28dae3b2774f2dc13c17d3b9d6a66278821ee", size = 88639, upload-time = "2025-02-14T14:36:09.555Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/54/1a7db08a1b18e38bdee55c645efb33304188dc58019015a816f8b1422613/python_stretch-0.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:bd90b85f33e3ecc11ce879db1a28dd87cf0b17d8cbe79d48e711b24c5456c158", size = 98714, upload-time = "2025-02-14T14:36:11.442Z" },
+    { url = "https://files.pythonhosted.org/packages/c1/63/33503a3157a6c9736a8b8396b46567c134b56928eaf3ee1f824c95228b98/python_stretch-0.3.1-cp312-abi3-macosx_10_14_x86_64.whl", hash = "sha256:0051931bc6379bb3bec42bd219edc219369950bd4b3a0b5e2906acce61fae1d7", size = 77587, upload-time = "2025-02-14T14:36:12.565Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/d2/f1cdf0547605fc1e1c5c42e1f3cac0dbf91fb6863586318f750ef3b9a06c/python_stretch-0.3.1-cp312-abi3-macosx_11_0_arm64.whl", hash = "sha256:d8b81028b6ca2de363f42b47e5a2026bd6e79137a496a563041052a725148000", size = 73363, upload-time = "2025-02-14T14:36:13.666Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/39/8d2b1fdef23ac1a0430dd1171671e955c7ea8b80c3987cbaf811726d004c/python_stretch-0.3.1-cp312-abi3-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1d575edf5897c292d9d6fc73a150baf2f2e350e5403a399f308d9bdc64d12634", size = 115708, upload-time = "2025-02-14T14:36:14.732Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/00/42ad5067691729478bb7298aa2722843df1f372d0d646e09daddc145fbbb/python_stretch-0.3.1-cp312-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5e7f4be789056a6a36c408e94e0c539fe37e6f1e4785aa5181b824fcf9d26b86", size = 109396, upload-time = "2025-02-14T14:36:16.576Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/2f/90b184cab98521a2b333371bdd711c0bb9030df72669fa8e52811ee493fd/python_stretch-0.3.1-cp312-abi3-musllinux_1_2_i686.whl", hash = "sha256:3777de362c0888744558f43cdd27cc74ad6a0c1137488d85ae22b950b588c9dd", size = 592965, upload-time = "2025-02-14T14:36:18.662Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/04/4857a503b3347912d57d12ec077bcbb2589bcd396d5180d7317a3c635e05/python_stretch-0.3.1-cp312-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:9c4e041e788e7b6dc5e404d755c5f76f7d6820a44a81d0c1755e41ba585f0749", size = 550237, upload-time = "2025-02-14T14:36:19.957Z" },
+    { url = "https://files.pythonhosted.org/packages/42/f4/f2c8499474b6c058ae438b90111fb8a70f7bd81ac8dd1c1aea8f8b63015c/python_stretch-0.3.1-cp312-abi3-win32.whl", hash = "sha256:8a81ab2638481de69e64cfc43e2629009568183410e2bc9e8d59708e6ef44010", size = 87106, upload-time = "2025-02-14T14:36:21.141Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/ee/35f9e968ddc238f24a23c938e72f64f7b67632af144c5d12dd229f74b374/python_stretch-0.3.1-cp312-abi3-win_amd64.whl", hash = "sha256:95581cb06c08e7423c267f6a1d1e6fb4071bcd3e401e39e0e497578ee73b1fc1", size = 97089, upload-time = "2025-02-14T14:36:22.173Z" },
 ]
 
 [[package]]

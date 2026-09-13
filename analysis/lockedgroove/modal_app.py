@@ -65,6 +65,7 @@ PIP_BASE = [
     "mido>=1.3",
     "scikit-learn>=1.4",
     "joblib>=1.3",
+    "python-stretch>=0.3.1",
 ]
 PIP_COMPUTE = [
     "supabase>=2.4",

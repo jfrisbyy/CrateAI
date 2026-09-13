@@ -969,6 +969,17 @@
         "method": {
           "title": "Method",
           "type": "string"
+        },
+        "bandwidth": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Estimate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [

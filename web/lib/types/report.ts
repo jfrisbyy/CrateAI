@@ -192,6 +192,7 @@ export interface Spectral {
   stereo_width: number;
   low_high_ratio_db: number;
   method: string;
+  bandwidth: Estimate | null;
 }
 
 export interface Structure {

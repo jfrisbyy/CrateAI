@@ -26,7 +26,17 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..report import AnalysisReport, DrumPattern, effective, hedge_word
-from .words import bar_number, bpm_text, db, key_display, pct, seconds, steps_phrase, with_hedge
+from .words import (
+    bandwidth_text,
+    bar_number,
+    bpm_text,
+    db,
+    key_display,
+    pct,
+    seconds,
+    steps_phrase,
+    with_hedge,
+)
 
 SectionKey = Literal["vitals", "structure", "sample", "drums", "bass", "harmony", "melodic",
                      "arrangement", "mix", "context", "recipe"]
@@ -516,6 +526,9 @@ def _mix(r: AnalysisReport, stems: dict[str, AnalysisReport]) -> BreakdownSectio
         width = "mono" if sp.stereo_width < 0.1 else ("narrow" if sp.stereo_width < 0.35 else "wide")
         sec.facts.append(_fact(f"It's {bal} ({db(sp.low_high_ratio_db)} low against high) and {width} in the stereo field.",
                                "spectral", None, sp.model_dump(), hedged=False))
+        bw = sp.bandwidth
+        if bw is not None and bw.value is not None:
+            sec.facts.append(_fact(bandwidth_text(bw.value), "spectral.bandwidth", bw.confidence, bw.value))
     fx = r.effects_estimates
     if fx is None:
         sec.missing.append(Missing(field="effects_estimates", text="Effects estimates weren't run yet.",

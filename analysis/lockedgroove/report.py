@@ -230,18 +230,25 @@ class Loudness(_Model):
     method: str
 
 
-class Spectral(_Model):
-    centroid_hz_mean: float
-    stereo_width: float
-    low_high_ratio_db: float
-    method: str
-
-
 class Estimate(_Model):
     value: Optional[float] = None
     confidence: float = Field(ge=0.0, le=1.0)
     method: str
     notes: Optional[str] = None
+
+
+class Spectral(_Model):
+    centroid_hz_mean: float
+    stereo_width: float
+    low_high_ratio_db: float
+    method: str
+    bandwidth: Optional[Estimate] = None
+    """Highest frequency still carrying real energy, in Hz: what the file actually has.
+
+    An ``Estimate`` because unlike the other three it is not deterministic - a
+    lossy encoder's lowpass reads with high confidence, a natural rolloff with
+    less, and a signal measured on a resampled working copy cannot be trusted at
+    all. ``None`` when it was not measured."""
 
 
 class SidechainEstimate(_Model):
