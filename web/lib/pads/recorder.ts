@@ -3,10 +3,9 @@
 // until stop. The grid math lives in recording.ts; this file owns the
 // clock, the click scheduling and the timers.
 
-import type { PadHitInput } from "@/lib/api/midi";
 import { scheduleClick } from "./click";
 import { barSeconds, beatSeconds, stepSeconds } from "./grid";
-import { acceptsHit, finalizeTake, type RecordedHit, type RecordingSettings } from "./recording";
+import { acceptsHit, finalizeTake, type RecordingSettings, type Take, type TakeHit } from "./recording";
 
 export type RecorderState = "idle" | "count-in" | "recording" | "done";
 
@@ -17,9 +16,9 @@ export interface RecorderSnapshot {
   recordStart: number | null;
   recordEnd: number | null;
   /** raw hits while armed or recording */
-  hits: PadHitInput[];
+  hits: TakeHit[];
   /** the finished take */
-  take: { bars: number; hits: RecordedHit[] } | null;
+  take: Take | null;
 }
 
 export interface ArmOptions extends RecordingSettings {
@@ -36,7 +35,7 @@ export class PadRecorder {
   private settings: RecordingSettings | null = null;
   private recordStart: number | null = null;
   private recordEnd: number | null = null;
-  private hits: PadHitInput[] = [];
+  private hits: TakeHit[] = [];
   private take: RecorderSnapshot["take"] = null;
   private listeners = new Set<() => void>();
   private timers: number[] = [];
@@ -106,13 +105,36 @@ export class PadRecorder {
   }
 
   /** Register a pad trigger that happened at audio-clock time `atTime`. Returns true when it was taken. */
-  hit(pad: number, chopFileId: string | null, atTime: number, velocity = 1): boolean {
+  hit(pad: number, chopFileId: string | null, atTime: number, velocity = 1, extra: { semitones?: number } = {}): boolean {
     if (!this.settings || this.recordStart === null || (this.state !== "count-in" && this.state !== "recording")) return false;
     const timeS = atTime - this.recordStart;
     if (!acceptsHit(timeS, this.settings)) return false;
-    this.hits = [...this.hits, { time_s: timeS, pad, chop_file_id: chopFileId, velocity }];
+    const hit: TakeHit = { time_s: timeS, pad, chop_file_id: chopFileId, velocity };
+    if (extra.semitones !== undefined && extra.semitones !== 0) hit.semitones = extra.semitones;
+    this.hits = [...this.hits, hit];
     this.emit();
     return true;
+  }
+
+  /**
+   * The key came up at `atTime`. In gate mode that is the note's length, and
+   * it is what lets a take land on the timeline as regions of the right size
+   * instead of sixteen whole slices. A release with no matching hit (the pad
+   * was empty, or the take had already ended) is ignored.
+   */
+  release(pad: number, atTime: number): boolean {
+    if (this.recordStart === null) return false;
+    for (let i = this.hits.length - 1; i >= 0; i--) {
+      const hit = this.hits[i] as TakeHit;
+      if (hit.pad !== pad || hit.length_s !== undefined) continue;
+      const length = Math.max(0, atTime - this.recordStart - hit.time_s);
+      const next = [...this.hits];
+      next[i] = { ...hit, length_s: Math.round(length * 1e6) / 1e6 };
+      this.hits = next;
+      this.emit();
+      return true;
+    }
+    return false;
   }
 
   /** End the take (also called by the fixed-length timer). */
