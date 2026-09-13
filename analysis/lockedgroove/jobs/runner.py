@@ -44,6 +44,7 @@ KIND_PHASE: dict[str, int] = {
     "revoice": 7,            # Combine and re-voice
     "beatbox_train": 9,      # Beatbox
     "beatbox_transcribe": 9,  # Beatbox
+    "export": 13,            # Export: the song out, as stems + a tempo map + a readme
 }
 
 # Job kinds metered as GPU time (BUILD_PACKET section 19); everything else is CPU time.

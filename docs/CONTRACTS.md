@@ -44,7 +44,7 @@ contract is enforced.
 | `derived/{user_id}/{file_id}/midi/{kind}.mid` | compute | MIDI |
 | `derived/{user_id}/{layer_id}/layer.wav` | compute | layer renders |
 | `derived/{user_id}/{file_id}/revoice/{revoice_id}.wav` | compute | re-voice renders |
-| `derived/{user_id}/bundles/{bundle_id}.zip` | compute | export bundles |
+| `derived/{user_id}/bundles/{bundle_id}.zip` | compute | export bundles (a song export uses the export job's id) |
 | `derived/{user_id}/beatbox/model.joblib` | compute | per-user beatbox model |
 
 Playback and download: signed URLs, 10-minute expiry, produced by web server
@@ -110,9 +110,36 @@ Idempotency: `analyze` on `(file_id, analysis_version)` is a no-op when
 | `compare` | `{ file_a_id, file_b_id }` | `comparisons` row |
 | `beatbox_train` | `{ examples: [{class, storage_path}] }` | `beatbox_profiles` row |
 | `beatbox_transcribe` | `{ recording_path, grid_file_id?, bpm? }` | `midi` row (`kind='beatbox'`) |
+| `export` | `{ song, format?: "flac" \| "wav", bit_depth?: 16 \| 24, sample_rate?: 44100 \| 48000, include_muted?: bool, midi_ids?: uuid[] }` | the zip at `derived/{user_id}/bundles/{job_id}.zip`; **no `files` row** |
 
 `jobs.result` always carries `{ ...ids of rows written }` so the client can
 select them on the surface when the job finishes.
+
+### `export`: the song out
+
+The arrangement is not persisted yet (`20260913001000_song_arrangement.sql` is
+written and not applied), so `params.song` **is** the song: lanes in the
+producer's order, each with its regions, each region with `file_id`, `start_s`,
+`duration_s`, `offset_s`, `gain`, `rate`, its `lineage` and the one line
+`web/lib/session/lineage.ts` derives from it. The Python mirror is
+`analysis/lockedgroove/export/song.py`; the TypeScript that builds it is
+`web/lib/export/song.ts`. When the song tables land, `POST /api/export/song`
+grows a `{ session_id }` form that reads the same shape out of them and nothing
+else moves.
+
+`result` carries `storage_path`, `filename`, `folder`, `size_bytes`, the audio
+settings, `length_samples`, the grid, one entry per stem (with its measured
+peak and whether it clipped), the lanes that were **not** exported and why, the
+MIDI that went in, and any notes. There is no `files` row: an export is a
+derived artefact the producer downloads, not a library entry.
+
+Because every id in `params.song` is caller input, ownership is settled three
+times: the route resolves every `file_id` and `midi_id` through the caller's
+RLS client before the job row is written; the handler re-checks each row's
+`user_id` **and** that its `storage_path` is under that user's own prefix
+(`derived.owner_path_ok`) before downloading anything; and the download route
+fetches the zip with the caller's client, so the storage policy decides.
+Metering is the runner's usual `cpu_seconds` row.
 
 ## 6. Peaks
 
@@ -164,6 +191,21 @@ in `web/lib/api/types.ts` and the per-seam `web/lib/api/*.ts` modules.
 | `/api/files/[id]/bundle` | GET | zip of chops + .mid + a readme, streamed to the creating user |
 | `/api/midi/pads` | POST | a pads recording as a `.mid` under `derived/`; inserts a `midi` row |
 | `/api/midi/[id]/download` | GET | signed URL for one MIDI file |
+
+### Export (Phase 13)
+
+| Route | Method | Does |
+|---|---|---|
+| `/api/export/song` | POST | `{ song, format?, bit_depth?, sample_rate?, include_muted?, midi_ids? }` → queue an `export` job; 413 over the cap, 404 for a record or MIDI the caller cannot open |
+| `/api/export/[id]/download` | GET | the finished zip for the creating user, fetched with the caller's client (`[id]` is the export job's id) |
+
+Stems plus a tempo map plus a readme, in that order of importance: per-lane
+renders across the full song at one length, a MIDI tempo track and a text map,
+and a README whose lineage section is the part only this product can write. The
+size cap is 1 GiB of finished zip, refused from arithmetic before anything is
+rendered; `web/lib/export/song.ts` and `analysis/lockedgroove/export/bundle.py`
+hold the same numbers so the panel and the job cannot disagree. See
+`docs/HANDOFF_export.md`.
 
 ### Breakdown and compare (Phase 4)
 

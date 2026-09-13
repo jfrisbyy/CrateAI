@@ -20,7 +20,8 @@ export type JobKind =
   | "breakdown"
   | "compare"
   | "beatbox_train"
-  | "beatbox_transcribe";
+  | "beatbox_transcribe"
+  | "export";
 export type JobStatus = "queued" | "running" | "done" | "failed";
 export type LoopOrigin = "finder" | "user" | "chat";
 export type MidiKind = "melody" | "drums" | "chords" | "beatbox" | "groove";
@@ -30,7 +31,7 @@ export type TagSource = "model" | "user";
 export const FILE_KINDS: readonly FileKind[] = ["original", "stem", "chop", "loop_render", "layer_render", "revoice_render"];
 export const JOB_KINDS: readonly JobKind[] = [
   "analyze", "stems", "chop", "midi", "embed", "render_loop", "layer", "revoice", "breakdown", "compare",
-  "beatbox_train", "beatbox_transcribe",
+  "beatbox_train", "beatbox_transcribe", "export",
 ];
 
 /** docs/CONTRACTS.md section 6. Mono mixdown, exactly `points` entries each, values in [-1, 1]. */
