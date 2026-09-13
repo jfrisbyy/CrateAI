@@ -262,6 +262,11 @@ def test_usage_events_are_recorded_per_job(world, monkeypatch):
 
 def test_breakdown_phase4_stages_run_with_force(world, monkeypatch):
     monkeypatch.setenv("LOCKEDGROOVE_FAKE_STEMS", "1")
+    # the fixture report already carries Phase 4 sections; a fresh analysis would not
+    report = world.db.get_file(world.beat["id"])["report"]
+    for section in ("drums", "sample_use", "instrumentation", "effects_estimates", "chords"):
+        report[section] = None
+    world.db.update_file(world.beat["id"], {"report": report})
     stems_job = world.job("stems", world.beat["id"], model="htdemucs_ft")
     run_job(stems_job["id"], world.db, world.storage)
     for jid in world.db.get_job(stems_job["id"])["result"]["queued_job_ids"]:
