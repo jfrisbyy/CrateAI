@@ -2,14 +2,20 @@
 
 // Drop files or folders; or pick either. Folders are walked with the entry
 // API on drop and with webkitdirectory in the picker. Only audio passes.
+//
+// Two sizes, one code path. `rail` is the compact box at the top of the
+// library. `hero` is the same target on the first screen, where dropping one
+// record is the only thing worth doing and the box should say so — a producer
+// should not have to find a 288 px box in a side rail to start.
 
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import { btn, cx } from "@/components/ui";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 import { ACCEPT_ATTR, filesFromDrop, filesFromInput } from "@/lib/upload/fs";
 
-export function UploadZone() {
+export function UploadZone({ variant = "rail" }: { variant?: "rail" | "hero" }) {
   const { uploader } = useLibrary();
+  const hero = variant === "hero";
   const [over, setOver] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -48,11 +54,21 @@ export function UploadZone() {
       onDragLeave={() => setOver(false)}
       onDrop={onDrop}
       className={cx(
-        "mx-3 mt-3 rounded-sm border border-dashed px-3 py-3 flex flex-col gap-2 bg-slate",
+        "rounded-sm border border-dashed flex flex-col gap-2 bg-slate",
+        hero ? "px-4 py-5" : "mx-3 mt-3 px-3 py-3",
         over ? "border-pad" : "border-rule",
       )}
     >
-      <p className="text-sm text-chalk-dim">{over ? "Drop to add to the library." : "Drop audio files or folders here."}</p>
+      {hero ? (
+        <div>
+          <p className="text-md">{over ? "Drop it." : "Drop a record here."}</p>
+          <p className="mt-1 text-xs text-chalk-dim">
+            wav, aif, aiff, flac, mp3, m4a, aac, ogg, opus. One is enough to start; a folder works too.
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm text-chalk-dim">{over ? "Drop to add to the library." : "Drop audio files or folders here."}</p>
+      )}
       <div className="flex gap-2">
         <button type="button" className={btn} onClick={() => fileInput.current?.click()}>
           Add files

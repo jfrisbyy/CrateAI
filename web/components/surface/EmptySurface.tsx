@@ -1,4 +1,9 @@
-// The center pane with nothing open. An invitation to act, not a mood.
+// The panel with nothing on it. An invitation to act, not a mood.
+//
+// The first screen a new producer meets is not this one: at "/" the router
+// renders nothing into the panel and the chat column holds the first run
+// (components/onboarding/FirstRun.tsx). This is what the panel says once
+// something has been on it and was closed.
 
 export function EmptySurface() {
   return (

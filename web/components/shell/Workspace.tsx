@@ -26,6 +26,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChatPane } from "@/components/chat/ChatPane";
 import { LibraryPane } from "@/components/library/LibraryPane";
+import { FirstRun } from "@/components/onboarding/FirstRun";
 import { RackPanel } from "@/components/rack/RackPanel";
 import { openRack, rackKey } from "@/components/rack/rackEvents";
 import { useRack } from "@/components/rack/useRack";
@@ -213,6 +214,12 @@ function Shell({ children }: { children: ReactNode }) {
           <div ref={areaRef} className="min-h-0 min-w-0 flex">
             <section className="min-h-0 min-w-0 flex flex-col" style={{ flex: panelOpen ? `0 0 ${((1 - split) * 100).toFixed(3)}%` : "1 1 100%" }} aria-label="Chat">
               <div className={cx("flex-1 min-h-0 flex flex-col w-full", !panelOpen && "max-w-[820px] mx-auto")}>
+                {/* The first run lives above the chat in the same column: an
+                    empty crate, the first analysis as it happens, what it
+                    measured, or what landed since the last session. It renders
+                    nothing once there is nothing true left to say
+                    (components/onboarding/FirstRun.tsx). */}
+                <FirstRun />
                 <ChatPane />
               </div>
             </section>
