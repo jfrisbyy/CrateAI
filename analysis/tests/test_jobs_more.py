@@ -158,7 +158,7 @@ def test_layer_job_renders_and_applies_plan(world):
     sample = chord_progression([triad("F", "minor"), triad("G#", "major")] * 2, 4, 96.0, SR, repeats=1)
     sample_file = world.add_file("sample.wav", sample, _grid_report(96.0, 4))
     layer = world.db.insert_rows("layers", [{"user_id": USER, "name": "test layer"}])[0]
-    items = world.db.insert_rows("layer_items", [
+    world.db.insert_rows("layer_items", [
         {"user_id": USER, "layer_id": layer["id"], "file_id": world.beat["id"], "position": 0, "stretch_ratio": 1,
          "pitch_semitones": 0, "offset_s": 0, "gain_db": 0, "muted": False},
         {"user_id": USER, "layer_id": layer["id"], "file_id": sample_file["id"], "position": 1, "stretch_ratio": 1,
