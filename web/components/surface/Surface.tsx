@@ -266,7 +266,10 @@ function LoadedSurface({ fileId }: { fileId: string }) {
   const updateLoop = useCallback(
     async (id: string, patch: LoopPatch) => {
       const before = loops;
-      setLoops((prev) => prev.map((l) => (l.id === id ? { ...l, ...stripUndefined(patch) } : l)));
+      // `via` says which control was used, for the correction the route logs; it
+      // is not a column, so it never goes into the row we show while we wait.
+      const { via: _via, ...fields } = patch;
+      setLoops((prev) => prev.map((l) => (l.id === id ? { ...l, ...stripUndefined(fields) } : l)));
       try {
         const res = await api.loops.update(id, patch);
         setLoops((prev) => prev.map((l) => (l.id === id ? res.loop : l)));

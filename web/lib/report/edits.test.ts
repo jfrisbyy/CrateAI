@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { applyEdit, editRequestSchema, predictedFor } from "./edits";
+import {
+  applyEdit,
+  compareRank,
+  continuesEdit,
+  editRequestSchema,
+  loopPickCorrection,
+  loopSpanCorrection,
+  loopSpanPayload,
+  LOOP_CORRECTION_FIELDS,
+  predictedFor,
+  SCORED_TERMS,
+} from "./edits";
 import { effective, emptyReport } from "./effective";
 
 function report() {
@@ -94,5 +105,85 @@ describe("applyEdit", () => {
     e = applyEdit(e, { field: "section_labels", value: { "1": "hook" } }, "t");
     expect(e.user_edits.section_labels).toEqual({ "0": "intro", "1": "hook" });
     expect(effective(e).structure?.sections.map((s) => s.label)).toEqual(["intro", "hook"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// loop corrections: what counts as one, and the shape it takes
+// ---------------------------------------------------------------------------
+
+describe("loop corrections", () => {
+  const terms = { seam: 0.61, phrase: 0.8, stability: 0.95, novelty: 1, onset_lock: 1, recurrence: 0.5 };
+
+  it("logs a drag that moved an edge, in the shape the migration pins", () => {
+    expect(loopSpanCorrection({ start_s: 0, end_s: 8, bars: 4 }, { start_s: 0, end_s: 16, bars: 8 }, "edges")).toEqual({
+      field: "loop_edges",
+      predicted: { start_s: 0, end_s: 8, bars: 4 },
+      corrected: { start_s: 0, end_s: 16, bars: 8 },
+    });
+  });
+
+  it("does not log a drag that ended where it started", () => {
+    const span = { start_s: 1.5, end_s: 9.5, bars: 4 };
+    expect(loopSpanCorrection(span, { ...span }, "edges")).toBeNull();
+    // and not a sub-millisecond one either: that is a click, not a correction
+    expect(loopSpanCorrection(span, { ...span, end_s: 9.5004 }, "edges")).toBeNull();
+    expect(loopSpanCorrection(span, { ...span, end_s: 9.52 }, "edges")).not.toBeNull();
+  });
+
+  it("logs a bar count said outright as loop_bars, and says nothing when it did not change", () => {
+    expect(loopSpanCorrection({ start_s: 0, end_s: 8, bars: 4 }, { start_s: 0, end_s: 4, bars: 2 }, "bars")).toMatchObject({
+      field: "loop_bars",
+      corrected: { start_s: 0, end_s: 4, bars: 2 },
+    });
+    expect(loopSpanCorrection({ start_s: 0, end_s: 8, bars: 4 }, { start_s: 0, end_s: 8.4, bars: 4 }, "bars")).toBeNull();
+  });
+
+  it("leaves bars out rather than guessing at one", () => {
+    expect(loopSpanPayload({ start_s: 0, end_s: 8, bars: null })).toEqual({ start_s: 0, end_s: 8 });
+  });
+
+  it("logs a pick with both rows' scored terms and neither row's anything else", () => {
+    const components = { ...terms, weights: { seam: 0.3 }, reasons: ["lands on a 4-bar phrase line"], personalization: { delta: 0.02 } };
+    expect(loopPickCorrection({ bars: 4, rank: 1, components }, { bars: 8, rank: 3, components })).toEqual({
+      field: "loop_pick",
+      predicted: { bars: 4, rank: 1, components: terms },
+      corrected: { bars: 8, rank: 3, components: terms },
+    });
+  });
+
+  it("does not log the producer agreeing with us", () => {
+    expect(loopPickCorrection({ bars: 4, rank: 1, components: terms }, { bars: 4, rank: 1, components: terms })).toBeNull();
+  });
+
+  it("carries a pick from a row with no measured terms rather than dropping it", () => {
+    expect(loopPickCorrection({ bars: 4, rank: 1, components: null }, { bars: 2, rank: 5, components: null })).toEqual({
+      field: "loop_pick",
+      predicted: { bars: 4, rank: 1 },
+      corrected: { bars: 2, rank: 5 },
+    });
+  });
+
+  it("ranks the rack the way GET /api/loops returns it: best score first, nulls last, ties by time", () => {
+    const rack = [
+      { score: null, start_s: 1 },
+      { score: 0.7, start_s: 9 },
+      { score: 0.9, start_s: 40 },
+      { score: 0.7, start_s: 2 },
+    ];
+    expect([...rack].sort(compareRank).map((r) => r.start_s)).toEqual([40, 2, 9, 1]);
+  });
+
+  it("knows when an edit is the same edit continuing", () => {
+    expect(continuesEdit({ start_s: 2, end_s: 10, bars: 4 }, { start_s: 2, end_s: 10, bars: 4 })).toBe(true);
+    expect(continuesEdit({ start_s: 2, end_s: 10 }, { start_s: 2.0004, end_s: 10 })).toBe(true);
+    expect(continuesEdit({ start_s: 2, end_s: 10 }, { start_s: 2.5, end_s: 10.5 })).toBe(false);
+    expect(continuesEdit(null, { start_s: 2, end_s: 10 })).toBe(false);
+    expect(continuesEdit({ bars: 4, rank: 1 }, { start_s: 2, end_s: 10 })).toBe(false);
+  });
+
+  it("reads back exactly the fields the ranker reads", () => {
+    expect([...LOOP_CORRECTION_FIELDS]).toEqual(["loop_edges", "loop_bars", "loop_pick"]);
+    expect([...SCORED_TERMS]).toEqual(["seam", "phrase", "stability", "novelty", "onset_lock", "recurrence"]);
   });
 });

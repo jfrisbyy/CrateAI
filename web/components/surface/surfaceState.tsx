@@ -25,6 +25,8 @@ export interface LoopPatch {
   end_s?: number;
   name?: string | null;
   bars?: number | null;
+  /** which control the producer used, for the correction the edit logs (principle 7) */
+  via?: "edges" | "bars";
 }
 
 export type PreviewMode = "raw" | "rendered";

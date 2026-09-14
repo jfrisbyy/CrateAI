@@ -315,6 +315,7 @@ export function seedProfile(db: TestDb, userId: string, partial: Partial<Profile
     stripe_customer_id: null,
     stripe_subscription_id: null,
     corrections_opt_in: false,
+    loop_personalization: true,
     created_at: NOW,
     updated_at: NOW,
     ...partial,

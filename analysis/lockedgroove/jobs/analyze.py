@@ -28,6 +28,14 @@ and ``score`` -- which is what orders the rack -- becomes the adjusted one. An
 account with no loop corrections, or one that set ``profiles.loop_personalization
 = false``, gets the finder's list unchanged, object for object.
 ``params.personalize = false`` turns it off for one run.
+
+The preference is read *before* the search, because an account that has one gets
+a deeper pool of candidates to reorder (``PERSONAL_POOL_MULTIPLE``) and the rack
+is trimmed to ``top_k`` after the adjustment. Otherwise a preference could
+reshuffle the rack but never bring a length class into it, which is most of what
+a producer who keeps dragging loops out to eight bars is asking for. An account
+with no preference asks the finder for exactly ``top_k`` -- the call this job
+made before any of this existed.
 """
 
 from __future__ import annotations
@@ -54,6 +62,18 @@ log = logging.getLogger(__name__)
 MAX_ANALYSIS_S = 20 * 60.0
 DEFAULT_LOOP_BARS = [1, 2, 4, 8]
 DEFAULT_LOOP_TOP_K = 12
+PERSONAL_POOL_MULTIPLE = 3
+"""How many racks deep a producer's own preference is allowed to reach.
+
+Only for an account that has a preference: with a pool of exactly ``top_k`` the
+adjustment can reorder the rack but never bring a candidate into it, so an
+account that keeps dragging loops out to eight bars would see the same rack of
+four-bar rows in a slightly different order forever. Three racks is enough for a
+length class to climb in and small enough that the rack is still the finder's
+opinion. The finder scores everything and truncates last, so this costs the rows
+it builds and nothing else.
+"""
+PERSONAL_POOL_MAX = 120
 
 
 def run(job: dict, db: Database, storage: Storage, ctx: JobContext) -> dict:
@@ -286,32 +306,80 @@ def loop_stems(db: Database, ctx: JobContext, file: dict, sr: int) -> tuple[dict
         return None, None
 
 
-def personalize_ranking(db: Database, file: dict, candidates: list[Any], params: dict) -> tuple[list[Any], Any]:
-    """Re-rank one account's candidates by its own loop corrections (principle 7).
+def loop_preference_of(db: Database, file: dict, params: dict) -> Any:
+    """This file owner's loop preference, read before the finder runs.
 
     The account is ``file["user_id"]`` and nothing else: the preference is read
-    for that id, learned from that id's rows, and applied only to that id's
-    ranking. ``params.personalize = false`` and
-    ``profiles.loop_personalization = false`` both mean "the measurement alone".
+    for that id, learned from that id's rows, and (in
+    :func:`personalize_ranking`) applied only to that id's ranking.
+    ``params.personalize = false`` and ``profiles.loop_personalization = false``
+    both mean "the measurement alone".
+
+    It is read *before* the search because a preference that is going to reorder
+    the rack wants a slightly deeper pool to reorder (see
+    :data:`PERSONAL_POOL_MULTIPLE`), and an account with no history must ask the
+    finder for exactly what it asked for yesterday.
+
+    Best effort in the same sense as the stem profile: a history that cannot be
+    read costs the personal ordering, never the loop search.
+    """
+    from ..learn.loop_prefs import LoopPreference, loop_preference_for
+
+    user_id = str(file.get("user_id") or "")
+    if not user_id:
+        raise JobError("the file has no user_id; a loop ranking cannot be personalized safely")
+    if params.get("personalize", True) is False:
+        return LoopPreference.neutral(user_id, enabled=False)
+    try:
+        return loop_preference_for(db, user_id)
+    except Exception:  # pragma: no cover - a ranking must never fail on its history
+        log.warning("could not read the loop preference for file %s", file.get("id"), exc_info=True)
+        return LoopPreference.neutral(user_id)
+
+
+def loop_pool_size(top_k: int | None, preference: Any) -> int | None:
+    """How many candidates to ask the finder for, given the preference about to be applied.
+
+    A preference can only reorder what it is given. With a pool of exactly
+    ``top_k`` it can shuffle the rack but never bring a length class *into* it,
+    which is most of what a producer who keeps dragging loops out to eight bars
+    is asking for. The finder scores every candidate and truncates at the end,
+    so a deeper pool costs nothing but the rows it builds.
+
+    A neutral preference asks for exactly ``top_k``: cold start makes the same
+    call it made before any of this existed.
+    """
+    if top_k is None or getattr(preference, "is_neutral", True):
+        return top_k
+    return min(int(top_k) * PERSONAL_POOL_MULTIPLE, PERSONAL_POOL_MAX)
+
+
+def personalize_ranking(db: Database, file: dict, candidates: list[Any], params: dict,
+                        preference: Any = None) -> tuple[list[Any], Any]:
+    """Re-rank one account's candidates by its own loop corrections (principle 7).
+
+    ``preference`` is the one :func:`loop_preference_of` already read for this
+    file's owner; without it the preference is read here, which is what a caller
+    that has not pre-read one (a test, the chat) gets.
 
     Best effort in the same sense as the stem profile: a history that cannot be
     read costs the personal ordering, never the loop search. On any failure the
     finder's own list comes back untouched.
     """
-    from ..learn.loop_prefs import LoopPreference, apply_preference, loop_preference_for
+    from ..learn.loop_prefs import LoopPreference, apply_preference
 
     user_id = str(file.get("user_id") or "")
     if not user_id:
         raise JobError("the file has no user_id; a loop ranking cannot be personalized safely")
-    wanted = params.get("personalize", True)
-    if wanted is False:
-        return candidates, LoopPreference.neutral(user_id, enabled=False)
+    if preference is None:
+        preference = loop_preference_of(db, file, params)
+    if preference.is_neutral:
+        return candidates, preference
     if any(not hasattr(c, "components") for c in candidates):
         # a finder that returns plain rows still ranks; it just cannot be personalized,
         # because the adjustment is computed from the scored terms in ``components``
         return candidates, LoopPreference.neutral(user_id)
     try:
-        preference = loop_preference_for(db, user_id)
         return apply_preference(candidates, preference, user_id), preference
     except Exception:  # pragma: no cover - a ranking must never fail on its history
         log.warning("could not personalize the loop ranking for file %s", file.get("id"), exc_info=True)
@@ -362,15 +430,19 @@ def find_loops_task(job: dict, db: Database, storage: Storage, ctx: JobContext, 
         ctx.progress(0.15, "stems")
         stems_arrays, stem_source = loop_stems(db, ctx, file, int(sr))
 
+    preference = loop_preference_of(db, file, params)
+
     ctx.progress(0.2, "find_loops")
-    kwargs: dict[str, Any] = {"bars": bars, "top_k": top_k}
+    kwargs: dict[str, Any] = {"bars": bars, "top_k": loop_pool_size(top_k, preference)}
     if stems_arrays:
         kwargs["stems"] = stems_arrays
         kwargs["stem_source"] = stem_source
     candidates = list(find_loops(y, sr, report, **kwargs) or [])
 
     ctx.progress(0.85, "personalize")
-    candidates, preference = personalize_ranking(db, file, candidates, params)
+    candidates, preference = personalize_ranking(db, file, candidates, params, preference)
+    if top_k is not None:
+        candidates = candidates[:top_k]
 
     rows = [_loop_row(c, file) for c in candidates]
     ctx.progress(0.9, "write")
@@ -393,5 +465,6 @@ def find_loops_task(job: dict, db: Database, storage: Storage, ctx: JobContext, 
     return result
 
 
-__all__ = ["DEFAULT_LOOP_BARS", "DEFAULT_LOOP_TOP_K", "MAX_ANALYSIS_S", "analyze_task", "find_loops_task",
-           "loop_name", "loop_stems", "personalize_ranking", "run"]
+__all__ = ["DEFAULT_LOOP_BARS", "DEFAULT_LOOP_TOP_K", "MAX_ANALYSIS_S", "PERSONAL_POOL_MAX",
+           "PERSONAL_POOL_MULTIPLE", "analyze_task", "find_loops_task", "loop_name", "loop_pool_size",
+           "loop_preference_of", "loop_stems", "personalize_ranking", "run"]

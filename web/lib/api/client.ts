@@ -15,6 +15,7 @@ import type {
   JobResponse,
   LoopCreateRequest,
   LoopPatchRequest,
+  LoopPersonalizationResponse,
   LoopResponse,
   LoopsFindRequest,
   LoopsListResponse,
@@ -99,6 +100,11 @@ export const api = {
     remove: (id: string) => del<{ ok: true }>(`/api/loops/${id}`),
     render: (id: string) => post<JobResponse>(`/api/loops/${id}/render`),
     find: (body: LoopsFindRequest) => post<JobResponse>("/api/loops/find", body),
+    /** whether this account's own corrections adjust its loop ranking (principle 7) */
+    personalization: {
+      get: () => call<LoopPersonalizationResponse>("/api/loops/personalization"),
+      set: (enabled: boolean) => patch<LoopPersonalizationResponse>("/api/loops/personalization", { enabled }),
+    },
   },
   search: (body: SearchRequest) => post<SearchResponse>("/api/search", body),
   conversations: {

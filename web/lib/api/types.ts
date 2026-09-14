@@ -63,6 +63,8 @@ export interface JobCreateRequest {
 export interface JobResponse {
   job: JobRow;
   dispatch?: DispatchInfo | null;
+  /** the `loop_pick` row this act logged, when it was one (POST /api/loops/[id]/render) */
+  correction?: CorrectionRow | null;
 }
 
 export interface LoopsListResponse {
@@ -80,9 +82,20 @@ export interface LoopPatchRequest {
   end_s?: number;
   name?: string | null;
   bars?: number | null;
+  /** which control was used, for the correction the edit logs; defaults to "edges" */
+  via?: "edges" | "bars";
 }
 export interface LoopResponse {
   loop: LoopRow;
+  /** the `loop_edges` / `loop_bars` row this edit logged, or null when it corrected nothing */
+  correction?: CorrectionRow | null;
+}
+
+export interface LoopPersonalizationResponse {
+  /** whether this account's own loop corrections adjust its loop ranking */
+  enabled: boolean;
+  /** false when the column the switch lives in is not in the database yet */
+  available: boolean;
 }
 export interface LoopsFindRequest {
   file_id: string;

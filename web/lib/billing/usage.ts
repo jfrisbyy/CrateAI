@@ -70,8 +70,8 @@ export async function getProfile(supabase: SupabaseClient<Database>, userId: str
   // Profiles are created by trigger; a user created before the migration gets defaults.
   return {
     id: userId, email: null, plan: "free", plan_status: "active", stripe_customer_id: null,
-    stripe_subscription_id: null, corrections_opt_in: false, created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    stripe_subscription_id: null, corrections_opt_in: false, loop_personalization: true,
+    created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   };
 }
 

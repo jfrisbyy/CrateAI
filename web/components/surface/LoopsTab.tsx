@@ -4,14 +4,18 @@
 // with snap modes, raw and rendered preview, edits, export and the finder.
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { btn, btnPrimary, btnQuiet, cx, input, label, segment, segmentItem } from "@/components/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { btn, btnPrimary, btnQuiet, cx, input, label, segment, segmentItem, select } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api/client";
 import { fmtClock, fmtNumber } from "@/lib/format";
-import { SNAP_MODES } from "@/lib/report/grid";
+import { barsToSeconds, SNAP_MODES } from "@/lib/report/grid";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 import type { JobRow, LoopRow } from "@/lib/types/db";
+import { jobPersonalization, PersonalizationChip, PersonalizationNote, rowPersonalization } from "./LoopPersonalization";
 import { useSurface } from "./surfaceState";
+
+/** The lengths the bar control offers, and the ones the finder searches by default. */
+const BAR_CHOICES = [1, 2, 4, 8] as const;
 
 function jobText(job: JobRow | undefined): string | null {
   if (!job) return null;
@@ -28,6 +32,48 @@ export function LoopsTab() {
   const s = useSurface();
   const { file, loops, loopsLoading, loopsError, selectedLoopId, selectLoop, liveEdges } = s;
   const ready = file.status === "ready" && s.report !== null;
+
+  // What this account's corrections did to this rack. The search itself reports
+  // it (`jobs.result.personalization`, which also says "off"); a rack ranked in
+  // an earlier session still carries it on its rows.
+  const personal = useMemo(
+    () => jobPersonalization(s.findJob?.result) ?? loops.map((l) => rowPersonalization(l.components)).find(Boolean) ?? null,
+    [s.findJob, loops],
+  );
+  const [switchState, setSwitchState] = useState<boolean | null>(null);
+  const [switchBusy, setSwitchBusy] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
+  // Only once a search has reported: an account that has never ranked a loop has
+  // nothing to read and nothing to refuse, and should not pay a query to hear it.
+  const ranked = personal !== null;
+  useEffect(() => {
+    if (!ranked) return;
+    let cancelled = false;
+    void api.loops.personalization
+      .get()
+      .then((res) => {
+        if (!cancelled) setSwitchState(res.enabled);
+      })
+      .catch(() => undefined); // the rack still ranks; only the switch's own state is unknown
+    return () => {
+      cancelled = true;
+    };
+  }, [ranked]);
+  const setPersonalization = async (next: boolean) => {
+    setSwitchBusy(true);
+    setSwitchError(null);
+    const before = switchState;
+    setSwitchState(next);
+    try {
+      const res = await api.loops.personalization.set(next);
+      setSwitchState(res.enabled);
+    } catch (err) {
+      setSwitchState(before);
+      setSwitchError(errorMessage(err));
+    } finally {
+      setSwitchBusy(false);
+    }
+  };
 
   return (
     <div className="flex flex-col">
@@ -91,6 +137,16 @@ export function LoopsTab() {
         {s.decodeState === "error" && <span className="text-xs">could not decode: {s.decodeError}</span>}
       </div>
 
+      {personal && (
+        <PersonalizationNote
+          personal={personal}
+          enabled={switchState ?? personal.enabled}
+          busy={switchBusy}
+          error={switchError}
+          onToggle={(next) => void setPersonalization(next)}
+        />
+      )}
+
       {s.actionError && (
         <p role="alert" className="mx-4 mt-2 text-xs border-l-2 border-pad pl-2 flex items-center gap-2">
           {s.actionError}
@@ -150,6 +206,7 @@ function LoopRowView({
   const renderJob = s.renderJobFor(loop.id);
   const renderFile = loop.render_file_id ? lib.fileById(loop.render_file_id) : undefined;
   const components = componentsOf(loop.components);
+  const personal = rowPersonalization(loop.components);
 
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(loop.name ?? "");
@@ -241,12 +298,11 @@ function LoopRowView({
           <span>
             <span className="text-chalk">{fmtClock(start)}</span> – <span className="text-chalk">{fmtClock(end)}</span>
           </span>
-          <span>
-            <span className="text-chalk">{loop.bars ?? "—"}</span> {loop.bars === 1 ? "bar" : "bars"}
-          </span>
+          <BarsControl loop={loop} start={start} />
           <span>
             score <span className="text-chalk">{loop.score !== null ? fmtNumber(loop.score, 2) : "—"}</span>
           </span>
+          {personal && <PersonalizationChip personal={personal} />}
           {components.map(([k, v]) => (
             <span key={k}>
               {k} <span className="text-chalk">{fmtNumber(v, 2)}</span>
@@ -294,6 +350,61 @@ function LoopRowView({
         </button>
       </div>
     </li>
+  );
+}
+
+/**
+ * Setting a loop's bar count outright: the length is the statement and the end
+ * moves to fit it, on this file's own bar grid.
+ *
+ * This is the one of the three signals a producer had no control for. It writes
+ * `loop_bars` rather than `loop_edges` (`via: "bars"`) because "make it four
+ * bars" and "drag this edge until it looks like four bars" are the same row
+ * otherwise, and only the control that was used can tell them apart.
+ */
+function BarsControl({ loop, start }: { loop: LoopRow; start: number }) {
+  const s = useSurface();
+  const choices = useMemo(() => {
+    const fits = (n: number) => {
+      const len = barsToSeconds(start, n, s.grid);
+      return len !== null && len > 0 && (!s.duration || start + len <= s.duration + 1e-6);
+    };
+    const out = BAR_CHOICES.filter(fits) as number[];
+    if (loop.bars !== null && !out.includes(loop.bars)) out.push(loop.bars);
+    return out.sort((a, b) => a - b);
+  }, [start, s.grid, s.duration, loop.bars]);
+
+  if (choices.length < 2) {
+    return (
+      <span title={s.grid.beatInterval ? "The file ends too soon for another length" : "Bar lengths need the beat grid"}>
+        <span className="text-chalk">{loop.bars ?? "—"}</span> {loop.bars === 1 ? "bar" : "bars"}
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-baseline gap-1">
+      <select
+        className={cx(select, "h-6 py-0 font-mono text-xs")}
+        value={loop.bars ?? ""}
+        aria-label="Loop length in bars"
+        title="Set the length in bars; the end moves to the bar line"
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => {
+          const bars = Number(e.target.value);
+          const len = barsToSeconds(start, bars, s.grid);
+          if (!len || bars === loop.bars) return;
+          void s.updateLoop(loop.id, { end_s: start + len, bars, via: "bars" });
+        }}
+      >
+        {loop.bars === null && <option value="">—</option>}
+        {choices.map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+      </select>
+      {loop.bars === 1 ? "bar" : "bars"}
+    </span>
   );
 }
 
