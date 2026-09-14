@@ -14,6 +14,7 @@ import {
   describeStems,
   modelSpec,
   qualityOf,
+  separationOutcomeOf,
   splitFor,
   splitKey,
   STEM_MODELS,
@@ -178,5 +179,55 @@ describe("stemQualityColumns", () => {
     const cols = stemQualityColumns("some_model_from_the_future");
     expect(cols.model_tier).toBe("weak");
     expect(modelSpec("some_model_from_the_future")).toBeUndefined();
+  });
+});
+
+// What the worker decided, read off a finished job's result. "The best
+// separator installed runs" is a promise the tab makes; this is the receipt,
+// and the sentences below are the ones resolve_model actually produces (pinned
+// in analysis/tests/test_stems_quality.py).
+describe("the separation outcome", () => {
+  const done = (result: unknown) => separationOutcomeOf(result);
+
+  it("reads the model, the tier and the sentence saying why", () => {
+    const out = done({
+      model: "htdemucs_ft",
+      model_reason: "best available for drums, bass, vocals and other (strong tier)",
+      downgraded: false,
+      quality: { model_tier: "strong", model_sdr: 9 },
+    })!;
+    expect(out.model).toBe("htdemucs_ft");
+    expect(out.tier).toBe("strong");
+    expect(out.downgraded).toBe(false);
+    expect(out.reason).toContain("best available for drums, bass, vocals and other");
+  });
+
+  it("flags a run that had to settle for what the image carries", () => {
+    const out = done({
+      model: "mdxnet_inst_hq",
+      model_reason: "best available for vocals and instrumental (baseline tier); 2 higher-quality separators are not installed here, the best of them bs_roformer",
+      downgraded: true,
+      quality: { model_tier: "baseline" },
+    })!;
+    expect(out.downgraded).toBe(true);
+    expect(out.reason).toContain("not installed here");
+    expect(out.reason).toContain("bs_roformer");
+  });
+
+  it("treats a missing flag as no downgrade rather than as one", () => {
+    expect(done({ model: "htdemucs_ft" })!.downgraded).toBe(false);
+    expect(done({ model: "htdemucs_ft", downgraded: "yes" })!.downgraded).toBe(false);
+  });
+
+  it("is null for a job that has no result yet, or a result that is not one", () => {
+    for (const junk of [null, undefined, {}, [], "done", { model: 7 }]) {
+      expect(done(junk)).toBeNull();
+    }
+  });
+
+  it("survives a result whose quality block is missing or the wrong shape", () => {
+    expect(done({ model: "m", quality: null })!.tier).toBeNull();
+    expect(done({ model: "m", quality: "strong" })!.tier).toBeNull();
+    expect(done({ model: "m" })!.reason).toBeNull();
   });
 });

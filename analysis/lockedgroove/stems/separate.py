@@ -184,6 +184,21 @@ def model_label(model: str, *, stand_in: bool = False) -> str:
     return f"{model}{STAND_IN_SUFFIX}" if stand_in else model
 
 
+def describe_stems(stems: Iterable[str]) -> str:
+    """"vocals and instrumental" -- the split the way a person says it.
+
+    ``ModelChoice.reason`` is shown to a producer (the Stems tab reads it off
+    the job result), so it may not carry a Python list repr into the interface.
+    Order is the registry's, not alphabetical: "drums, bass, vocals and other".
+    """
+    names = list(dict.fromkeys(stems))
+    if not names:
+        return "nothing"
+    if len(names) == 1:
+        return names[0]
+    return f"{', '.join(names[:-1])} and {names[-1]}"
+
+
 def _sort_key(model: str) -> tuple[int, float, str]:
     spec = MODELS[model]
     sdr = spec["sdr"] if spec["sdr"] is not None else -1.0
@@ -245,9 +260,13 @@ def resolve_model(requested: Optional[str] = None, stems_wanted: Optional[Sequen
     quality = quality_of(chosen, stand_in=stand_in)
     ranked = models_for(wanted)
     skipped = [m for m in ranked if _sort_key(m) < _sort_key(chosen)]
-    reason = f"best available for {sorted(set(wanted))} ({quality.tier} tier)"
+    reason = f"best available for {describe_stems(wanted)} ({quality.tier} tier)"
     if skipped:
-        reason += f"; {len(skipped)} higher-quality model(s) not installed here"
+        # Name the one that was missed rather than counting them. The owner
+        # decides what the image carries, and a name is what they act on.
+        reason += (f"; {skipped[0]} is higher quality but is not installed here" if len(skipped) == 1
+                   else f"; {len(skipped)} higher-quality separators are not installed here, "
+                        f"the best of them {skipped[0]}")
     return ModelChoice(model=chosen, quality=quality, reason=reason, requested=None, downgraded=bool(skipped))
 
 
@@ -387,7 +406,7 @@ def separate_file(path: str, model: str = DEFAULT_MODEL, backend: Optional[Separ
     return [s for s in stems if s.name in expected]
 
 
-__all__ = ["DEFAULT_MODEL", "DEFAULT_STEMS", "MODELS", "STAND_IN_SUFFIX", "TIERS", "TIER_CONFIDENCE",
+__all__ = ["describe_stems", "DEFAULT_MODEL", "DEFAULT_STEMS", "MODELS", "STAND_IN_SUFFIX", "TIERS", "TIER_CONFIDENCE",
            "AudioSeparatorBackend", "FakeSeparator", "ModelChoice", "SeparationQuality", "Separator",
            "StemAudio", "backend_available_models", "best_model", "model_label", "models_for", "quality_of",
            "resolve_model", "separate_file", "stem_name_from_filename"]

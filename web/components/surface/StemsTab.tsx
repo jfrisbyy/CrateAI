@@ -16,9 +16,9 @@ import { useMemo, useState } from "react";
 import { StemList } from "@/components/stems/StemList";
 import { isInFlight, jobStatusText } from "@/components/stems/jobStatus";
 import { useStems } from "@/components/stems/useStems";
-import { btnPrimary, btnQuiet, label, select } from "@/components/ui";
+import { btnPrimary, btnQuiet, cx, label, select } from "@/components/ui";
 import { api } from "@/lib/api/client";
-import { DEFAULT_SPLIT, describeAsk, describeStems, splitKey, stemsAskOf, STEM_SPLITS, TIER_NOTE } from "@/lib/api/stems";
+import { DEFAULT_SPLIT, describeAsk, describeStems, separationOutcomeOf, splitKey, stemsAskOf, STEM_SPLITS, TIER_NOTE } from "@/lib/api/stems";
 import { useSurface } from "./surfaceState";
 
 export function StemsTab() {
@@ -36,6 +36,12 @@ export function StemsTab() {
     return asked.stems !== null && splitKey(asked.stems) === splitKey(split.stems);
   });
   const lastFailed = !inFlight.length && stemJobs[0]?.status === "failed" ? stemJobs[0] : undefined;
+  // What the worker actually chose, and whether it had to settle. "The best
+  // separator installed runs" is a promise; this is the receipt.
+  const lastOutcome = useMemo(
+    () => stemJobs.filter((j) => j.status === "done").map((j) => separationOutcomeOf(j.result)).find(Boolean) ?? null,
+    [stemJobs],
+  );
   const canSeparate = file.status !== "uploading" && !sameSplitRunning;
 
   const stopTransport = () => {
@@ -83,6 +89,11 @@ export function StemsTab() {
         The best separator installed that makes those stems runs: {TIER_NOTE[split.bestTier]}. Each stem lands in the
         library as its own file with its own analysis, and every stem says what produced it.
       </p>
+      {lastOutcome?.reason && (
+        <p className={cx("px-4 pt-1 text-xs max-w-[640px]", lastOutcome.downgraded ? "text-pad" : "text-chalk-dim")}>
+          Last separation: {lastOutcome.reason}.
+        </p>
+      )}
 
       {(stems.actionError || playError) && (
         <p role="alert" className="mx-4 mt-2 text-xs border-l-2 border-pad pl-2 flex items-center gap-2">

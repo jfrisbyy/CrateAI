@@ -19,6 +19,7 @@ import soundfile as sf
 from lockedgroove.db import InMemoryDatabase
 from lockedgroove.ingest import sha256_file
 from lockedgroove.jobs import run_job
+from lockedgroove.stems import separate
 from lockedgroove.stems.separate import (
     DEFAULT_MODEL,
     DEFAULT_STEMS,
@@ -209,3 +210,45 @@ def test_an_explicit_weak_model_still_runs_but_the_rows_are_labelled(world, monk
     row = world.db.select("stems", {"file_id": world.file["id"]})[0]
     assert row["model_family"] == "kuielab"
     assert row["is_stand_in"] is True          # the stand-in ran, so that is what the row says
+
+
+# --- the sentence a producer reads ------------------------------------------------------------
+#
+# `ModelChoice.reason` is shown in the Stems tab, off the finished job's result.
+# It used to carry a Python list repr into the interface
+# ("best available for ['bass', 'drums', 'other', 'vocals']") and count what was
+# missing rather than name it, which is no use to the person who decides what
+# the image carries.
+
+
+def test_the_reason_says_the_split_the_way_a_person_would():
+    choice = separate.resolve_model(None, ["drums", "bass", "vocals", "other"], available=None)
+    assert "drums, bass, vocals and other" in choice.reason
+    assert "[" not in choice.reason, "a list repr must not reach the interface"
+
+
+def test_the_split_keeps_the_registry_order_rather_than_alphabetical():
+    assert separate.describe_stems(["drums", "bass", "vocals", "other"]) == "drums, bass, vocals and other"
+    assert separate.describe_stems(["vocals", "instrumental"]) == "vocals and instrumental"
+    assert separate.describe_stems(["drums"]) == "drums"
+    assert separate.describe_stems([]) == "nothing"
+    assert separate.describe_stems(["drums", "drums", "bass"]) == "drums and bass"
+
+
+def test_a_downgrade_names_the_separator_that_was_missing():
+    choice = separate.resolve_model(None, ["vocals", "instrumental"], available={"mdx23c_inst_voc"})
+    assert choice.downgraded is True
+    assert "bs_roformer is higher quality but is not installed here" in choice.reason
+
+
+def test_a_downgrade_past_several_names_the_best_of_them_and_counts():
+    choice = separate.resolve_model(None, ["vocals", "instrumental"], available={"mdxnet_inst_hq"})
+    assert choice.downgraded is True
+    assert "2 higher-quality separators are not installed here" in choice.reason
+    assert "the best of them bs_roformer" in choice.reason
+
+
+def test_nothing_better_missing_means_nothing_said_about_it():
+    choice = separate.resolve_model(None, ["vocals", "instrumental"], available={"bs_roformer"})
+    assert choice.downgraded is False
+    assert "not installed" not in choice.reason

@@ -512,6 +512,25 @@ cannot disagree: a named model keys on the model, anything else keys on the
 sorted, de-duplicated split. Jobs queued before this route stopped taking a bare
 model still key correctly.
 
+### The worker's decision comes back with a receipt
+
+A finished `stems` job's `result` carries `model`, `quality`, `model_reason` and
+`downgraded`. `resolve_model` writes the reason as one sentence a producer can
+read — "best available for drums, bass, vocals and other (strong tier)", or
+"…; bs_roformer is higher quality but is not installed here". The Stems tab
+shows it under the picker, in the warning colour when `downgraded` is true.
+
+Without it, "the best separator installed runs" is a promise with no receipt: a
+producer on an image missing the reference checkpoints would get baseline-tier
+stems and never learn why. Naming the missing separator rather than counting
+what was skipped is deliberate — the owner decides what the image carries, and a
+name is what they act on.
+
+The sentence is worded in Python beside the decision. It used to carry a list
+repr into the interface (`best available for ['bass', 'drums', 'other',
+'vocals']`), which is what happens when a string is written for a log and then
+shown to a person.
+
 ### The catalogue is generated
 
 `web/lib/types/stemModels.ts` comes from `scripts/gen_stem_models.py`

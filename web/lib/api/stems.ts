@@ -89,6 +89,39 @@ export function describeStems(stems: readonly string[]): string {
 }
 
 /**
+ * What the worker decided, read off a finished `stems` job's result.
+ *
+ * `resolve_model` says which separator ran and why in one sentence, and flags a
+ * downgrade — a better model exists for this split but is not installed in the
+ * image. None of it reached the producer: the tab showed a job status and
+ * nothing else, so "the best separator installed runs" was a promise with no
+ * receipt. The sentence is worded in Python, beside the decision it describes.
+ */
+export interface SeparationOutcome {
+  model: string;
+  tier: SeparationTier | null;
+  /** why this separator and not another, in one sentence */
+  reason: string | null;
+  /** true when something better exists for this split but is not installed here */
+  downgraded: boolean;
+}
+
+export function separationOutcomeOf(result: unknown): SeparationOutcome | null {
+  if (typeof result !== "object" || result === null || Array.isArray(result)) return null;
+  const r = result as { model?: unknown; model_reason?: unknown; downgraded?: unknown; quality?: unknown };
+  if (typeof r.model !== "string") return null;
+  const quality = typeof r.quality === "object" && r.quality !== null && !Array.isArray(r.quality)
+    ? (r.quality as { model_tier?: unknown })
+    : {};
+  return {
+    model: r.model,
+    tier: typeof quality.model_tier === "string" ? (quality.model_tier as SeparationTier) : null,
+    reason: typeof r.model_reason === "string" ? r.model_reason : null,
+    downgraded: r.downgraded === true,
+  };
+}
+
+/**
  * What a queued `stems` job asked for.
  *
  * One definition, shared by the route (which de-duplicates in-flight jobs with
