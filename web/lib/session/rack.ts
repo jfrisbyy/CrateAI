@@ -16,7 +16,7 @@
 // (`/api/compat`, `/api/loops`) and turn them into rows the rack renders, so
 // the same rack renders real data and a fixture without knowing the difference.
 
-import { STEM_MODELS, type StemModelId } from "@/lib/api/stems";
+import { modelSpec } from "@/lib/api/stems";
 import { compareTempo, foldTempo, type Mode, type TrackVitals } from "@/lib/compat/theory";
 import type { CompatMatch } from "@/lib/compat/matches";
 import { effective } from "@/lib/report/effective";
@@ -253,7 +253,7 @@ function provenanceOf(file: FileRow, startS: number, endS: number, stem: StemRow
     kind: file.kind,
     stem: stem?.stem ?? (file.kind === "stem" ? stemNameFrom(file.original_filename) : null),
     separationModel: model,
-    separationModelLabel: model ? (STEM_MODELS.find((m) => m.id === (model as StemModelId))?.describe.split(".")[0] ?? model) : null,
+    separationModelLabel: model ? (modelSpec(model)?.label ?? model) : null,
     parentFileId: file.parent_file_id,
   };
 }

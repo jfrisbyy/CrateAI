@@ -25,6 +25,7 @@ import type {
 } from "@/lib/types/db";
 import type { AnalysisReport } from "@/lib/types/report";
 import { testUuid, type TestDb } from "./db";
+import { stemQualityColumns } from "@/lib/api/stems";
 import { NOW } from "./schema";
 
 /** A small report with a tempo, a key and a beat grid: enough for every route that needs one. */
@@ -142,6 +143,9 @@ export function seedStem(db: TestDb, userId: string, fileId: string, stemFileId:
     stem: "drums",
     model: "htdemucs_ft",
     stem_file_id: stemFileId,
+    // From the generated registry, so a seeded row cannot claim a tier the
+    // model does not have. A test that wants a weak row names a weak model.
+    ...stemQualityColumns(typeof partial.model === "string" ? partial.model : "htdemucs_ft"),
     created_at: NOW,
     ...partial,
   };

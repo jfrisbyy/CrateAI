@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ChopWithFile } from "@/lib/api/chops";
-import type { StemWithFile } from "@/lib/api/stems";
+import { stemQualityColumns, type StemWithFile } from "@/lib/api/stems";
 import { bindPads, EMPTY_BINDINGS } from "./bindings";
 
 function chop(index: number, fileId: string | null, name: string | null = null): ChopWithFile {
@@ -26,6 +26,7 @@ function stem(model: string, name: string, createdAt: string): StemWithFile {
     stem: name,
     model,
     stem_file_id: `file-${model}-${name}`,
+    ...stemQualityColumns(model),
     created_at: createdAt,
     file: null,
   };

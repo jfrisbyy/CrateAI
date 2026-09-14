@@ -1,31 +1,42 @@
 "use client";
 
-// The Stems tab: pick a model, separate, watch the job, then the stems as
-// rows (each a library file with its own analysis) with play, Open and
-// Loop this stem. Re-separating with another model adds a group.
+// The Stems tab: pick a split, separate, watch the job, then the stems as rows
+// (each a library file with its own analysis) with play, Open and Loop this
+// stem. Asking for a different split adds a group.
+//
+// What is offered is the split — which parts you want the record pulled into —
+// and never a model id. Separation is the irreversible step: a weak separator
+// throws away high frequencies no EQ downstream puts back, so the best
+// separator installed that makes those stems is the one that runs, and the
+// worker decides because only it knows what is installed in its image. This tab
+// used to offer three identifiers, which asked a producer to make a quality
+// decision from a string they have no way to evaluate.
 
 import { useMemo, useState } from "react";
 import { StemList } from "@/components/stems/StemList";
-import { isInFlight, jobStatusText, paramOf } from "@/components/stems/jobStatus";
+import { isInFlight, jobStatusText } from "@/components/stems/jobStatus";
 import { useStems } from "@/components/stems/useStems";
-import { btnPrimary, btnQuiet, cx, label, select } from "@/components/ui";
+import { btnPrimary, btnQuiet, label, select } from "@/components/ui";
 import { api } from "@/lib/api/client";
-import { DEFAULT_STEM_MODEL, STEM_MODELS, type StemModelId } from "@/lib/api/stems";
+import { DEFAULT_SPLIT, describeAsk, describeStems, splitKey, stemsAskOf, STEM_SPLITS, TIER_NOTE } from "@/lib/api/stems";
 import { useSurface } from "./surfaceState";
 
 export function StemsTab() {
   const s = useSurface();
   const { file, jobs } = s;
   const stems = useStems(file.id, jobs);
-  const [model, setModel] = useState<StemModelId>(DEFAULT_STEM_MODEL);
+  const [chosen, setChosen] = useState<string>(splitKey(DEFAULT_SPLIT.stems));
   const [playError, setPlayError] = useState<string | null>(null);
-  const chosen = STEM_MODELS.find((m) => m.id === model) ?? STEM_MODELS[0]!;
+  const split = STEM_SPLITS.find((x) => splitKey(x.stems) === chosen) ?? DEFAULT_SPLIT;
 
   const stemJobs = useMemo(() => jobs.filter((j) => j.kind === "stems"), [jobs]);
   const inFlight = stemJobs.filter(isInFlight);
-  const sameModelRunning = inFlight.some((j) => paramOf(j, "model") === model);
+  const sameSplitRunning = inFlight.some((j) => {
+    const asked = stemsAskOf(j.params);
+    return asked.stems !== null && splitKey(asked.stems) === splitKey(split.stems);
+  });
   const lastFailed = !inFlight.length && stemJobs[0]?.status === "failed" ? stemJobs[0] : undefined;
-  const canSeparate = file.status !== "uploading" && !sameModelRunning;
+  const canSeparate = file.status !== "uploading" && !sameSplitRunning;
 
   const stopTransport = () => {
     s.waveRef.current?.pause();
@@ -35,13 +46,13 @@ export function StemsTab() {
   return (
     <div className="flex flex-col">
       <div className="px-4 py-2 border-b border-rule flex flex-wrap items-center gap-x-4 gap-y-2">
-        <label htmlFor="stem-model" className={label}>
-          Model
+        <label htmlFor="stem-split" className={label}>
+          Separate into
         </label>
-        <select id="stem-model" value={model} onChange={(e) => setModel(e.target.value as StemModelId)} className={cx(select, "font-mono")}>
-          {STEM_MODELS.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.id}
+        <select id="stem-split" value={chosen} onChange={(e) => setChosen(e.target.value)} className={select}>
+          {STEM_SPLITS.map((x) => (
+            <option key={splitKey(x.stems)} value={splitKey(x.stems)}>
+              {describeStems(x.stems)}
             </option>
           ))}
         </select>
@@ -49,19 +60,19 @@ export function StemsTab() {
           type="button"
           className={btnPrimary}
           disabled={!canSeparate}
-          onClick={() => void stems.separate(model)}
-          title={sameModelRunning ? "This model is already running on the file" : `Separate into ${chosen.stems.join(", ")}`}
+          onClick={() => void stems.separate({ stems: [...split.stems] })}
+          title={sameSplitRunning ? "That split is already running on this file" : `Separate into ${describeStems(split.stems)}`}
         >
           Separate
         </button>
         {inFlight.map((j) => (
           <span key={j.id} className="text-xs text-chalk-dim">
-            <span className="font-mono text-chalk">{String(paramOf(j, "model") ?? "stems")}</span> {jobStatusText(j)}
+            <span className="text-chalk">{describeAsk(stemsAskOf(j.params))}</span> {jobStatusText(j)}
           </span>
         ))}
         {lastFailed && (
           <span className="text-xs flex items-center gap-2">
-            <span className="font-mono">{String(paramOf(lastFailed, "model") ?? "stems")}</span> {jobStatusText(lastFailed)}
+            <span>{describeAsk(stemsAskOf(lastFailed.params))}</span> {jobStatusText(lastFailed)}
             <button type="button" className={btnQuiet} onClick={() => void api.jobs.retry(lastFailed.id)}>
               Retry
             </button>
@@ -69,7 +80,8 @@ export function StemsTab() {
         )}
       </div>
       <p className="px-4 pt-2 text-xs text-chalk-dim max-w-[640px]">
-        {chosen.describe} Each stem lands in the library as its own file and gets its own analysis.
+        The best separator installed that makes those stems runs: {TIER_NOTE[split.bestTier]}. Each stem lands in the
+        library as its own file with its own analysis, and every stem says what produced it.
       </p>
 
       {(stems.actionError || playError) && (
@@ -101,7 +113,7 @@ export function StemsTab() {
         <p className="px-4 py-3 text-sm text-chalk-dim max-w-[560px]">
           {inFlight.length > 0
             ? "Separating. The stems appear here, and in the library, when the job finishes."
-            : "No stems yet. Pick a model and press Separate; then open a stem and loop just that part."}
+            : "No stems yet. Choose what to separate into and press Separate; then open a stem and loop just that part."}
         </p>
       ) : (
         <StemList stems={stems.stems} onBeforePlay={stopTransport} onError={setPlayError} />

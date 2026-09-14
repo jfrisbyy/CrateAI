@@ -104,7 +104,7 @@ Idempotency: `analyze` on `(file_id, analysis_version)` is a no-op when
 | kind | params | writes |
 |---|---|---|
 | `analyze` | `{ analysis_version?: int, stages?: string[], force?: bool }` | `files.report` **after every stage** (see below), then `files.peaks`, `files.duration_s/sample_rate/channels/format`, `files.analysis_version`, `files.status='ready'`, `tags` rows (source `model`) |
-| `stems` | `{ model: "htdemucs_ft" \| "htdemucs_6s" \| "bs_roformer" }` | one `files` row per stem (`kind='stem'`, `parent_file_id`), `stems` rows, and one `analyze` job per stem |
+| `stems` | `{ stems?: string[], model?: <registry key> }` — the *split*, not the model (§13) | one `files` row per stem (`kind='stem'`, `parent_file_id`), `stems` rows carrying the quality columns, and one `analyze` job per stem |
 | `chop` | `{ mode: "transients" \| "grid" \| "manual", count?, start_bar?, end_bar?, markers_s?: number[] }` | `files` rows (`kind='chop'`), `chops` rows |
 | `midi` | `{ kind: "melody" \| "drums" \| "chords" \| "groove" }` | `midi` row; `result.notes` mirrors `midi.notes` |
 | `embed` | `{ model?: string }` | `embeddings` row |
@@ -221,7 +221,7 @@ in `web/lib/api/types.ts` and the per-seam `web/lib/api/*.ts` modules.
 
 | Route | Method | Does |
 |---|---|---|
-| `/api/files/[id]/stems` | GET, POST | stems of a file; queue `stems` (GPU) |
+| `/api/files/[id]/stems` | GET, POST | stems of a file; queue `stems` (GPU) by split, one in flight per split (§13) |
 | `/api/files/[id]/chops` | GET, POST | chops of a file; queue `chop` with a mode and its params |
 | `/api/files/[id]/chops/[chopId]` | PATCH | move a chop's edges or rename it (logs a correction) |
 | `/api/files/[id]/midi` | GET, POST | MIDI rows for a file; queue `midi` (drums, or Basic Pitch on a stem) |
@@ -475,3 +475,62 @@ into a trigger that also guards `plan_status` and the two Stripe ids.
 `web/lib/testing/schema.ts` is the test double's mirror of all of this — which
 table a row belongs to, which columns a client may not change — and has to move
 when these do.
+
+---
+
+## 13. Separation: ask for a split, not a model
+
+Separation is the one irreversible step in the product. Measured on a real
+upload: `kuielab_a_other` left **−37.1 dB** of 8–20 kHz energy where the source
+had **−19.5 dB**, and BS-Roformer on the same source left it at **−19.5 dB**,
+untouched. Nothing downstream puts that back. A producer hears "muddy" and has
+no way to know why.
+
+So the registry in `analysis/lockedgroove/stems/separate.py` is ordered by
+quality, `resolve_model` picks the best separator **installed in the worker's
+image** that returns the stems being asked for, and **there is no fast mode** —
+this module does not offer trading separation quality for compute.
+
+### Who decides what
+
+| | |
+|---|---|
+| the producer | which **split** they want: `drums, bass, vocals, other` (default), `vocals, instrumental`, or the six-stem split |
+| the worker | which **model** runs, because only it knows which checkpoints its image carries |
+| the `stems` row | which model *did* run, its tier, its published SDR and the basis for that number |
+
+`POST /api/files/[id]/stems` takes `{ stems?: string[] }`. `{ model }` remains
+as the escape hatch for a producer who knows exactly which separator they want;
+`resolve_model` honours it and reports in the job result when something better
+was available, so the choice is never silent. A bare `model` means *that model's
+own stems* — defaulting the split as well would queue `bs_roformer` against a
+request for drums and bass, which the worker can only refuse.
+
+One separation per split per file is in flight at a time. The key is
+`lib/api/stems.ts`'s `stemsAskKey`, shared by the route and the tab so they
+cannot disagree: a named model keys on the model, anything else keys on the
+sorted, de-duplicated split. Jobs queued before this route stopped taking a bare
+model still key correctly.
+
+### The catalogue is generated
+
+`web/lib/types/stemModels.ts` comes from `scripts/gen_stem_models.py`
+(`--check` in CI, `analysis/tests/test_stem_models_gen.py` fails when stale).
+The web used to keep a hand-typed copy: three models out of six, with a default
+named by string, which is how the quality ordering stopped reaching the producer
+entirely. Nothing in `web/` may name a separator that is not in that generated
+file.
+
+A split is only offered when a model above the `weak` tier produces it. `weak`
+and `stand_in` exist so a row that came from one can be **labelled** as such —
+never so that one can be chosen.
+
+### What a stem says about itself
+
+`qualityOf` (`lib/api/stems.ts`) reads the seven quality columns. A null
+`model_tier` means the row predates them, which the migration says to read as
+**unknown, not fine**: it is shown with the same weight as `weak`. A model name
+ending in `-fake` overrides a contradicting tier column, because a stand-in is
+never a separation whatever a column claims. The Stems tab puts the tier, the
+model, the SDR and the one-sentence note above every group, and a published SDR
+is never rendered without the basis that says what the number is.

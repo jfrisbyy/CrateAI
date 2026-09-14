@@ -3,6 +3,7 @@
 // with the migration; the typed Supabase client is built on `Database` below.
 
 import type { AnalysisReport } from "./report";
+import type { SeparationTier } from "./stemModels";
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -179,6 +180,16 @@ export type StemRow = {
   stem: string;
   model: string;
   stem_file_id: string;
+  // Separation quality (20260913000800_stem_quality.sql). A null `model_tier`
+  // means the row predates these columns; the migration says to read that as
+  // untrusted, the same as 'weak' — never as "fine".
+  model_family: string | null;
+  model_tier: SeparationTier | null;
+  model_sdr: number | null;
+  model_sdr_basis: string | null;
+  is_stand_in: boolean;
+  quality_confidence: number | null;
+  quality_note: string | null;
   created_at: string;
 }
 
@@ -189,6 +200,13 @@ export type StemInsert = {
   stem: string;
   model: string;
   stem_file_id: string;
+  model_family?: string | null;
+  model_tier?: SeparationTier | null;
+  model_sdr?: number | null;
+  model_sdr_basis?: string | null;
+  is_stand_in?: boolean;
+  quality_confidence?: number | null;
+  quality_note?: string | null;
   created_at?: string;
 }
 

@@ -1,8 +1,14 @@
 "use client";
 
-// The stems as rows grouped by model: name, analysis state (live from the
-// library store), duration, BPM and key with their confidence, play, Open,
-// and Loop this stem (opens the stem's own surface on its Loops tab).
+// The stems as rows grouped by the separation that made them: what it was, how
+// good it is, then each stem's name, analysis state (live from the library
+// store), duration, BPM and key with their confidence, play, Open, and Loop
+// this stem (opens the stem's own surface on its Loops tab).
+//
+// The group header carries the quality, because separation is the irreversible
+// step and a producer who cannot see which tier made a stem has no way to know
+// why one sounds soft. A published SDR is never shown without the sentence
+// saying what the number is — a bare "9.0" is worse than nothing.
 
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
@@ -10,7 +16,7 @@ import { fileTitle, statusText } from "@/components/library/FileRow";
 import { ConfidenceDot } from "@/components/surface/ConfidenceDot";
 import { btn, btnQuiet, cx } from "@/components/ui";
 import { api } from "@/lib/api/client";
-import { baseModelOf, isStandInModel, stemOrderIndex, vitalsOf, type FileVitals, type StemWithFile } from "@/lib/api/stems";
+import { modelSpec, qualityOf, stemOrderIndex, vitalsOf, type FileVitals, type StemQuality, type StemWithFile } from "@/lib/api/stems";
 import { fmtBpm, fmtDuration } from "@/lib/format";
 import { displayKey } from "@/lib/music/keys";
 import { useLibrary } from "@/lib/state/LibraryProvider";
@@ -19,7 +25,7 @@ import { openFile } from "./navigate";
 
 export interface StemGroup {
   model: string;
-  standIn: boolean;
+  quality: StemQuality;
   stems: StemWithFile[];
 }
 
@@ -34,12 +40,12 @@ export function groupStems(stems: readonly StemWithFile[]): StemGroup[] {
   return [...groups.entries()]
     .map(([model, rows]) => ({
       model,
-      standIn: isStandInModel(model),
+      quality: qualityOf(rows[0]!),
       newest: rows.reduce((m, r) => (r.created_at > m ? r.created_at : m), ""),
       stems: [...rows].sort((a, b) => stemOrderIndex(a.stem) - stemOrderIndex(b.stem)),
     }))
     .sort((a, b) => (a.newest < b.newest ? 1 : a.newest > b.newest ? -1 : 0))
-    .map(({ model, standIn, stems: rows }) => ({ model, standIn, stems: rows }));
+    .map(({ model, quality, stems: rows }) => ({ model, quality, stems: rows }));
 }
 
 export function StemList({ stems, onBeforePlay, onError }: { stems: StemWithFile[]; onBeforePlay: () => void; onError: (message: string) => void }) {
@@ -48,10 +54,7 @@ export function StemList({ stems, onBeforePlay, onError }: { stems: StemWithFile
     <div>
       {groups.map((g) => (
         <section key={g.model} aria-label={g.model}>
-          <h2 className="px-4 pt-3 pb-1 text-xs text-chalk-dim flex items-baseline gap-2">
-            <span className="font-mono text-chalk">{baseModelOf(g.model)}</span>
-            {g.standIn && <span>development stand-in, not a separation model</span>}
-          </h2>
+          <SeparationHeader model={g.model} quality={g.quality} stems={g.stems.length} />
           <ul>
             {g.stems.map((stem) => (
               <StemRowView key={stem.id} stem={stem} onBeforePlay={onBeforePlay} onError={onError} />
@@ -60,6 +63,33 @@ export function StemList({ stems, onBeforePlay, onError }: { stems: StemWithFile
         </section>
       ))}
     </div>
+  );
+}
+
+/**
+ * What made these stems, and how far to trust them.
+ *
+ * The tier leads, because that is the part a producer can act on; the model id
+ * is there for someone who wants it. An untrusted separation (a stand-in, a
+ * weak or baseline model, or a row from before the quality columns existed)
+ * says so where it cannot be missed rather than in a tooltip.
+ */
+export function SeparationHeader({ model, quality, stems }: { model: string; quality: StemQuality; stems: number }) {
+  const spec = modelSpec(model);
+  return (
+    <h2 className="px-4 pt-3 pb-1 text-xs text-chalk-dim">
+      <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span className={cx("text-chalk", quality.untrusted && "text-pad")}>{quality.tier.replace("_", " ")}</span>
+        <span className="font-mono">{spec?.id ?? model}</span>
+        {quality.sdr !== null && quality.sdrBasis && (
+          <span title={quality.sdrBasis}>
+            {quality.sdr.toFixed(2)} dB SDR<span className="sr-only"> — {quality.sdrBasis}</span>
+          </span>
+        )}
+        <span className="sr-only">{stems} stems</span>
+      </span>
+      <span className={cx("block max-w-[640px] pt-0.5", quality.untrusted && "text-pad")}>{quality.note}</span>
+    </h2>
   );
 }
 

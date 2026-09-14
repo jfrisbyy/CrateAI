@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { errorMessage } from "@/lib/api/client";
-import { stemsApi, type StemModelId, type StemWithFile } from "@/lib/api/stems";
+import { stemsApi, type SeparateRequest, type StemWithFile } from "@/lib/api/stems";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 import type { JobRow } from "@/lib/types/db";
 import { useJobDone } from "./useJobDone";
@@ -17,7 +17,7 @@ export interface StemsState {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  separate: (model: StemModelId) => Promise<void>;
+  separate: (req?: SeparateRequest) => Promise<void>;
   actionError: string | null;
   clearActionError: () => void;
 }
@@ -48,10 +48,10 @@ export function useStems(fileId: string, jobs: JobRow[]): StemsState {
   useJobDone(jobs, isStemsJob, () => void refetch());
 
   const separate = useCallback(
-    async (model: StemModelId) => {
+    async (req: SeparateRequest = {}) => {
       setActionError(null);
       try {
-        const res = await stemsApi.separate(fileId, { model });
+        const res = await stemsApi.separate(fileId, req);
         lib.upsertJob(res.job);
         if (res.dispatch && !res.dispatch.ok) setActionError(`Separation queued, but ${res.dispatch.reason}.`);
       } catch (err) {

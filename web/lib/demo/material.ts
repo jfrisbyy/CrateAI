@@ -13,6 +13,7 @@
 // are written by hand to describe that synthesised audio. They are what the
 // analysis would have measured, not what it did measure, and the page says so.
 
+import { stemQualityColumns } from "@/lib/api/stems";
 import { buildMatches, type CompatMatch } from "@/lib/compat/matches";
 import { METHOD, type Mode, type TrackVitals } from "@/lib/compat/theory";
 import { emptyReport } from "@/lib/report/effective";
@@ -476,6 +477,7 @@ export function renderDemoRecord(index: number, sampleRate: number): RenderedRec
           stem: record.stem.name,
           model: record.stem.model,
           stem_file_id: record.id,
+          ...stemQualityColumns(record.stem.model),
           created_at: AT,
         }
       : null,

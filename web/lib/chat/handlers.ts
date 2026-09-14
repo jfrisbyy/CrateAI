@@ -6,6 +6,8 @@
 
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { describeStems, qualityOf, splitFor } from "@/lib/api/stems";
+import { DEFAULT_STEMS } from "@/lib/types/stemModels";
 import { buildExportRequest, estimateExport, exportZipName, heldBackTracks, referencedFileIds } from "@/lib/export/song";
 import { EXPORT_FORMATS } from "@/lib/export/types";
 import { displayKey, PITCH_CLASSES } from "@/lib/music/keys";
@@ -23,7 +25,7 @@ import { WEB_QUOTA_MESSAGE } from "./limits";
 import { compactReport, explainReport, fileName, notAnalyzed, vitalsOf, type CompactSection } from "./report";
 import { grammarLines, noSessionText, planSteps, readSession, type SessionSnapshot } from "./surfaces";
 import { LINK_REFUSAL } from "./system";
-import { BATCH_GPU_CONFIRM, BATCH_MAX_OPERATIONS, CHOP_MODES, EDIT_FIELDS, GPU_TOOLS, MIDI_KINDS, REVOICE_PATHS, STEM_MODELS, TOOL_NAMES } from "./tools";
+import { BATCH_GPU_CONFIRM, BATCH_MAX_OPERATIONS, CHOP_MODES, EDIT_FIELDS, GPU_TOOLS, MIDI_KINDS, REVOICE_PATHS, STEM_NAMES, TOOL_NAMES } from "./tools";
 
 export type DispatchInfo = { ok: true; call_id: string } | { ok: false; reason: string };
 
@@ -66,7 +68,7 @@ export const INPUT_SCHEMAS = {
   }),
   create_loop: z.object({ file_id: UUID, start_s: z.number().min(0), end_s: z.number().min(0), name: z.string().trim().max(120).optional() }),
   render_loop: z.object({ loop_id: UUID }),
-  separate_stems: z.object({ file_id: UUID, model: z.enum(STEM_MODELS).optional() }),
+  separate_stems: z.object({ file_id: UUID, stems: z.array(z.enum(STEM_NAMES)).min(1).optional() }),
   chop: z.object({
     file_id: UUID,
     mode: z.enum(CHOP_MODES),
@@ -274,13 +276,34 @@ async function renderLoop(input: z.infer<typeof INPUT_SCHEMAS.render_loop>, ctx:
 async function separateStems(input: z.infer<typeof INPUT_SCHEMAS.separate_stems>, ctx: ToolContext): Promise<ToolOutcome> {
   const file = await needFile(ctx, input.file_id);
   if (isOutcome(file)) return file;
-  const model = input.model ?? "htdemucs_ft";
-  const stems = (await ctx.db.listStems(file.id)).filter((s) => s.model === model);
-  if (stems.length > 0) {
-    const files = await ctx.db.getFiles(stems.map((s) => s.stem_file_id));
+
+  // The model is the worker's choice, so the chat asks for a split and the
+  // registry's quality ordering decides. Asking by name is left to the tab,
+  // where a producer who wants a specific separator can say so themselves.
+  const wanted = input.stems ? [...new Set(input.stems)] : [...DEFAULT_STEMS];
+  const asked = describeStems(wanted);
+  if (!splitFor(wanted)) {
+    return errorOutcome(`No separator produces exactly ${asked}. Ask for ${describeStems(DEFAULT_STEMS)}, or vocals and instrumental, or the six-stem split.`);
+  }
+
+  // "Already separated" means some one separation produced every stem asked
+  // for — not that the file has stems lying around from a different split.
+  const existing = await ctx.db.listStems(file.id);
+  const byModel = new Map<string, typeof existing>();
+  for (const row of existing) byModel.set(row.model, [...(byModel.get(row.model) ?? []), row]);
+  const covering = [...byModel.entries()].find(([, rows]) => wanted.every((w) => rows.some((r) => r.stem === w)));
+  if (covering) {
+    const [model, rows] = covering;
+    const quality = qualityOf(rows[0]!);
+    const files = await ctx.db.getFiles(rows.map((r) => r.stem_file_id));
     return outcome({
-      text: JSON.stringify({ already_separated: true, model, stems: stems.map((s) => ({ stem: s.stem, file_id: s.stem_file_id })) }),
-      summary: `${fileName(file)} already has ${stems.length} ${model} stems`,
+      text: JSON.stringify({
+        already_separated: true,
+        model,
+        quality: { tier: quality.tier, note: quality.note, untrusted: quality.untrusted },
+        stems: rows.map((r) => ({ stem: r.stem, file_id: r.stem_file_id })),
+      }),
+      summary: `${fileName(file)} already has ${asked} (${quality.tier})`,
       card: {
         type: "search",
         query: `stems of ${fileName(file)}`,
@@ -290,6 +313,7 @@ async function separateStems(input: z.infer<typeof INPUT_SCHEMAS.separate_stems>
       },
     });
   }
+
   const active = await ctx.db.findActiveJob("stems", file.id);
   if (active) {
     return outcome({
@@ -298,7 +322,7 @@ async function separateStems(input: z.infer<typeof INPUT_SCHEMAS.separate_stems>
       card: jobCard(active, "separate stems", { ok: true, call_id: active.modal_call_id ?? "" }),
     });
   }
-  return queue(ctx, "stems", file.id, { model }, `stems (${model})`, `stem separation of ${fileName(file)} with ${model}`);
+  return queue(ctx, "stems", file.id, { stems: wanted }, `stems (${asked})`, `separating ${fileName(file)} into ${asked}`);
 }
 
 async function chop(input: z.infer<typeof INPUT_SCHEMAS.chop>, ctx: ToolContext): Promise<ToolOutcome> {

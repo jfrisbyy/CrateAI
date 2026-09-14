@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 import { MemoryWebCache } from "@/lib/webinfo/cache";
 import { fetchPage } from "@/lib/webinfo/fetchPage";
 import { RobotsCache } from "@/lib/webinfo/robots";
-import type { BreakdownRow } from "@/lib/types/db";
+import { stemQualityColumns } from "@/lib/api/stems";
+import type { BreakdownRow, StemRow } from "@/lib/types/db";
 import { fakeContext, fakeFile, fakeId, fakeWeb, MemoryChatDb } from "./fakes";
 import { batchFingerprint, runTool } from "./handlers";
 import { WEB_QUOTA_MESSAGE } from "./limits";
@@ -236,7 +237,7 @@ describe("library operations", () => {
     const file = fakeFile();
     const db = new MemoryChatDb([file]);
     const ctx = fakeContext(db, { dispatch: async () => ({ ok: false, reason: "compute not configured" }) });
-    const stems = await runTool("separate_stems", { file_id: file.id, model: "htdemucs_6s" }, ctx);
+    const stems = await runTool("separate_stems", { file_id: file.id, stems: ["drums", "bass", "vocals", "other", "guitar", "piano"] }, ctx);
     expect(stems.card).toMatchObject({ type: "job", kind: "stems", dispatch: "compute not configured" });
     expect(stems.text).toContain("stays queued");
     expect((await runTool("chop", { file_id: file.id, mode: "transients", params: { count: 8 } }, ctx)).card).toMatchObject({ type: "job", kind: "chop" });
@@ -356,5 +357,72 @@ describe("batch confirmation (OPEN_QUESTIONS E.23)", () => {
     expect(tooMany.is_error).toBe(true);
     const badJson = await runTool("batch", { operations: [{ tool: "get_report", input_json: "{" }] }, fakeContext(db));
     if (badJson.card?.type === "batch") expect(badJson.card.items[0]).toMatchObject({ is_error: true });
+  });
+});
+
+// The chat asks for a split and lets the worker choose the separator, because
+// separation is the irreversible step and the registry is ordered by quality.
+// It used to name htdemucs_ft by default, which meant the ordering never ran.
+describe("separate_stems asks for a split, not a model", () => {
+  const withFile = () => {
+    const file = fakeFile();
+    const db = new MemoryChatDb([file]);
+    return { file, db, ctx: fakeContext(db) };
+  };
+
+  const stemRow = (fileId: string, model: string, stem: string): StemRow => ({
+    id: `${model}-${stem}`,
+    user_id: "user-1",
+    file_id: fileId,
+    stem,
+    model,
+    stem_file_id: fakeId(),
+    ...stemQualityColumns(model),
+    created_at: "2026-09-15T12:00:00.000Z",
+  });
+
+  it("queues the default four-stem split when nothing is asked for", async () => {
+    const { file, db, ctx } = withFile();
+    await runTool("separate_stems", { file_id: file.id }, ctx);
+    expect(db.jobs[0]?.params).toEqual({ stems: ["drums", "bass", "vocals", "other"] });
+  });
+
+  it("never puts a model in the job it queues", async () => {
+    const { file, db, ctx } = withFile();
+    await runTool("separate_stems", { file_id: file.id, stems: ["vocals", "instrumental"] }, ctx);
+    expect(db.jobs[0]?.params).not.toHaveProperty("model");
+  });
+
+  it("refuses a split no separator makes instead of queueing a job that must fail", async () => {
+    const { file, ctx } = withFile();
+    const out = await runTool("separate_stems", { file_id: file.id, stems: ["drums", "instrumental"] }, ctx);
+    expect(out.is_error).toBe(true);
+    expect(out.text).toContain("vocals and instrumental");
+  });
+
+  it("reports an existing separation that covers the split, with its tier", async () => {
+    const { file, db, ctx } = withFile();
+    db.stems.push(stemRow(file.id, "bs_roformer", "vocals"), stemRow(file.id, "bs_roformer", "instrumental"));
+    const out = await runTool("separate_stems", { file_id: file.id, stems: ["vocals", "instrumental"] }, ctx);
+    expect(db.jobs).toHaveLength(0);
+    expect(JSON.parse(out.text)).toMatchObject({ already_separated: true, model: "bs_roformer", quality: { tier: "reference", untrusted: false } });
+  });
+
+  // The old check was `s.model === model`: stems from any other separation
+  // counted as "already separated" for that model and nothing else did.
+  it("does not count a different split as already done", async () => {
+    const { file, db, ctx } = withFile();
+    db.stems.push(stemRow(file.id, "bs_roformer", "vocals"), stemRow(file.id, "bs_roformer", "instrumental"));
+    await runTool("separate_stems", { file_id: file.id }, ctx);
+    expect(db.jobs[0]?.params).toEqual({ stems: ["drums", "bass", "vocals", "other"] });
+  });
+
+  it("tells the model when the separation it found cannot be trusted", async () => {
+    const { file, db, ctx } = withFile();
+    db.stems.push(stemRow(file.id, "kuielab_other", "other"));
+    const out = await runTool("separate_stems", { file_id: file.id, stems: ["other"] }, ctx);
+    // "other" alone is not a split any decent separator makes, so this is
+    // refused before the existing weak row is even consulted.
+    expect(out.is_error).toBe(true);
   });
 });

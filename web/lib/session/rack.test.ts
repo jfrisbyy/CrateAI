@@ -4,6 +4,7 @@
 // than the ranked table it replaced.
 
 import { describe as group, expect, it } from "vitest";
+import { modelSpec, stemQualityColumns } from "@/lib/api/stems";
 import { compatibility } from "@/lib/compat/theory";
 import { emptyReport } from "@/lib/report/effective";
 import type { FileRow, LoopRow, StemRow } from "@/lib/types/db";
@@ -80,7 +81,7 @@ function loop(id: string, partial: Partial<LoopRow> = {}): LoopRow {
 }
 
 function stem(fileId: string, name = "drums", model = "bs_roformer"): StemRow {
-  return { id: `s-${fileId}`, user_id: "u", file_id: "parent", stem: name, model, stem_file_id: fileId, created_at: "2026-09-13T00:00:00Z" };
+  return { id: `s-${fileId}`, user_id: "u", file_id: "parent", stem: name, model, stem_file_id: fileId, ...stemQualityColumns(model), created_at: "2026-09-13T00:00:00Z" };
 }
 
 function candidate(partial: Partial<RackCandidate> = {}): RackCandidate {
@@ -133,7 +134,12 @@ group("what a row says for itself", () => {
     expect(c.measurements.map((m) => m.label)).toEqual(["92.0 BPM", "loop score 0.81", "percussive 0.72", "loudness 0.55"]);
     expect(c.measurements[0]?.confidence).toBe(0.88);
     expect(c.provenance).toMatchObject({ fileId: "rec", startS: 8, endS: 16, stem: "drums", separationModel: "bs_roformer" });
-    expect(c.provenance.separationModelLabel).toContain("BS-RoFormer");
+    // The label is the generated registry's (scripts/gen_stem_models.py), not a
+    // string typed into the web app — that hand-written copy went stale at three
+    // models out of six and defaulted to one of them by name.
+    expect(c.provenance.separationModelLabel).toBe(modelSpec("bs_roformer")!.label);
+    expect(c.provenance.separationModelLabel).not.toBe("bs_roformer");
+    expect(c.provenance.separationModelLabel).toMatch(/vocals/i);
     expect(c.rank).toBe(2);
   });
 

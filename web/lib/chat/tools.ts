@@ -3,6 +3,7 @@
 // never does; the schemas are the contract lib/chat/handlers.ts validates
 // against again with zod before touching anything.
 
+import { ALL_STEMS } from "@/lib/types/stemModels";
 import type Anthropic from "@anthropic-ai/sdk";
 import { EXPORT_FORMATS } from "@/lib/export/types";
 import { REPORT_SECTIONS } from "@/lib/types/report";
@@ -29,7 +30,8 @@ function tool(name: string, description: string, properties: Record<string, unkn
   };
 }
 
-export const STEM_MODELS = ["htdemucs_ft", "htdemucs_6s", "bs_roformer"] as const;
+/** The stem names any separator returns; the split is chosen from these. */
+export const STEM_NAMES = ALL_STEMS as readonly string[] as [string, ...string[]];
 export const CHOP_MODES = ["transients", "grid", "manual"] as const;
 export const MIDI_KINDS = ["melody", "drums", "chords", "groove"] as const;
 export const REVOICE_PATHS = ["symbolic", "neural"] as const;
@@ -90,8 +92,8 @@ export const CHAT_TOOLS: Anthropic.Tool[] = [
   ),
   tool(
     "separate_stems",
-    "Queue stem separation for a file (GPU): drums, bass, vocals and other with htdemucs_ft (default), plus guitar and piano with htdemucs_6s, or bs_roformer. Each stem becomes its own library file with its own analysis. It never runs on audio from a link, only on library files.",
-    { file_id: uuid("The file"), model: { type: "string", enum: [...STEM_MODELS], description: "Separation model; default htdemucs_ft." } },
+    "Queue stem separation for a file (GPU). Ask for the split, never a model: drums, bass, vocals and other (the default), or vocals and instrumental, or those four plus guitar and piano. The best separator installed that makes them runs. Each stem becomes its own library file with its own analysis. Library files only, never audio from a link.",
+    { file_id: uuid("The file"), stems: { type: "array", items: { type: "string", enum: [...STEM_NAMES] }, description: "The split; omit for drums, bass, vocals and other." } },
     ["file_id"],
   ),
   tool(

@@ -98,6 +98,8 @@ jobs:
           uv pip install --python .venv/bin/python -e "./analysis[dev]"
       - name: gen_report_types --check
         run: .venv/bin/python scripts/gen_report_types.py --check
+      - name: gen_stem_models --check
+        run: .venv/bin/python scripts/gen_stem_models.py --check
 
   changes:
     name: changed paths

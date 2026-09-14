@@ -13,6 +13,7 @@ touches the analysis package through `lockedgroove.pipeline.analyze_array` and
 | `datasets/*.json` | item lists (file names, audio md5 sums) copied from the annotation repos at a pinned commit, so `--list` and md5 checks need no network |
 | `datasets/sample_pairs.example.json` | the template for the one dataset a human writes by hand: an original record and the song that sampled it (§3) |
 | `gen_report_types.py` | regenerates the JSON Schema and TypeScript types from `report.py` (`--check` in CI) |
+| `gen_stem_models.py` | regenerates the web app's separator catalogue from `stems/separate.py` (`--check` in CI) |
 
 Everything under `data/` is gitignored. Run the scripts with the analysis
 environment (`uv venv && uv pip install -e "./analysis[dev]"`, or the repo venv).
@@ -320,7 +321,7 @@ field ("flip timestamp unreadable"), never what you wrote in it. If a pair's
   project rules from `analysis/pyproject.toml`, applied to `analysis/` and `scripts/`).
 - `web`: pnpm install, typecheck, lint, test, build with placeholder Supabase
   env; skipped while `web/package.json` does not exist.
-- `schema`: `gen_report_types.py --check`.
+- `schema`: `gen_report_types.py --check` and `gen_stem_models.py --check`.
 - `harness`: runs when `analysis/**` or `scripts/**` changed (or on manual
   dispatch): builds the synthetic set, restores the public datasets from
   `actions/cache` (key: hash of `fetch_public_datasets.py` and

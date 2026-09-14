@@ -7,37 +7,171 @@ import type { JobResponse } from "./types";
 import { effective } from "@/lib/report/effective";
 import type { FileKind, FileRow, FileStatus, StemRow } from "@/lib/types/db";
 import type { AnalysisReport, Mode } from "@/lib/types/report";
+import {
+  STEM_MODELS,
+  STEM_SPLITS,
+  TIER_CONFIDENCE,
+  TIER_NOTE,
+  type SeparationTier,
+  type StemModelId,
+  type StemSplit,
+} from "@/lib/types/stemModels";
 
-export type StemModelId = "htdemucs_ft" | "htdemucs_6s" | "bs_roformer";
+export { ALL_STEMS, DEFAULT_STEMS, STEM_MODELS, STEM_SPLITS, TIER_CONFIDENCE, TIER_NOTE, TIERS } from "@/lib/types/stemModels";
 
-export interface StemModel {
-  id: StemModelId;
-  stems: readonly string[];
-  /** one line, shown under the select */
-  describe: string;
+export type { SeparationTier, StemModelId, StemModelSpec, StemSplit } from "@/lib/types/stemModels";
+
+export function modelSpec(model: string) {
+  return STEM_MODELS.find((m) => m.id === baseModelOf(model));
 }
 
-/** analysis/lockedgroove/stems/separate.py: MODELS, in the order the tab offers them. */
-export const STEM_MODELS: ReadonlyArray<StemModel> = [
-  {
-    id: "htdemucs_ft",
-    stems: ["drums", "bass", "vocals", "other"],
-    describe: "Demucs v4, fine-tuned. Drums, bass, vocals and other; the default and the best all-round split.",
-  },
-  {
-    id: "htdemucs_6s",
-    stems: ["drums", "bass", "vocals", "other", "guitar", "piano"],
-    describe: "Demucs v4, six stems. Adds guitar and piano; slightly less clean on the other four.",
-  },
-  {
-    id: "bs_roformer",
-    stems: ["vocals", "instrumental"],
-    describe: "BS-RoFormer. Vocals and instrumental only, with the cleanest vocal of the three.",
-  },
-];
+/**
+ * The seven quality columns as the worker would write them for `model`.
+ *
+ * Used by the seeds and the demo so a row they invent cannot claim a tier the
+ * registry does not give that model — the drift this whole pass is about, in
+ * miniature.
+ */
+export function stemQualityColumns(model: string): Pick<StemRow, "model_family" | "model_tier" | "model_sdr" | "model_sdr_basis" | "is_stand_in" | "quality_confidence" | "quality_note"> {
+  const standIn = isStandInModel(model);
+  const spec = modelSpec(model);
+  const tier: SeparationTier = standIn ? "stand_in" : (spec?.tier ?? "weak");
+  return {
+    model_family: spec?.family ?? null,
+    model_tier: tier,
+    model_sdr: standIn ? null : (spec?.sdr ?? null),
+    model_sdr_basis: standIn ? "not a separation model" : (spec?.sdrBasis ?? null),
+    is_stand_in: standIn,
+    quality_confidence: TIER_CONFIDENCE[tier],
+    quality_note: TIER_NOTE[tier],
+  };
+}
 
-export const DEFAULT_STEM_MODEL: StemModelId = "htdemucs_ft";
-export const STEM_MODEL_IDS = STEM_MODELS.map((m) => m.id) as [StemModelId, ...StemModelId[]];
+/**
+ * What a producer asks for: a split, not a model.
+ *
+ * Separation is the one irreversible step. A weak separator threw away 17.6 dB
+ * of 8-20 kHz energy on a real upload that a reference one preserved exactly,
+ * and no EQ downstream puts it back — the producer just hears "muddy". The
+ * registry in analysis/lockedgroove/stems/separate.py is ordered by quality for
+ * that reason, and the worker picks the best separator *installed in its image*
+ * that makes the stems being asked for. Only the worker knows what is
+ * installed, so the choice belongs there and not here.
+ *
+ * This file used to name three models by hand and default to one of them by
+ * string, which meant the ordering never ran and the producer was asked to
+ * choose between identifiers they cannot evaluate. Now the catalogue is
+ * generated (scripts/gen_stem_models.py) and the request says what it wants.
+ */
+export function splitFor(stems: readonly string[]): StemSplit | undefined {
+  return STEM_SPLITS.find((s) => splitKey(s.stems) === splitKey(stems));
+}
+
+export const DEFAULT_SPLIT: StemSplit = STEM_SPLITS.find((s) => s.isDefault) ?? STEM_SPLITS[0]!;
+
+/**
+ * One split, one key, whatever order the stems arrived in.
+ *
+ * Both sides de-duplicate in-flight separations with this: asking twice for the
+ * same split collides, asking for a different one does not. It used to be the
+ * model id, which stopped working the moment the model became the worker's
+ * choice rather than the client's.
+ */
+export function splitKey(stems: readonly string[]): string {
+  return [...new Set(stems)].sort().join("+");
+}
+
+/** "drums, bass, vocals and other" — the split in a sentence, never an id. */
+export function describeStems(stems: readonly string[]): string {
+  const named = [...stems];
+  if (named.length <= 1) return named[0] ?? "nothing";
+  return `${named.slice(0, -1).join(", ")} and ${named[named.length - 1]}`;
+}
+
+/**
+ * What a queued `stems` job asked for.
+ *
+ * One definition, shared by the route (which de-duplicates in-flight jobs with
+ * it) and the tab (which labels them with it), so the two cannot disagree about
+ * what "the same separation" means. A job queued before this route stopped
+ * taking a bare model still reads correctly: it carries `model` and no `stems`.
+ */
+export interface StemsAsk {
+  stems: readonly string[] | null;
+  model: string | null;
+}
+
+export function stemsAskOf(params: unknown): StemsAsk {
+  if (typeof params !== "object" || params === null || Array.isArray(params)) return { stems: null, model: null };
+  const p = params as { model?: unknown; stems?: unknown };
+  return {
+    stems: Array.isArray(p.stems) ? p.stems.filter((x): x is string => typeof x === "string") : null,
+    model: typeof p.model === "string" ? p.model : null,
+  };
+}
+
+/**
+ * What makes two separations "the same" for the purpose of refusing a duplicate.
+ *
+ * A named model keys on the model, so asking for the reference separator by name
+ * while the default split runs is allowed; anything else keys on the split. It
+ * used to key on the model alone, which stopped meaning anything the moment the
+ * model became the worker's choice rather than the client's.
+ */
+export function stemsAskKey(ask: StemsAsk): string | null {
+  if (ask.model) return `model:${ask.model}`;
+  if (ask.stems && ask.stems.length > 0) return `split:${splitKey(ask.stems)}`;
+  return null;
+}
+
+/** How a job is named in the tab: what was asked for, never which net ran. */
+export function describeAsk(ask: StemsAsk): string {
+  if (ask.stems && ask.stems.length > 0) return describeStems(ask.stems);
+  if (ask.model) return ask.model;
+  return "stems";
+}
+
+/**
+ * What actually ran, read off the row.
+ *
+ * A null tier means the row predates the quality columns. The migration is
+ * explicit that this reads as unknown rather than as fine, so it is shown with
+ * the same weight as `weak`: something we cannot vouch for.
+ */
+export interface StemQuality {
+  tier: SeparationTier;
+  /** false when the tier came from a null column rather than from the worker */
+  measured: boolean;
+  sdr: number | null;
+  sdrBasis: string | null;
+  note: string;
+  confidence: number;
+  isStandIn: boolean;
+  /** true when a producer should be told before they build on this stem */
+  untrusted: boolean;
+}
+
+const TRUSTED_TIERS: readonly SeparationTier[] = ["reference", "strong"];
+
+export function qualityOf(row: Pick<StemRow, "model" | "model_tier" | "model_sdr" | "model_sdr_basis" | "is_stand_in" | "quality_confidence" | "quality_note">): StemQuality {
+  // The two signals can contradict each other — a row whose name ends in
+  // `-fake` but whose tier column says `strong`. The name wins, because the
+  // worker writes it last and a stand-in is never a separation whatever a
+  // column claims.
+  const isStandIn = row.is_stand_in || isStandInModel(row.model);
+  const measured = row.model_tier !== null;
+  const tier: SeparationTier = isStandIn ? "stand_in" : (row.model_tier ?? "weak");
+  return {
+    tier,
+    measured,
+    sdr: isStandIn ? null : row.model_sdr,
+    sdrBasis: isStandIn ? "not a separation model" : row.model_sdr_basis,
+    note: (isStandIn ? null : row.quality_note) ?? (measured || isStandIn ? TIER_NOTE[tier] : "this stem predates the quality columns, so what produced it is unknown"),
+    confidence: isStandIn ? TIER_CONFIDENCE.stand_in : (row.quality_confidence ?? TIER_CONFIDENCE[tier]),
+    isStandIn,
+    untrusted: !measured || isStandIn || !TRUSTED_TIERS.includes(tier),
+  };
+}
 
 /** Display order of stem names inside one model's group (and on the pads). */
 export const STEM_ORDER: readonly string[] = ["drums", "bass", "vocals", "other", "guitar", "piano", "instrumental"];
@@ -81,8 +215,14 @@ export interface StemsListResponse {
   stems: StemWithFile[];
 }
 
+/**
+ * Ask for a split. `model` is the escape hatch for a producer who knows exactly
+ * which separator they want; `resolve_model` honours it and says in the job's
+ * result if something better was available, so the choice is never silent.
+ */
 export interface SeparateRequest {
-  model: StemModelId;
+  stems?: readonly string[];
+  model?: StemModelId;
 }
 
 /** BPM and key with their confidence, read from the effective report. */
@@ -137,6 +277,6 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
 export const stemsApi = {
   list: (fileId: string) => apiFetch<StemsListResponse>(`/api/files/${encodeURIComponent(fileId)}/stems`),
-  separate: (fileId: string, body: SeparateRequest) =>
+  separate: (fileId: string, body: SeparateRequest = {}) =>
     apiFetch<JobResponse>(`/api/files/${encodeURIComponent(fileId)}/stems`, { method: "POST", body: JSON.stringify(body) }),
 };
