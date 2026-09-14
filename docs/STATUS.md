@@ -17,16 +17,18 @@ what they had each built and left unmounted.
 
 ## Verification
 
-*Numbers below are from the seams pass, 2026-09-14, on branch `agent/seams`.*
+*Numbers below are from the separation pass, 2026-09-14, on the integration
+branch with all eighteen agent branches merged.*
 
 | Check | Result |
 |---|---|
-| `analysis`: `uv run pytest -q` | 765 tests, 763 passed, 2 skipped (optional `modal` and `basic_pitch` not installed here) |
+| `analysis`: `uv run pytest -q` | 784 tests, 782 passed, 2 skipped (optional `modal` and `basic_pitch` not installed here) |
 | `analysis`: `uv run ruff check .` | clean |
 | `web`: `pnpm typecheck`, `pnpm lint` | clean |
-| `web`: `pnpm test` | 167 files, 1749 tests passed |
+| `web`: `pnpm test` | 176 files, 1915 tests passed |
 | `web`: `pnpm build` | clean; every API route compiles as dynamic |
 | `scripts/gen_report_types.py --check` | schema and TypeScript types in sync |
+| `scripts/gen_stem_models.py --check` | the web's separator catalogue is the Python registry |
 | Supabase project `CrateAI` (`ufmpwtjtyzmfucjyuhqo`) | **five of fourteen migrations applied** (`…000000`–`…000400`); the other nine are written, verified together on a throwaway local Postgres, and waiting for the owner. See `docs/RUNBOOK.md` section 1 and `docs/HANDOFF_seams.md`. |
 | `supabase/migrations/*`, all fourteen in order, local Postgres 16 + pgvector | apply cleanly; advisors clean (RLS on every table, every foreign key covered, `search_path` set on every function the project writes) |
 | Accuracy harness, synthetic set | see the table below |
@@ -111,11 +113,11 @@ cost observations, owner to-dos.
 
 ### Phase 2 — stems and better beats
 
-- **Shipped:** the `stems` job on the GPU image (`audio-separator`, default `htdemucs_ft`, model selectable) writing stems as library files that get their own analysis; the Stems tab (model choice, queue, per-stem rows that open the stem on the surface or its Loops tab); `beat_tracking.py` with a backend interface (librosa default, least-squares tempo over the beat times, BeatNet behind a flag), downbeat phase from low-band energy and harmonic change, each weighted by its decisiveness; key from harmonic chroma above C2.
-- **Deferred:** BeatNet ships only if its GPL weights are acceptable for a hosted product; meter detection; the band-split stand-in is development only.
+- **Shipped:** the `stems` job on the GPU image (`audio-separator`) writing stems as library files that get their own analysis; a registry of six separators ordered by quality, with the resolver picking the best one installed that returns the stems asked for and no fast mode on offer; the Stems tab asking for a **split** (`drums, bass, vocals, other`; `vocals, instrumental`; six stems) rather than a model, since only the worker knows what its image carries, and showing the tier, the model, the published SDR and the note on every group (CONTRACTS section 13); the catalogue generated from the Python registry (`scripts/gen_stem_models.py`, `--check` in CI); `beat_tracking.py` with a backend interface (librosa default, least-squares tempo over the beat times, BeatNet behind a flag), downbeat phase from low-band energy and harmonic change, each weighted by its decisiveness; key from harmonic chroma above C2.
+- **Deferred:** BeatNet ships only if its GPL weights are acceptable for a hosted product; meter detection; the band-split stand-in is development only. Which checkpoints the GPU image actually carries is still an owner decision (OPEN_QUESTIONS 41) — until one is made the resolver falls back down the tiers and the row says so.
 - **Proposals:** meter detection, Ballroom waltz subset as the meter case, stems and chops in the Realtime publication.
 - **Harness:** downbeat 0.625 → 0.79 and key_exact 0.583 → 0.85 on the synthetic set from the beats and key changes.
-- **Cost:** separation is seconds per track on an A10G after a cold start that loads the model; the model cache volume keeps the cold start to the first call.
+- **Cost:** separation is seconds per track on an A10G after a cold start that loads the model; the model cache volume keeps the cold start to the first call. Measured on a real upload, the quality difference the ordering exists for: the weak separator left -37.1 dB of 8-20 kHz energy where the source had -19.5 dB, and BS-Roformer on the same source left it at -19.5 dB untouched.
 - **Owner to-dos:** decide on BeatNet (OPEN_QUESTIONS 17 and BACKLOG); the GPU image builds on the first Modal deploy.
 
 ### Phase 3 — chops and MIDI
