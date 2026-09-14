@@ -3,7 +3,9 @@
 // on. Cards are plain JSON so they persist in messages.tool_calls and render
 // again from the rows.
 
+import type { KeyboardCommand } from "@/lib/pads/commands";
 import type { Matched } from "@/lib/search/merge";
+import type { SessionCommand } from "@/lib/session/commands";
 import type { FileKind, FileStatus, JobKind, JobStatus, Json, LoopOrigin } from "@/lib/types/db";
 
 export interface Citation {
@@ -94,7 +96,28 @@ export type Card =
   | { type: "edit"; file_id: string; file_name: string; field: string; predicted: Json; corrected: Json }
   | { type: "report"; file_id: string; file_name: string; vitals: Vitals; not_analyzed: string[] }
   | { type: "confirm"; batch_id: string; operations: BatchOperation[]; gpu_count: number; estimate: string; message: string }
-  | { type: "batch"; items: Array<{ tool: string; summary: string; card: Card | null; is_error: boolean }> };
+  | { type: "batch"; items: Array<{ tool: string; summary: string; card: Card | null; is_error: boolean }> }
+  /**
+   * A directive: commands the client carries out on the controls the producer
+   * can see, parsed on the server by the same `lib/session/commands.ts` the
+   * composer's own command line uses. It is applied exactly once, while the
+   * turn is streaming (components/chat/directive.ts); rendering a stored one
+   * from `messages.tool_calls` is a receipt and never re-runs it, or reopening
+   * a conversation would replay every edit in it.
+   */
+  | { type: "directive"; steps: DirectiveCardStep[]; refused: Array<{ said: string; note: string }> }
+  /** the open session read back: the same lines the context block carries, or one bar, or one lane */
+  | { type: "session"; lanes: number; regions: number; bpm: number | null; lines: string[] };
+
+export interface DirectiveCardStep {
+  /** the sentence the model said, in the session's own vocabulary */
+  said: string;
+  /** which bus carries it: the session's controls, or the keyboard instrument's */
+  bus: "session" | "keyboard";
+  command: SessionCommand | KeyboardCommand;
+  /** what the control says it did, from the same describe* the echo uses */
+  line: string;
+}
 
 export type CardType = Card["type"];
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fakeFile } from "./fakes";
+import { fakeFile, fakeSnapshot } from "./fakes";
 import { buildContextBlock, GROUNDING_CONTRACT, HEDGE_TABLE, LINK_REFUSAL, SYSTEM_PROMPT } from "./system";
 
 describe("system prompt", () => {
@@ -57,5 +57,33 @@ describe("context block", () => {
     expect(buildContextBlock([], null)).toContain("No files are attached");
     const raw = fakeFile({ status: "analyzing" }, null);
     expect(buildContextBlock([raw], raw.id)).toContain("has no report yet (status analyzing)");
+  });
+
+  it("carries the open session and its vocabulary, and nothing at all when there is none", () => {
+    const file = fakeFile();
+    const withSession = buildContextBlock([file], file.id, new Date("2026-09-13T12:00:00Z"), fakeSnapshot(), []);
+    expect(withSession).toContain("The producer has a session open");
+    expect(withSession).toContain("92 BPM, 4/4, bar 1 is second 0");
+    expect(withSession).toContain("session_control steps");
+    // and it is a tail, after the files: the cached prefix never moves
+    expect(withSession.indexOf("session open")).toBeGreaterThan(withSession.indexOf("Files in this conversation"));
+
+    const without = buildContextBlock([file], file.id, new Date("2026-09-13T12:00:00Z"));
+    expect(without).not.toContain("session open");
+    expect(without).not.toContain("session_control");
+  });
+
+  it("carries the session even with no file attached, because a song is not a file", () => {
+    expect(buildContextBlock([], null, new Date("2026-09-13T12:00:00Z"), fakeSnapshot(), [])).toContain("session_control steps");
+  });
+});
+
+describe("the session tools are named in the prompt", () => {
+  it("says what each one is for, and that a queued export is not a finished one", () => {
+    expect(SYSTEM_PROMPT).toContain("session_control");
+    expect(SYSTEM_PROMPT).toContain("read_session");
+    expect(SYSTEM_PROMPT).toContain("export_song");
+    expect(SYSTEM_PROMPT).toContain("queued, not done");
+    expect(SYSTEM_PROMPT).toContain("claim no more than they say");
   });
 });

@@ -288,6 +288,50 @@ export function ToolCardView({ card, actions }: { card: Card; actions: CardActio
         </div>
       );
 
+    // A receipt, never a trigger. The steps were put on the bus once, live, by
+    // components/chat/directive.ts; rendering this again — reopening the
+    // conversation, say — must not replay them.
+    case "directive":
+      return (
+        <div className="flex flex-col gap-0.5">
+          {card.steps.map((step, i) => (
+            <div key={`s${i}`} className={row}>
+              <span className="truncate" title={step.said}>
+                {step.line}
+              </span>
+              <span className={cx("font-mono text-2xs", dim)}>{step.bus === "keyboard" ? "keys" : "session"}</span>
+            </div>
+          ))}
+          {card.refused.map((refusal, i) => (
+            <div key={`r${i}`} className={cx(row, dim)}>
+              <span className="truncate" title={refusal.said}>
+                {refusal.note}
+              </span>
+              <span className="font-mono text-2xs">not done</span>
+            </div>
+          ))}
+        </div>
+      );
+
+    case "session":
+      return (
+        <div>
+          <div className={row}>
+            <span className="truncate">
+              {card.lanes} {card.lanes === 1 ? "lane" : "lanes"}, {card.regions} {card.regions === 1 ? "region" : "regions"}
+            </span>
+            <span className="font-mono text-right">{card.bpm === null ? "no tempo" : `${fmtBpm(card.bpm)} BPM`}</span>
+          </div>
+          <ul className={cx("mt-1 text-2xs", dim)}>
+            {card.lines.slice(0, 14).map((line, i) => (
+              <li key={i} className="truncate whitespace-pre">
+                {line}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+
     case "batch":
       return (
         <div className="flex flex-col gap-1">

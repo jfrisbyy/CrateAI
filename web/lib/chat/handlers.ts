@@ -6,6 +6,8 @@
 
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { buildExportRequest, estimateExport, exportZipName, heldBackTracks, referencedFileIds } from "@/lib/export/song";
+import { EXPORT_FORMATS } from "@/lib/export/types";
 import { displayKey, PITCH_CLASSES } from "@/lib/music/keys";
 import { applyEdit, editRequestSchema, predictedFor, type EditRequest } from "@/lib/report/edits";
 import { effective } from "@/lib/report/effective";
@@ -19,6 +21,7 @@ import { errorOutcome, outcome, type BatchOperation, type Card, type Citation, t
 import type { ChatDb } from "./db";
 import { WEB_QUOTA_MESSAGE } from "./limits";
 import { compactReport, explainReport, fileName, notAnalyzed, vitalsOf, type CompactSection } from "./report";
+import { grammarLines, noSessionText, planSteps, readSession, type SessionSnapshot } from "./surfaces";
 import { LINK_REFUSAL } from "./system";
 import { BATCH_GPU_CONFIRM, BATCH_MAX_OPERATIONS, CHOP_MODES, EDIT_FIELDS, GPU_TOOLS, MIDI_KINDS, REVOICE_PATHS, STEM_MODELS, TOOL_NAMES } from "./tools";
 
@@ -37,6 +40,16 @@ export interface ToolContext {
   currentFileId: string | null;
   /** fingerprint of a batch the producer already confirmed on the pane */
   confirmedBatch?: string | null;
+  /**
+   * The session open in the producer's browser, as it travelled with this
+   * turn. It is here and not in the prompt: only the compact block
+   * `lib/chat/surfaces.ts` renders is ever put in front of the model, while
+   * the handlers get the real arrangement so the export renders the song the
+   * producer is looking at. Null when no session is open.
+   */
+  session?: SessionSnapshot | null;
+  /** the library rows the session's lanes point at, for measured values (bandwidth, key) */
+  sessionFiles?: readonly FileRow[];
 }
 
 const UUID = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "must be a UUID");
@@ -93,6 +106,9 @@ export const INPUT_SCHEMAS = {
     }),
   }),
   embed: z.object({ file_id: UUID }),
+  session_control: z.object({ steps: z.array(z.string().trim().min(1).max(200)).min(1).max(8) }),
+  read_session: z.object({ bar: z.number().int().min(1).max(9999).optional(), track: z.string().trim().min(1).max(80).optional() }),
+  export_song: z.object({ format: z.enum(EXPORT_FORMATS).optional(), include_muted: z.boolean().optional() }),
   batch: z.object({
     operations: z.array(z.object({ tool: z.string(), input_json: z.string() })).min(1).max(BATCH_MAX_OPERATIONS),
     confirmed: z.boolean().optional(),
@@ -548,6 +564,115 @@ async function embed(input: z.infer<typeof INPUT_SCHEMAS.embed>, ctx: ToolContex
   return queue(ctx, "embed", file.id, {}, "embed", `the CLAP embedding of ${fileName(file)}`);
 }
 
+// ---------------------------------------------------------------------------
+// the surfaces that live in the producer's browser
+// ---------------------------------------------------------------------------
+//
+// The chat runs here; the session runs there. Rather than grow a second set of
+// session mutations on the server, these three tools go through what already
+// exists: `lib/session/commands.ts` parses the step, the snapshot the turn
+// carried says whether it can be carried out, and the client puts the parsed
+// command on the same bus the composer's own command line uses. See the header
+// of lib/chat/surfaces.ts for the shape and why.
+
+/** The one tool whose effect needs the client; a batch could not carry it out. */
+export const CLIENT_TOOL = "session_control";
+
+async function sessionControl(input: z.infer<typeof INPUT_SCHEMAS.session_control>, ctx: ToolContext): Promise<ToolOutcome> {
+  const snapshot = ctx.session ?? null;
+  if (!snapshot) return errorOutcome(noSessionText());
+  const plan = planSteps(input.steps, snapshot);
+  const refusals = plan.refused.map((r) => `"${r.said}" — ${r.note}`);
+  if (plan.steps.length === 0) {
+    return errorOutcome([`Nothing moved.`, ...refusals, "", "The steps this takes right now:", ...grammarLines(snapshot)].join("\n"));
+  }
+  return outcome({
+    text: JSON.stringify({
+      moved: plan.steps.map((s) => ({ said: s.said, line: s.line, bus: s.bus })),
+      refused: plan.refused,
+      note: "The producer's screen carries these out on the controls themselves while this turn streams, and echoes the same lines under the composer. Say the lines back as they read; do not add a number a line does not have. A step listed under refused did not happen.",
+    }),
+    summary: [...plan.steps.map((s) => s.line), ...refusals].join("; "),
+    card: { type: "directive", steps: plan.steps, refused: plan.refused },
+  });
+}
+
+async function readSessionTool(input: z.infer<typeof INPUT_SCHEMAS.read_session>, ctx: ToolContext): Promise<ToolOutcome> {
+  const snapshot = ctx.session ?? null;
+  if (!snapshot) return errorOutcome(noSessionText());
+  const reading = readSession(snapshot, input);
+  return outcome({
+    text: reading.text,
+    summary: reading.summary,
+    card: {
+      type: "session",
+      lanes: snapshot.arrangement.tracks.length,
+      regions: snapshot.arrangement.regions.length,
+      bpm: snapshot.tempo?.bpm ?? null,
+      lines: reading.text.split("\n").slice(0, 60),
+    },
+  });
+}
+
+async function exportSong(input: z.infer<typeof INPUT_SCHEMAS.export_song>, ctx: ToolContext): Promise<ToolOutcome> {
+  const snapshot = ctx.session ?? null;
+  if (!snapshot) return errorOutcome(noSessionText());
+  const files = ctx.sessionFiles ?? [];
+  const fileOf = (id: string) => files.find((f) => f.id === id);
+  const request = buildExportRequest(snapshot.arrangement, {
+    name: snapshot.songName ?? "Untitled song",
+    bpm: snapshot.tempo?.bpm ?? null,
+    beatsPerBar: snapshot.tempo?.beatsPerBar ?? 4,
+    masterGain: snapshot.masterGain,
+    format: input.format,
+    includeMuted: input.include_muted === true,
+    // The key is attributed to the record it was measured on, never guessed.
+    keyOf: (fileId) => {
+      const report = fileOf(fileId)?.report;
+      const key = report ? effective(report).key : null;
+      return key && key.tonic && key.mode ? { tonic: key.tonic, mode: key.mode } : null;
+    },
+    nameOf: (fileId) => {
+      const file = fileOf(fileId);
+      return file ? fileName(file) : null;
+    },
+  });
+  // The same arithmetic the panel and the job use, so a song that cannot be
+  // rendered is refused before any compute is spent.
+  const estimate = estimateExport(request);
+  if (estimate.blocked) return errorOutcome(estimate.blocked);
+
+  // Ownership, under RLS: a record the caller cannot select does not come back.
+  const fileIds = referencedFileIds(request.song);
+  const found = await ctx.db.getFiles(fileIds);
+  const missing = fileIds.filter((id) => !found.some((f) => f.id === id));
+  if (missing.length > 0) {
+    return errorOutcome(`The song references ${missing.length} record${missing.length === 1 ? "" : "s"} that is not in this library, so nothing was exported.`);
+  }
+
+  const held = heldBackTracks(request.song.tracks, request.include_muted === true);
+  const job = await ctx.db.insertJob({ file_id: null, kind: "export", params: request as unknown as Json });
+  const dispatch = await ctx.dispatch(job.id);
+  const label = `export the song (${request.format})`;
+  return outcome({
+    text: JSON.stringify({
+      queued: true,
+      job_id: job.id,
+      zip: exportZipName(request.song),
+      lanes: estimate.tracks,
+      regions: estimate.regions,
+      length_s: Math.round(estimate.length_s * 100) / 100,
+      estimated_bytes: estimate.bytes,
+      tempo_map: request.song.bpm !== null,
+      not_exported: held.map((h) => ({ name: h.track.name, reason: h.reason })),
+      dispatch,
+      note: queuedText("the song export", job, dispatch),
+    }),
+    summary: dispatch.ok ? `queued ${label}: ${estimate.tracks} ${estimate.tracks === 1 ? "lane" : "lanes"}` : `queued ${label} (compute not reachable)`,
+    card: jobCard(job, label, dispatch),
+  });
+}
+
 export function batchFingerprint(operations: BatchOperation[]): string {
   return createHash("sha256").update(JSON.stringify(operations.map((o) => [o.tool, o.input_json]))).digest("hex").slice(0, 16);
 }
@@ -559,6 +684,10 @@ export function gpuOperationCount(operations: BatchOperation[]): number {
 async function batch(input: z.infer<typeof INPUT_SCHEMAS.batch>, ctx: ToolContext): Promise<ToolOutcome> {
   const operations = input.operations;
   if (operations.some((o) => o.tool === "batch")) return errorOutcome("A batch cannot contain a batch.");
+  // A directive is carried out by the producer's screen, and only a top-level
+  // tool result reaches it. Inside a batch it would be stored and never
+  // applied, which is the one failure worse than a refusal: silence.
+  if (operations.some((o) => o.tool === CLIENT_TOOL)) return errorOutcome(`A batch cannot contain ${CLIENT_TOOL}; call it on its own, with its steps in order.`);
   const unknown = operations.filter((o) => !TOOL_NAMES.includes(o.tool)).map((o) => o.tool);
   if (unknown.length > 0) return errorOutcome(`Unknown tools in the batch: ${[...new Set(unknown)].join(", ")}.`);
   const gpu = gpuOperationCount(operations);
@@ -627,6 +756,9 @@ const HANDLERS: { [N in ToolName]: Handler<N> } = {
   identify_context: identifyContext,
   set_edit: setEdit,
   embed,
+  session_control: sessionControl,
+  read_session: readSessionTool,
+  export_song: exportSong,
   batch,
 };
 

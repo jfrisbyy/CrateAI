@@ -122,4 +122,31 @@ describe("tool cards", () => {
     expect(shtml).toContain("0.87");
     expect(shtml).toContain("Open");
   });
+
+  it("directive: shows the line each control said, which bus it went to, and what was refused", () => {
+    const card: Card = {
+      type: "directive",
+      steps: [
+        { said: "solo the drums", bus: "session", command: { kind: "solo", target: "drums", on: true }, line: "soloed drums" },
+        { said: "gate", bus: "keyboard", command: { kind: "set-trigger", mode: "gate" }, line: "gate: a key sounds while it is down." },
+      ],
+      refused: [{ said: "mute the horns", note: "nothing in the session is called horns." }],
+    };
+    const html = renderToStaticMarkup(<ToolCardView card={card} actions={actions()} />);
+    expect(html).toContain("soloed drums");
+    expect(html).toContain("session");
+    expect(html).toContain("keys");
+    expect(html).toContain("nothing in the session is called horns.");
+    expect(html).toContain("not done");
+  });
+
+  it("session: the lanes, the regions and the grid, or that there is no tempo", () => {
+    const card: Card = { type: "session", lanes: 3, regions: 7, bpm: 92, lines: ["grid: 92 BPM", "  Drums | -2.0 dB"] };
+    const html = renderToStaticMarkup(<ToolCardView card={card} actions={actions()} />);
+    expect(html).toContain("3 lanes, 7 regions");
+    expect(html).toContain("92.0 BPM");
+    expect(html).toContain("Drums");
+    const none = renderToStaticMarkup(<ToolCardView card={{ ...card, bpm: null }} actions={actions()} />);
+    expect(none).toContain("no tempo");
+  });
 });

@@ -4,6 +4,7 @@
 import { ApiError } from "@/lib/api/client";
 import type { BatchOperation } from "@/lib/chat/cards";
 import { EventDecoder, type ChatEvent } from "@/lib/chat/protocol";
+import type { SessionSnapshot } from "@/lib/chat/surfaces";
 
 export interface ChatSendBody {
   conversation_id: string | null;
@@ -12,6 +13,14 @@ export interface ChatSendBody {
   open_file_id: string | null;
   /** the confirm card's Run: the same operations, confirmed */
   batch?: { operations: BatchOperation[]; confirmed: true };
+  /**
+   * The surfaces that live in the browser: the open song, the transport, the
+   * rack, the chains. The chat runs on the server and cannot see any of it, so
+   * a turn carries it. Only the compact block in lib/chat/surfaces.ts reaches
+   * the model; the whole arrangement reaches the tools, which is what lets the
+   * export render the song the producer is looking at.
+   */
+  session?: SessionSnapshot | null;
 }
 
 export interface ChatStreamResult {

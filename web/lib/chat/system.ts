@@ -7,6 +7,7 @@
 import { effective } from "@/lib/report/effective";
 import type { FileRow } from "@/lib/types/db";
 import { compactReport, fileContextLine } from "./report";
+import { sessionLines, type SessionSnapshot } from "./surfaces";
 
 export const LINK_REFUSAL = "I can't pull audio from links; upload the file and I'll take it from there.";
 
@@ -39,6 +40,8 @@ Vocabulary: speak like a mentor with perfect ears, in producer terms. Steps on t
 
 Tools: get_report is how you learn anything about a file; call it (or explain) before stating a musical fact you have not already read this conversation. Library operations (find_loops, create_loop, render_loop, separate_stems, chop, extract_midi, layer, revoice, breakdown, compare, embed) queue jobs and return a card; say what was queued and that the result lands on the surface and in the library when the job finishes, never that it is done. search is the producer's own library; web_search, fetch_page and identify_context are the internet, always cited. set_edit applies a correction. batch runs a list; when it returns a confirmation request, tell the producer the count and the estimate and wait for them to press Run. Use several tools in one turn when the request needs them (a five-step sentence runs end to end). When a tool returns an error, say what happened and what would fix it; do not retry the same call blindly.
 
+The session: a session block means the producer has a song open in their browser — lanes, regions, the transport, a rack, a per-lane chain, sometimes the keyboard instrument. session_control moves those controls, one step per move, said exactly as the block spells it; its result carries each control's own line, so answer in those words and claim no more than they say. read_session reads the song in detail; export_song queues its render (queued, not done). No session block, no open song: say so.
+
 Style: dense and quiet. Short paragraphs, sentence case, no headings, no emojis, no bullet lists unless listing files or steps. Lead with the answer. Numbers plain (92 BPM, 0.82), never rounded to look more certain than the confidence allows. When you cite, put the source title after the fact in the sentence; the pane lists the links. Don't narrate your tool calls beyond one clause; the cards show them. Don't invent names for things that have ids: use the file's name and, when useful, its id.`;
 
 export interface ContextFile {
@@ -46,14 +49,26 @@ export interface ContextFile {
 }
 
 /**
- * The per-request context: the attached files with their vitals, and the
- * open file's compact effective report. Not cached (it changes per turn).
+ * The per-request context: the attached files with their vitals, the open
+ * file's compact effective report, and — when the producer has one open — a
+ * compact summary of the session with the vocabulary session_control takes.
+ * Not cached (it changes per turn), which is also why the session block only
+ * exists when there is a session: with no song open it costs nothing at all.
+ * See lib/chat/surfaces.ts for why the grammar rides here rather than in the
+ * cached tool descriptions.
  */
-export function buildContextBlock(files: FileRow[], openFileId: string | null, now: Date = new Date()): string {
+export function buildContextBlock(
+  files: FileRow[],
+  openFileId: string | null,
+  now: Date = new Date(),
+  session: SessionSnapshot | null = null,
+  sessionFiles: readonly FileRow[] = [],
+): string {
   const lines: string[] = [];
   lines.push(`Today is ${now.toISOString().slice(0, 10)} (UTC).`);
   if (files.length === 0) {
     lines.push("No files are attached to this conversation. The producer can open a file or attach one; until then you can search the library and read the web, and say that you need a file for anything about audio.");
+    if (session) lines.push(...sessionLines(session, sessionFiles));
     return lines.join("\n");
   }
   lines.push(`Files in this conversation (${files.length}); values are effective (user edits applied) with confidence in parentheses:`);
@@ -73,5 +88,6 @@ export function buildContextBlock(files: FileRow[], openFileId: string | null, n
       lines.push(`The open file (${open.id}) has no report yet (status ${open.status}); nothing about its audio can be stated until the analysis runs.`);
     }
   }
+  if (session) lines.push(...sessionLines(session, sessionFiles));
   return lines.join("\n");
 }

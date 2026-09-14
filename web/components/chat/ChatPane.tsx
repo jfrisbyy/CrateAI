@@ -5,23 +5,36 @@
 // flight, then reloads the stored rows so ids, tool calls and citations are
 // final. The open file (/f/[fileId]) is attached by default.
 //
-// It is also the command line. Before a message is sent to the model it is
-// parsed for a transport or rack command — "solo the drums", "loop bars 9 to
-// 16", "next", "keep it". A sentence that is unmistakably one of those moves
-// the control the mouse would have moved and never reaches the model; anything
-// else, including every question, goes to the model exactly as before. What
-// happened is echoed under the composer in the same words the control uses,
-// so the two halves of the interface can never disagree.
+// It is also the command line, in both directions. Before a message is sent to
+// the model it is parsed for a transport, song, chain or rack command — "solo
+// the drums", "loop bars 9 to 16", "next", "keep it". A sentence that is
+// unmistakably one of those moves the control the mouse would have moved and
+// never reaches the model; anything else, including every question, goes to the
+// model exactly as before.
+//
+// The other direction is new: a turn carries a compact snapshot of the open
+// session, and the model answers with `session_control` directives — the same
+// commands, parsed by the same parser on the server (lib/chat/surfaces.ts) —
+// which are put on the same bus here, exactly once, while the turn streams
+// (directive.ts). So a sentence typed by the producer and a step chosen by the
+// model take an identical path to the control, and both are echoed under the
+// composer in the words the control uses.
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { btnQuiet, cx } from "@/components/ui";
 import { streamChat } from "@/lib/api/chat";
 import { api, errorMessage } from "@/lib/api/client";
-import type { LoopSummary } from "@/lib/chat/cards";
+import type { DirectiveCardStep, LoopSummary } from "@/lib/chat/cards";
+import type { SessionSnapshot } from "@/lib/chat/surfaces";
 import type { ChatEvent } from "@/lib/chat/protocol";
 import { emitSessionCommand, onCommandResult } from "@/components/shell/sessionCommands";
+import { useProcessing } from "@/components/processing/ProcessingProvider";
+import { useSession } from "@/components/shell/SessionProvider";
+import { onKeyboardResult } from "@/lib/pads/commands";
 import { parseSessionCommand } from "@/lib/session/commands";
+import { runDirective } from "./directive";
+import { buildSessionSnapshot } from "./sessionSnapshot";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 import type { ConversationRow, MessageRow } from "@/lib/types/db";
 import { AttachmentChips } from "./AttachmentChips";
@@ -42,6 +55,8 @@ export function ChatPane() {
   const router = useRouter();
   const pathname = usePathname();
   const openFileId = openFileIdFrom(pathname);
+  const session = useSession();
+  const processing = useProcessing();
 
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -53,17 +68,34 @@ export function ChatPane() {
   const [attached, setAttached] = useState<string[]>([]);
   const [commandLog, setCommandLog] = useState<Array<{ id: number; said: string; text: string; ok: boolean }>>([]);
   const pendingCommand = useRef<string | null>(null);
+  /** while a directive runs, its own runner logs each line with the step that caused it */
+  const inDirective = useRef(false);
+  /** directives run one after another, never at the same time */
+  const directives = useRef<Promise<void>>(Promise.resolve());
   const logId = useRef(0);
   const scroller = useRef<HTMLDivElement>(null);
 
-  // The shell applies the command and says what it did; that line is the echo.
+  const logLine = useCallback((said: string, text: string, ok: boolean) => {
+    setCommandLog((prev) => [...prev.slice(-3), { id: ++logId.current, said, text, ok }]);
+  }, []);
+
+  // The shell (or the processing dock, or the instrument) applies the command
+  // and says what it did; that line is the echo, whether the sentence was typed
+  // here or chosen by the model.
   useEffect(() => {
-    return onCommandResult((result) => {
+    const echo = (result: { text: string; ok: boolean }) => {
+      if (inDirective.current) return;
       const said = pendingCommand.current ?? "";
       pendingCommand.current = null;
-      setCommandLog((prev) => [...prev.slice(-3), { id: ++logId.current, said, text: result.text, ok: result.ok }]);
-    });
-  }, []);
+      logLine(said, result.text, result.ok);
+    };
+    const offSession = onCommandResult(echo);
+    const offKeyboard = onKeyboardResult(echo);
+    return () => {
+      offSession();
+      offKeyboard();
+    };
+  }, [logLine]);
 
   // the open file joins the conversation when it changes; detaching it is remembered until the next file opens
   const lastOpen = useRef<string | null>(null);
@@ -73,6 +105,54 @@ export function ChatPane() {
       setAttached((prev) => (prev.includes(openFileId) ? prev : [openFileId, ...prev]));
     }
   }, [openFileId]);
+
+  // ---- the session travels with the turn -----------------------------------
+  // Only the controls; every measured value is read on the server from the
+  // report row instead (components/chat/sessionSnapshot.ts).
+  const songName = openFileId ? (lib.fileById(openFileId)?.title?.trim() || lib.fileById(openFileId)?.original_filename || null) : null;
+  const snapshot = useCallback(
+    (): SessionSnapshot =>
+      buildSessionSnapshot({
+        tracks: session.arrangement.tracks,
+        regions: session.arrangement.regions,
+        tempo: session.tempo,
+        playing: session.playing,
+        positionS: session.position(),
+        loop: session.loop,
+        masterGain: session.masterGain,
+        snap: session.snap,
+        selectedRegionId: session.selectedRegionId,
+        undoLabel: session.undoLabel,
+        redoLabel: session.redoLabel,
+        processing: processing.state,
+        focusTrackId: processing.focusTrackId,
+        auditioning: session.auditioning,
+        openFileId,
+        songName,
+      }),
+    [session, processing, openFileId, songName],
+  );
+
+  // ---- and the model's steps come back the same way -------------------------
+  // A turn may return more than one directive, and the buses are one-way, so
+  // they are queued rather than raced: two runs listening at once would each
+  // take the other's result line.
+  const applyDirective = useCallback(
+    (card: { steps: DirectiveCardStep[]; refused: Array<{ said: string; note: string }> }) => {
+      directives.current = directives.current.then(async () => {
+        for (const refusal of card.refused) logLine(refusal.said, refusal.note, false);
+        if (card.steps.length === 0) return;
+        inDirective.current = true;
+        try {
+          for (const result of await runDirective(card.steps)) logLine(result.said, result.text, result.ok);
+        } finally {
+          inDirective.current = false;
+        }
+      });
+      return directives.current;
+    },
+    [logLine],
+  );
 
   const loadConversations = useCallback(async () => {
     try {
@@ -148,6 +228,10 @@ export function ChatPane() {
       }
       setLive({ userText: text, text: "", tools: [], citations: [], error: null, streaming: true });
       const onEvent = (e: ChatEvent) => {
+        // Outside the state updater on purpose: React may call an updater more
+        // than once, and a directive applied twice would move the control
+        // twice. Every event arrives here exactly once.
+        if (e.type === "tool_result" && e.card?.type === "directive") void applyDirective(e.card);
         setLive((prev) => {
           if (!prev) return prev;
           switch (e.type) {
@@ -156,6 +240,9 @@ export function ChatPane() {
             case "tool_call":
               return { ...prev, tools: [...prev.tools, { id: e.id, name: e.name, input: e.input, summary: null, card: null, is_error: false, done: false }] };
             case "tool_result":
+              // The card is only stored here; it was carried out above. A
+              // stored card renders as a receipt and is never re-applied, or
+              // reopening a conversation would replay every edit in it.
               return { ...prev, tools: prev.tools.map((t) => (t.id === e.id ? { ...t, summary: e.summary, card: e.card, is_error: e.is_error === true, done: true } : t)) };
             case "citations":
               return { ...prev, citations: e.items };
@@ -173,6 +260,7 @@ export function ChatPane() {
             message: text,
             file_ids: attached,
             open_file_id: openFileId && attached.includes(openFileId) ? openFileId : null,
+            session: snapshot(),
             ...(batch ? { batch: { operations: batch.operations, confirmed: true as const } } : {}),
           },
           onEvent,
@@ -190,7 +278,7 @@ export function ChatPane() {
         setError(message);
       }
     },
-    [activeId, attached, openFileId, loadMessages, loadConversations],
+    [activeId, attached, openFileId, loadMessages, loadConversations, snapshot, applyDirective],
   );
 
   const actions = useMemo<CardActions>(

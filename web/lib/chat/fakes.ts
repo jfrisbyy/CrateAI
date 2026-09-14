@@ -7,7 +7,9 @@ import type { HybridSearchResult } from "@/lib/search/hybrid";
 import type { BreakdownRow, ComparisonRow, CorrectionRow, FileRow, JobRow, LayerItemRow, LayerRow, LoopRow, StemRow } from "@/lib/types/db";
 import type { AnalysisReport } from "@/lib/types/report";
 import type { FetchOutcome, IdentifyResult, SearchResult, WebInfo } from "@/lib/webinfo/types";
+import type { SessionRegion, SessionTrack } from "@/lib/session/types";
 import type { ChatDb } from "./db";
+import type { SessionSnapshot } from "./surfaces";
 import type { ToolContext } from "./handlers";
 import type { ChatModel, ModelStream } from "./loop";
 
@@ -209,6 +211,74 @@ export function fakeSearch(result?: Partial<HybridSearchResult>): ToolContext["l
     note: null,
     ...result,
   });
+}
+
+// ---------------------------------------------------------------------------
+// a session snapshot (lib/chat/surfaces.ts)
+// ---------------------------------------------------------------------------
+
+/** A lane with one four-bar region on it, carrying real lineage. */
+export function fakeTrack(id: string, name: string, fileId: string, partial: Partial<SessionTrack> = {}): SessionTrack {
+  return { id, name, gain: 1, muted: false, soloed: false, fileId, origin: "candidate", provenance: `${name} from a record`, ...partial };
+}
+
+export function fakeRegion(id: string, trackId: string, fileId: string, partial: Partial<SessionRegion> = {}): SessionRegion {
+  return {
+    id,
+    trackId,
+    sourceId: fileId,
+    startS: 0,
+    durationS: 10.435,
+    offsetS: 0.31,
+    gain: 1,
+    lineage: {
+      fileId,
+      fileName: "Masquerade",
+      parentFileId: null,
+      kind: "stem",
+      stem: "drums",
+      separationModel: "bs_roformer",
+      separationModelLabel: "BS-Roformer",
+      takeStartS: 0.31,
+      takeEndS: 10.745,
+      downbeatS: 0.31,
+      sourceDurationS: 180,
+      sourceBpm: 92,
+      sourceBeatsPerBar: 4,
+      cents: 0,
+      stretch: 1,
+      candidateId: "c1",
+      reason: "vocal-free, 0.86",
+      confidence: 0.86,
+    },
+    ...partial,
+  };
+}
+
+/** A session with one lane, a measured tempo and nothing auditioning. */
+export function fakeSnapshot(partial: Partial<SessionSnapshot> = {}): SessionSnapshot {
+  const fileId = "file-drums";
+  const track = fakeTrack("t1", "Drums", fileId);
+  return {
+    arrangement: { tracks: [track], regions: [fakeRegion("r1", "t1", fileId)] },
+    tempo: { bpm: 92, beatsPerBar: 4 },
+    playing: false,
+    positionS: 0,
+    loop: null,
+    masterGain: 1,
+    snap: "bar",
+    selectedRegionId: null,
+    undoLabel: null,
+    redoLabel: null,
+    chains: [],
+    master: "limiter off",
+    focusTrackId: null,
+    rack: null,
+    openFileId: null,
+    keyboardOpen: false,
+    songName: "Midnight Flip",
+    ...partial,
+  };
 }
 
 export function fakeContext(db: ChatDb, partial: Partial<ToolContext> = {}): ToolContext {

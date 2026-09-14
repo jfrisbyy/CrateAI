@@ -1,5 +1,11 @@
-// POST /api/chat { conversation_id?, message, file_ids?, open_file_id?, batch? }
+// POST /api/chat { conversation_id?, message, file_ids?, open_file_id?, batch?, session? }
 // — the chat front door (BUILD_PACKET section 14, Phase 8).
+//
+// `session` is the surfaces that live in the browser (lib/chat/surfaces.ts):
+// the open song, the transport, the rack, the chains. It arrives on the wire
+// because no server route can see client state; it is handed to the tools in
+// full and to the model only as the compact block buildContextBlock renders,
+// after the cache breakpoint. When the song tables land it becomes an id.
 //
 // Streams application/x-ndjson, one event per line (lib/chat/protocol.ts):
 // text deltas as they arrive, tool_call / tool_result with the card the pane
@@ -22,6 +28,7 @@ import { HISTORY_LIMIT, historyFromRows } from "@/lib/chat/history";
 import { chatQuotaMessage, chatTurnsLeft, meterChatTurn, meterWebSearches, readUsage, webSearchesIn, webSearchesLeft } from "@/lib/chat/limits";
 import { runToolLoop, type ChatModel, type ToolLoopResult } from "@/lib/chat/loop";
 import { CHAT_CONTENT_TYPE, encodeEvent, type ChatEvent } from "@/lib/chat/protocol";
+import { sessionFileIds, sessionSnapshotSchema, type SessionSnapshot } from "@/lib/chat/surfaces";
 import { buildContextBlock, SYSTEM_PROMPT } from "@/lib/chat/system";
 import { CHAT_TOOLS } from "@/lib/chat/tools";
 import { dispatchJob } from "@/lib/compute/dispatch";
@@ -46,6 +53,7 @@ const schema = z
     file_ids: z.array(z.string().regex(UUID_RE)).max(50).optional(),
     open_file_id: z.string().regex(UUID_RE).nullable().optional(),
     batch: batchSchema.optional(),
+    session: sessionSnapshotSchema.nullable().optional(),
   })
   .refine((b) => Boolean(b.message ?? b.content), { message: "message is required", path: ["message"] });
 
@@ -114,7 +122,12 @@ export async function POST(req: Request) {
     const attached = await db.getFiles(attachedIds);
     const files = attachedIds.map((id) => attached.find((f) => f.id === id)).filter((f): f is NonNullable<typeof f> => f !== undefined);
     const openFileId = body.open_file_id && files.some((f) => f.id === body.open_file_id) ? body.open_file_id : (files[0]?.id ?? null);
-    const contextBlock = buildContextBlock(files, openFileId);
+    // The session's own records, read here rather than trusted from the wire:
+    // the lane names and gains are the producer's controls, but a measured
+    // value (bandwidth, key, tempo) only ever comes off the report row.
+    const session: SessionSnapshot | null = body.session ?? null;
+    const sessionFiles = session ? await db.getFiles(sessionFileIds(session)) : [];
+    const contextBlock = buildContextBlock(files, openFileId, new Date(), session, sessionFiles);
     const confirmedBatch = body.batch ? batchFingerprint(body.batch.operations) : null;
 
     const ctx: ToolContext = {
@@ -127,6 +140,8 @@ export async function POST(req: Request) {
       now: () => new Date(),
       currentFileId: openFileId,
       confirmedBatch,
+      session,
+      sessionFiles,
     };
 
     let userText = text;
