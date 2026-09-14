@@ -715,6 +715,8 @@ export type ProfileRow = {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   corrections_opt_in: boolean;
+  /** whether this account's own loop corrections adjust its loop ranking (principle 7) */
+  loop_personalization: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -727,6 +729,7 @@ export type ProfileInsert = {
   stripe_customer_id?: string | null;
   stripe_subscription_id?: string | null;
   corrections_opt_in?: boolean;
+  loop_personalization?: boolean;
   created_at?: string;
   updated_at?: string;
 };

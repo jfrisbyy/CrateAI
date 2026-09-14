@@ -212,9 +212,10 @@ in `web/lib/api/types.ts` and the per-seam `web/lib/api/*.ts` modules.
 | `/api/jobs/[id]` | GET | job row |
 | `/api/jobs/[id]/retry` | POST | requeue a failed job |
 | `/api/loops` | GET, POST | list loops for a file; create a user loop |
-| `/api/loops/[id]` | PATCH, DELETE | edit edges, name |
-| `/api/loops/[id]/render` | POST | queue `render_loop` |
+| `/api/loops/[id]` | PATCH, DELETE | edit edges, bars, name; logs `loop_edges` / `loop_bars` (`via` says which control) |
+| `/api/loops/[id]/render` | POST | queue `render_loop`; logs `loop_pick` when the exported row was not ranked first |
 | `/api/loops/find` | POST | queue the loop finder (`analyze` with `task: find_loops`) |
+| `/api/loops/personalization` | GET, PATCH | whether this account's own loop corrections adjust its ranking |
 
 ### Stems, chops, MIDI (Phases 2 and 3)
 

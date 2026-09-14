@@ -1,0 +1,430 @@
+{
+  "note": "Written by web/app/api/loops/corrections.test.ts from the real route handlers: these are the rows PATCH /api/loops/[id] and POST /api/loops/[id]/render insert. user_id and file_id are the replaying test's to stamp. Regenerate with UPDATE_LOOP_CORRECTION_FIXTURE=1 pnpm test corrections.",
+  "bar_s": 2,
+  "histories": {
+    "drags_out_to_eight": [
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_bars",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_bars",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 16,
+          "bars": 8
+        }
+      },
+      {
+        "field": "loop_pick",
+        "predicted": {
+          "bars": 4,
+          "rank": 1,
+          "components": {
+            "seam": 0.61,
+            "phrase": 1,
+            "stability": 0.95,
+            "novelty": 1,
+            "onset_lock": 1,
+            "recurrence": 0.5
+          }
+        },
+        "corrected": {
+          "bars": 8,
+          "rank": 2,
+          "components": {
+            "seam": 0.61,
+            "phrase": 1,
+            "stability": 0.95,
+            "novelty": 1,
+            "onset_lock": 1,
+            "recurrence": 0.5
+          }
+        }
+      },
+      {
+        "field": "loop_pick",
+        "predicted": {
+          "bars": 4,
+          "rank": 1,
+          "components": {
+            "seam": 0.61,
+            "phrase": 1,
+            "stability": 0.95,
+            "novelty": 1,
+            "onset_lock": 1,
+            "recurrence": 0.5
+          }
+        },
+        "corrected": {
+          "bars": 8,
+          "rank": 2,
+          "components": {
+            "seam": 0.61,
+            "phrase": 1,
+            "stability": 0.95,
+            "novelty": 1,
+            "onset_lock": 1,
+            "recurrence": 0.5
+          }
+        }
+      }
+    ],
+    "pulls_in_to_two": [
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_edges",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_bars",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_bars",
+        "predicted": {
+          "start_s": 0,
+          "end_s": 8,
+          "bars": 4
+        },
+        "corrected": {
+          "start_s": 0,
+          "end_s": 4,
+          "bars": 2
+        }
+      },
+      {
+        "field": "loop_pick",
+        "predicted": {
+          "bars": 4,
+          "rank": 1,
+          "components": {
+            "seam": 0.61,
+            "phrase": 1,
+            "stability": 0.95,
+            "novelty": 1,
+            "onset_lock": 1,
+            "recurrence": 0.5
+          }
+        },
+        "corrected": {
+          "bars": 2,
+          "rank": 2,
+          "components": {
+            "seam": 0.61,
+            "phrase": 1,
+            "stability": 0.95,
+            "novelty": 1,
+            "onset_lock": 1,
+            "recurrence": 0.5
+          }
+        }
+      },
+      {
+        "field": "loop_pick",
+        "predicted": {
+          "bars": 4,
+          "rank": 1,
+          "components": {
+            "seam": 0.61,
+            "phrase": 1,
+            "stability": 0.95,
+            "novelty": 1,
+            "onset_lock": 1,
+            "recurrence": 0.5
+          }
+        },
+        "corrected": {
+          "bars": 2,
+          "rank": 2,
+          "components": {
+            "seam": 0.61,
+            "phrase": 1,
+            "stability": 0.95,
+            "novelty": 1,
+            "onset_lock": 1,
+            "recurrence": 0.5
+          }
+        }
+      }
+    ]
+  }
+}

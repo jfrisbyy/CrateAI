@@ -144,6 +144,7 @@ export const TABLES: Record<string, TableMeta> = {
       stripe_customer_id: null,
       stripe_subscription_id: null,
       corrections_opt_in: false,
+      loop_personalization: true,
       created_at: now,
       updated_at: now,
     },
