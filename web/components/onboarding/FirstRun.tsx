@@ -28,7 +28,7 @@ import { capWarnings, planSentence, planShape, UNMETERED_NOTE, usageShape } from
 import { EMPTY_MEMORY, readMemory, writeMemory, type OnboardingMemory } from "@/lib/onboarding/memory";
 import { elapsedSeconds, pastAnalysisRuns, positionAt } from "@/lib/onboarding/stages";
 import { firstRunStep, firstRunSubject, wayBackIn, type FirstRunStep } from "@/lib/onboarding/state";
-import { effective } from "@/lib/report/effective";
+import { effective, isPartial } from "@/lib/report/effective";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 import type { FileRow, JobRow, LoopRow } from "@/lib/types/db";
 import { CapShape } from "./CapShape";
@@ -283,6 +283,15 @@ function Working({ step, jobs }: { step: Extract<FirstRunStep, { kind: "queued" 
   const past = useMemo(() => pastAnalysisRuns(jobs), [jobs]);
   const dispatchNote = job?.error?.startsWith("dispatch:") ? job.error.slice("dispatch:".length).trim() : null;
 
+  // The analysis publishes its report after every stage now, so the wait can
+  // show the measurements that have already landed while the ladder shows what
+  // is still running. Everything here was really measured — a stage either ran
+  // or it did not — and `isPartial` is what keeps a half-written report from
+  // being read as the finished one (lib/report/effective.ts).
+  const report = useMemo(() => (file.report ? effective(file.report) : null), [file.report]);
+  const findings = useMemo(() => firstFindings(report), [report]);
+  const partial = isPartial(report);
+
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
@@ -300,8 +309,17 @@ function Working({ step, jobs }: { step: Extract<FirstRunStep, { kind: "queued" 
       ) : (
         <p className="mt-1 text-sm text-chalk-dim">Measuring it now.</p>
       )}
+      {partial && findings.length > 0 && (
+        <div className="mt-2">
+          <FindingsTable findings={findings} />
+          <p className="mt-1 text-xs text-chalk-faint">
+            Measured so far. The rest is still running, and nothing above is a guess — a measurement appears when it
+            has been made.
+          </p>
+        </div>
+      )}
       <div className="mt-2">
-        <StageLadder position={position} progress={progress} elapsedS={job ? elapsedSeconds(job) : null} past={past} />
+        <StageLadder position={position} progress={progress} elapsedS={job ? elapsedSeconds(job) : null} past={past} partial={partial} />
       </div>
       <p className="mt-2 text-xs text-chalk-faint">
         Drop more records while this runs; they queue behind it. Nothing here needs your attention until it lands.

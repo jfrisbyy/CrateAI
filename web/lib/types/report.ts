@@ -156,6 +156,36 @@ export interface Onsets {
   count: number;
 }
 
+/**
+ * Present only while the report is still being written.
+ *
+ * A report is published stage by stage now (``pipeline.analyze_array``'s
+ * ``on_partial``), so a producer sees a real tempo at twenty seconds instead
+ * of a step name. That makes a new kind of mistake possible: something
+ * downstream reading a half-written report as if it were everything we know,
+ * and saying "no key was measured" about a stage that has not run yet.
+ *
+ * So a report under construction says so, in the report, and the rule is
+ * exactly one line: **``pending`` is set while it is partial and ``None``
+ * when it is finished.** Absence means complete, which keeps every reader
+ * written before this field existed correct about a finished report; and a
+ * partial is only ever stored while ``files.status = 'analyzing'``, so a
+ * reader that never learns about this field still has the row's status to go
+ * on. ``effective()`` carries it through untouched, and
+ * ``web/lib/report/effective.ts`` mirrors both halves.
+ *
+ * ``done`` and ``stages`` are the report's own field names, so a reader can
+ * say *which* measurement is still coming rather than only that one is.
+ */
+export interface Pending {
+  /** report fields that have not run yet */
+  stages: Array<string>;
+  /** report fields that have run and are in this report */
+  done: Array<string>;
+  /** stages done / stages asked for */
+  fraction: number;
+}
+
 export interface SampleUse {
   is_loop_based: boolean | null;
   chop_count_estimate: number | null;
@@ -253,6 +283,8 @@ export interface AnalysisReport {
   effects_estimates: EffectsEstimates | null;
   tags: Array<Tag>;
   user_edits: UserEdits;
+  /** set while the analysis is still running; None on a finished report (see Pending) */
+  pending: Pending | null;
 }
 
 export const REPORT_SECTIONS = [

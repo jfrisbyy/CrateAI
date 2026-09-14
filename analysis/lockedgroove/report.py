@@ -14,6 +14,7 @@ in ``[0, 1]``. A section that has not run is ``None``.
 from __future__ import annotations
 
 import copy
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Literal, Optional
 
@@ -287,6 +288,33 @@ class UserEdits(_Model):
     edited_at: Optional[str] = None
 
 
+class Pending(_Model):
+    """Present only while the report is still being written.
+
+    A report is published stage by stage now (``pipeline.analyze_array``'s
+    ``on_partial``), so a producer sees a real tempo at twenty seconds instead
+    of a step name. That makes a new kind of mistake possible: something
+    downstream reading a half-written report as if it were everything we know,
+    and saying "no key was measured" about a stage that has not run yet.
+
+    So a report under construction says so, in the report, and the rule is
+    exactly one line: **``pending`` is set while it is partial and ``None``
+    when it is finished.** Absence means complete, which keeps every reader
+    written before this field existed correct about a finished report; and a
+    partial is only ever stored while ``files.status = 'analyzing'``, so a
+    reader that never learns about this field still has the row's status to go
+    on. ``effective()`` carries it through untouched, and
+    ``web/lib/report/effective.ts`` mirrors both halves.
+
+    ``done`` and ``stages`` are the report's own field names, so a reader can
+    say *which* measurement is still coming rather than only that one is.
+    """
+
+    stages: list[str] = Field(default_factory=list, description="report fields that have not run yet")
+    done: list[str] = Field(default_factory=list, description="report fields that have run and are in this report")
+    fraction: float = Field(default=0.0, ge=0.0, le=1.0, description="stages done / stages asked for")
+
+
 class AnalysisReport(_Model):
     schema_version: Literal["3.0"] = SCHEMA_VERSION
     analysis_version: int = 0
@@ -306,6 +334,10 @@ class AnalysisReport(_Model):
     effects_estimates: Optional[EffectsEstimates] = None
     tags: list[Tag] = Field(default_factory=list)
     user_edits: UserEdits = Field(default_factory=UserEdits)
+    pending: Optional[Pending] = Field(
+        default=None,
+        description="set while the analysis is still running; None on a finished report (see Pending)",
+    )
 
     @classmethod
     def empty(cls, file: Optional[FileInfo] = None, analysis_version: int = 0) -> "AnalysisReport":
@@ -338,12 +370,36 @@ def _beats_per_bar(meter: str) -> int:
     return max(1, num_i)
 
 
+def is_partial(report: "AnalysisReport | Mapping[str, object] | None") -> bool:
+    """True while a report is still being written (see ``Pending``).
+
+    Takes either the model or the raw jsonb straight out of ``files.report``,
+    because half the readers have one and half have the other, and the answer
+    must not depend on which. ``None``, and anything that is not a report, is
+    not partial: an absent report is a different thing from an unfinished one
+    and the caller already has to handle it.
+    """
+    if report is None:
+        return False
+    if isinstance(report, AnalysisReport):
+        return report.pending is not None
+    if isinstance(report, Mapping):
+        return report.get("pending") is not None
+    return False
+
+
 def effective(report: AnalysisReport) -> AnalysisReport:
     """Resolve ``user_edits`` over analyzed values (principle 7).
 
     Every consumer reads the effective report, never the raw one. The returned
     object is a deep copy; the stored report keeps the prediction so the
     correction can be logged against it.
+
+    A partial report stays partial: ``pending`` is copied through untouched, so
+    ``is_partial(effective(r)) == is_partial(r)``. Resolving a correction over
+    what has been measured so far is right — the correction wins whenever the
+    measurement lands — but nothing here may make a half-written report look
+    finished.
     """
     out = copy.deepcopy(report)
     edits = report.user_edits
@@ -426,7 +482,7 @@ __all__ = [
     "AnalysisReport", "Beats", "ChordSegment", "Chords", "DrumHit", "DrumPattern", "Drums",
     "EffectsEstimates", "Estimate", "FileInfo", "Groove", "Instrumentation",
     "InstrumentationSection", "InstrumentEvent", "Key", "KeyAlternate", "KeyEdit", "Loudness",
-    "Onsets", "PITCH_CLASSES", "SampleUse", "Section", "SidechainEstimate", "Spectral",
+    "Onsets", "PITCH_CLASSES", "Pending", "SampleUse", "Section", "SidechainEstimate", "Spectral",
     "Structure", "Tag", "Tempo", "TimingDeviation", "UserEdits", "effective", "hedge_word",
-    "json_schema", "key_name", "now_iso", "SCHEMA_VERSION",
+    "is_partial", "json_schema", "key_name", "now_iso", "SCHEMA_VERSION",
 ]

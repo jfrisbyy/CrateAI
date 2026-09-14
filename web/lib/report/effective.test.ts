@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AnalysisReport } from "@/lib/types/report";
-import { beatsPerBar, effective, emptyReport, subdivide } from "./effective";
+import { beatsPerBar, effective, emptyReport, isPartial, pendingStages, subdivide } from "./effective";
 
 // Mirrors the `effective()` cases in analysis/tests/test_report_schema.py.
 
@@ -157,5 +157,41 @@ describe("helpers", () => {
     expect(subdivide([0, 1], 4)).toEqual([0, 0.25, 0.5, 0.75, 1]);
     expect(subdivide([5], 2)).toEqual([5]);
     expect(subdivide([], 2)).toEqual([]);
+  });
+});
+
+// Mirrors analysis/tests/test_partial_report.py: a report that is still being
+// written says so, and `effective()` may not make it look finished.
+describe("a partial report", () => {
+  const partial = () =>
+    emptyReport({
+      tempo: { bpm: 92.0, confidence: 0.8, method: "librosa", alternates_bpm: [46.0, 184.0], notes: null },
+      pending: { stages: ["key", "structure"], done: ["tempo", "beats"], fraction: 0.5 },
+    });
+
+  it("is partial while `pending` is set and finished when it is null", () => {
+    expect(isPartial(partial())).toBe(true);
+    expect(isPartial(emptyReport())).toBe(false);
+    expect(isPartial(null)).toBe(false);
+    expect(isPartial(undefined)).toBe(false);
+  });
+
+  it("names the measurements that have not run yet, in the order they will arrive", () => {
+    expect(pendingStages(partial())).toEqual(["key", "structure"]);
+    expect(pendingStages(emptyReport())).toEqual([]);
+    expect(pendingStages(null)).toEqual([]);
+  });
+
+  it("survives effective(), so a correction cannot make it look finished", () => {
+    const r = partial();
+    r.user_edits.tempo_bpm = 46.0;
+    const out = effective(r);
+    expect(out.tempo?.bpm).toBe(46.0);
+    expect(isPartial(out)).toBe(true);
+    expect(pendingStages(out)).toEqual(["key", "structure"]);
+  });
+
+  it("leaves a finished report finished through effective()", () => {
+    expect(isPartial(effective(emptyReport({ tempo: { bpm: 92, confidence: 0.8, method: "librosa", alternates_bpm: [], notes: null } })))).toBe(false);
   });
 });

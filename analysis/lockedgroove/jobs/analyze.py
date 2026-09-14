@@ -8,7 +8,14 @@ writes (task ``analyze``): ``files.report``, ``files.peaks``,
 ``files.status = 'ready'``, ``tags`` rows (source ``model``).
 
 Idempotency (CONTRACTS section 4): a no-op when ``files.analysis_version >=
-requested`` and ``files.report`` is present; ``params.force`` overrides.
+requested`` and ``files.report`` is present and finished; ``params.force``
+overrides. A *partial* report (``report.Pending``) never counts as analyzed.
+
+The report is published stage by stage rather than once at the end: each stage
+writes ``files.report`` with ``report.pending`` still set, Realtime pushes the
+row, and the first-run screen shows a measured tempo at about twenty seconds
+instead of a step name. ``pending`` is cleared in the finishing patch, and it is
+the one thing that tells a partial report apart from a finished one.
 
 Files longer than 20 minutes (OPEN_QUESTIONS B.9) are analyzed on their first
 20 minutes; peaks and ``duration_s`` still describe the whole file and the
@@ -44,7 +51,7 @@ from .. import ANALYSIS_VERSION
 from ..db import Database, jsonable
 from ..ingest import compute_peaks, file_info_for, load_audio
 from ..pipeline import DEFAULT_STAGES, analyze_array, to_mono
-from ..report import AnalysisReport, effective
+from ..report import AnalysisReport, effective, is_partial
 from ..storage import Storage
 from .common import JobContext, JobError, params_of
 from .derived import STEM_AWARE_STAGES, load_stem_arrays, stem_rows
@@ -106,7 +113,13 @@ def analyze_task(job: dict, db: Database, storage: Storage, ctx: JobContext, fil
         raise JobError("params.stages must be a list of stage names")
 
     current_version = int(file.get("analysis_version") or 0)
-    if not force and file.get("report") and current_version >= requested:
+    # A partial report is not an analysis (``report.Pending``): it is what a run
+    # still going -- or one that died -- left behind, and the idempotency rule
+    # must not read it as "already analyzed" and refuse to run again.
+    # ``analysis_version`` is written only in the final patch, so a half-written
+    # report always sits under the *previous* version; without this guard a file
+    # re-analyzed at the same version, interrupted, could never be re-analyzed.
+    if not force and file.get("report") and not is_partial(file.get("report")) and current_version >= requested:
         return {
             "file_id": file_id, "skipped": True, "analysis_version": current_version,
             "reason": f"already analyzed at version {current_version} (requested {requested})",
@@ -153,9 +166,39 @@ def analyze_task(job: dict, db: Database, storage: Storage, ctx: JobContext, fil
     def on_progress(stage: str, fraction: float) -> None:
         ctx.progress(0.1 + 0.8 * fraction, stage)
 
+    def on_partial(partial: AnalysisReport) -> None:
+        """Publish the report after each stage, so the wait shows numbers.
+
+        Realtime already pushes ``files`` row changes to the browser and the
+        first-run screen already renders whatever the report has and skips what
+        it does not (``web/lib/onboarding/findings.ts``), so this one write is
+        the whole of the feature: a real tempo at about twenty seconds instead
+        of a step name lighting up.
+
+        Three things it must not do:
+
+        * **Look finished.** ``partial.pending`` is set by the pipeline until
+          the last stage is in, and the final patch below writes the same report
+          with ``pending`` cleared. That is the only difference a reader needs.
+        * **Lose a correction.** ``user_edits`` is copied onto the report after
+          ``analyze_array`` returns, so until then the live object carries the
+          default. A partial written without them would, if this job then died,
+          leave the file with the producer's corrections erased -- principle 7,
+          broken by a progress feature. The prior edits go into every partial.
+        * **Touch anything else.** Only ``report``. ``analysis_version``,
+          ``status`` and the vitals are the finishing patch's to write, so an
+          interrupted job leaves a file that is plainly unfinished rather than
+          one that claims a version it never reached.
+        """
+        doc = partial.to_json_dict()
+        if prior is not None:
+            doc["user_edits"] = prior.user_edits.model_dump(mode="json")
+        db.update_file(file_id, {"report": doc})
+
     report, actx = analyze_array(
         y, sr, file_info=info, stages=stages, analysis_version=requested,
-        on_progress=on_progress, return_context=True, base_report=base_report, stems=stems_arrays,
+        on_progress=on_progress, on_partial=on_partial, return_context=True,
+        base_report=base_report, stems=stems_arrays,
     )
     if prior is not None:
         report.user_edits = prior.user_edits  # corrections survive re-analysis (principle 7)

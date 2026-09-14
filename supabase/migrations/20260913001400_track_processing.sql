@@ -81,18 +81,34 @@
 -- `auth.uid() = user_id` on every operation.
 --
 -- DEPENDS ON 20260913001000_song_arrangement.sql, which creates the tables.
--- `alter table if exists` so that running this against a database where that
--- migration has not been applied is a no-op rather than a failure.
+--
+-- This file originally used `alter table if exists`, so that running it before
+-- that migration was a no-op rather than a failure. The seams pass reversed
+-- that: a silent no-op means `web/lib/processing/persist.ts` writes a chain to
+-- a column that is not there, the producer's EQ disappears on reload, and
+-- nothing anywhere says why. A missing dependency should be loud, once, at
+-- apply time. The guard below names the file to run first.
 --
 -- NOT APPLIED by the agent that wrote it: run it with the Supabase CLI.
 
-alter table if exists public.song_tracks
+do $$
+begin
+  if to_regclass('public.song_tracks') is null or to_regclass('public.song_sessions') is null then
+    raise exception using
+      errcode = 'undefined_table',
+      message = 'song_tracks / song_sessions do not exist',
+      hint = 'apply supabase/migrations/20260913001000_song_arrangement.sql first; per-track processing is two columns on the tables it creates';
+  end if;
+end;
+$$;
+
+alter table public.song_tracks
   add column if not exists processing jsonb;
 
 comment on column public.song_tracks.processing is
   'Corrective processing for this lane (web/lib/processing/persist.ts StoredProcessing): seven EQ slots, an input trim in dB, a tune in cents, and whether the chain is bypassed. Null means the lane has no chain at all, which is not the same as a chain that is doing nothing. Never affects the source audio.';
 
-alter table if exists public.song_sessions
+alter table public.song_sessions
   add column if not exists master_processing jsonb;
 
 comment on column public.song_sessions.master_processing is

@@ -759,6 +759,38 @@
       "title": "Onsets",
       "type": "object"
     },
+    "Pending": {
+      "additionalProperties": false,
+      "description": "Present only while the report is still being written.\n\nA report is published stage by stage now (``pipeline.analyze_array``'s\n``on_partial``), so a producer sees a real tempo at twenty seconds instead\nof a step name. That makes a new kind of mistake possible: something\ndownstream reading a half-written report as if it were everything we know,\nand saying \"no key was measured\" about a stage that has not run yet.\n\nSo a report under construction says so, in the report, and the rule is\nexactly one line: **``pending`` is set while it is partial and ``None``\nwhen it is finished.** Absence means complete, which keeps every reader\nwritten before this field existed correct about a finished report; and a\npartial is only ever stored while ``files.status = 'analyzing'``, so a\nreader that never learns about this field still has the row's status to go\non. ``effective()`` carries it through untouched, and\n``web/lib/report/effective.ts`` mirrors both halves.\n\n``done`` and ``stages`` are the report's own field names, so a reader can\nsay *which* measurement is still coming rather than only that one is.",
+      "properties": {
+        "stages": {
+          "description": "report fields that have not run yet",
+          "items": {
+            "type": "string"
+          },
+          "title": "Stages",
+          "type": "array"
+        },
+        "done": {
+          "description": "report fields that have run and are in this report",
+          "items": {
+            "type": "string"
+          },
+          "title": "Done",
+          "type": "array"
+        },
+        "fraction": {
+          "default": 0.0,
+          "description": "stages done / stages asked for",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Fraction",
+          "type": "number"
+        }
+      },
+      "title": "Pending",
+      "type": "object"
+    },
     "SampleUse": {
       "additionalProperties": false,
       "properties": {
@@ -1402,6 +1434,18 @@
     },
     "user_edits": {
       "$ref": "#/$defs/UserEdits"
+    },
+    "pending": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Pending"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "set while the analysis is still running; None on a finished report (see Pending)"
     }
   },
   "title": "AnalysisReport",

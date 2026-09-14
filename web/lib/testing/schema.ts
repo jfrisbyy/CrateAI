@@ -34,8 +34,20 @@ function table(owner: string | null, extra: Partial<TableMeta> = {}): TableMeta 
   };
 }
 
-/** `now()` in the double: every row written in one test shares it unless a test moves it. */
-export let NOW = "2026-09-13T12:00:00.000Z";
+/**
+ * `now()` in the double: every row written in one test shares it unless a test
+ * moves it with `setNow`.
+ *
+ * Midday **today**, not a date written down once. It used to be the literal
+ * "2026-09-13T12:00:00.000Z", which meant every test asserting a daily count —
+ * `chat_turns_today`, the free plan's searches-per-day cap — seeded a row
+ * "today" and compared it against the real clock. Those tests passed on the day
+ * they were written and failed on the next one, which is how the suite reached
+ * this seam three tests down with nothing having changed. A fixture clock that
+ * means "now" cannot rot that way, and nothing asserts this literal: the tests
+ * that pin a date bring their own.
+ */
+export let NOW = `${new Date().toISOString().slice(0, 10)}T12:00:00.000Z`;
 
 export function setNow(iso: string): void {
   NOW = iso;
@@ -114,9 +126,16 @@ export const TABLES: Record<string, TableMeta> = {
     unique: [["user_id"]],
     defaults: { sample_count: 0, cv_accuracy: null, enabled: false, classes: [], trained_at: now },
   }),
+  // The owner writes their own row (corrections_opt_in, the loop-personalization
+  // switch, the onboarding state) and billing writes the rest. In Postgres that
+  // is `profiles_update_own` plus the `profiles_guard_billing` trigger
+  // (20260913001600_profiles_client_writes.sql); here it is `frozen`. The
+  // Stripe ids are on the list because they are unique and the webhook looks an
+  // account up by them — a client that could set its own could point the
+  // webhook at someone else's row.
   profiles: table("id", {
     insertable: false,
-    frozen: ["plan"],
+    frozen: ["plan", "plan_status", "stripe_customer_id", "stripe_subscription_id"],
     touchUpdatedAt: true,
     defaults: {
       email: null,
