@@ -575,3 +575,42 @@ ending in `-fake` overrides a contradicting tier column, because a stand-in is
 never a separation whatever a column claims. The Stems tab puts the tier, the
 model, the SDR and the one-sentence note above every group, and a published SDR
 is never rendered without the basis that says what the number is.
+
+
+---
+
+## 14. What the source itself allows
+
+`report.spectral.bandwidth` is the highest frequency still carrying real energy
+(`analysis/lockedgroove/quality/bandwidth.py`). A 320 kbps encode stops around
+20 kHz, a 128 kbps one around 16, a rip off a cassette far lower. The uploads in
+the first real sessions measured **12.0, 13.5 and 15.7 kHz**, and every layer
+built from them sounded muffled.
+
+The processing chain has honoured this since it was measured — `moves.ts`
+refuses to boost above the edge — but the producer was never told, so a dull
+flip read as our fault rather than as the record's. The Report tab now leads its
+spectral section with it, and `web/lib/report/bandwidth.ts` turns it into one
+sentence:
+
+| Edge | Reads as |
+|---|---|
+| ≥ 19.0 kHz | full: nothing here is holding the sound back |
+| 16.5–19.0 kHz | a lossy encode: stems will sound softer than the record |
+| < 16.5 kHz | limited: dull however it is separated; a cleaner source is the only fix |
+
+**A confidence below 0.4 grades nothing.** The same floor as `hedgeWord`'s "I
+can't tell" band, and it is load-bearing rather than decorative: a measurement
+taken on a downsampled working copy reports *the copy's* ceiling — 11.0 kHz at
+confidence 0.2, with a note saying to re-measure on the upload. Grading that
+would tell a producer their source is the problem when the file may be perfect.
+
+The measurement's own `notes` are read out in its words. The `nyquist_limited`
+flag never reaches the report, so re-deriving "the sample rate is the limit, not
+the record" on the web would mean sniffing Python's prose.
+
+`web/lib/report/bandwidthFixture.json` is **generated** by
+`analysis/tests/test_quality_bandwidth.py` from real measurements of real
+signals, and that test fails when the committed file goes stale — so the
+thresholds above are checked against what the measurement returns, not against
+numbers typed on the web side.

@@ -1,0 +1,33 @@
+{
+  "_generated_by": "analysis/tests/test_quality_bandwidth.py::test_the_web_fixture_is_current",
+  "full_band": {
+    "confidence": 0.5,
+    "method": "highest frequency above -60 dB of the in-band peak, from the 90th-percentile spectrum of the loud frames; a >=25 dB drop inside 8% of that frequency is reported as an encoder lowpass",
+    "notes": "content runs to the file's own ceiling (22.1 kHz); the sample rate is the limit, not the record",
+    "value": 22050.0
+  },
+  "limited_12k": {
+    "confidence": 0.9,
+    "method": "highest frequency above -60 dB of the in-band peak, from the 90th-percentile spectrum of the loud frames; a >=25 dB drop inside 8% of that frequency is reported as an encoder lowpass",
+    "notes": "sharp cut at 12.1 kHz (62 dB inside 8%), the signature of a lossy encode",
+    "value": 12058.6
+  },
+  "lossy_15k7": {
+    "confidence": 0.9,
+    "method": "highest frequency above -60 dB of the in-band peak, from the 90th-percentile spectrum of the loud frames; a >=25 dB drop inside 8% of that frequency is reported as an encoder lowpass",
+    "notes": "sharp cut at 15.8 kHz (76 dB inside 8%), the signature of a lossy encode",
+    "value": 15751.5
+  },
+  "silence": {
+    "confidence": 0.0,
+    "method": "highest frequency above -60 dB of the in-band peak, from the 90th-percentile spectrum of the loud frames; a >=25 dB drop inside 8% of that frequency is reported as an encoder lowpass",
+    "notes": "no measurable signal (silence or too short)",
+    "value": null
+  },
+  "working_copy": {
+    "confidence": 0.2,
+    "method": "highest frequency above -60 dB of the in-band peak, from the 90th-percentile spectrum of the loud frames; a >=25 dB drop inside 8% of that frequency is reported as an encoder lowpass",
+    "notes": "measured on a 22.1 kHz working copy, so nothing above 11.0 kHz can be seen; re-measure on the upload",
+    "value": 11025.0
+  }
+}

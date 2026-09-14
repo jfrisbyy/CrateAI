@@ -8,6 +8,9 @@ than the answer.
 
 from __future__ import annotations
 
+import json
+import pathlib
+
 import numpy as np
 import pytest
 
@@ -90,3 +93,51 @@ def test_without_the_native_signal_the_estimate_hedges_itself():
     section = spectral_stage.run(y, ANALYSIS_SR, Context(report=AnalysisReport.empty(), sr=ANALYSIS_SR))
     assert section.bandwidth is not None
     assert section.bandwidth.confidence <= 0.3
+
+
+# --- the shape the web reads ------------------------------------------------------------------
+#
+# `web/lib/report/bandwidth.ts` turns this estimate into a sentence a producer
+# can act on ("this flip is limited by the record, not by us" -- the intent in
+# this module's own docstring, which the product never said out loud). Its tests
+# read the file generated here rather than numbers typed on that side, so the
+# grade boundaries are checked against what this code actually measures.
+
+WEB_FIXTURE = (
+    pathlib.Path(__file__).resolve().parents[2] / "web" / "lib" / "report" / "bandwidthFixture.json"
+)
+
+
+def _web_fixture_cases():
+    wide = _wideband()
+    cases = {
+        "_generated_by": "analysis/tests/test_quality_bandwidth.py::test_the_web_fixture_is_current",
+        # a release-quality file: nothing thrown away
+        "full_band": measure_bandwidth(wide, SR).to_json(),
+        # the real uploads from the first sessions, bottom and top of the range
+        "lossy_15k7": measure_bandwidth(lossy_copy(wide, SR, 15700.0), SR).to_json(),
+        "limited_12k": measure_bandwidth(lossy_copy(wide, SR, 12000.0), SR).to_json(),
+        # measured on a working copy: the answer is capped by the copy's own rate
+        "working_copy": measure_bandwidth(resample(wide, SR, ANALYSIS_SR), ANALYSIS_SR,
+                                          rate_is_native=False).to_json(),
+        # nothing to measure: a value must not be invented
+        "silence": measure_bandwidth(np.zeros(SR, dtype=np.float32), SR).to_json(),
+    }
+    return cases
+
+
+def test_the_web_fixture_is_current():
+    rendered = json.dumps(_web_fixture_cases(), indent=2, sort_keys=True) + "\n"
+    if WEB_FIXTURE.read_text() != rendered:
+        WEB_FIXTURE.write_text(rendered)
+        pytest.fail(f"{WEB_FIXTURE.name} was stale and has been rewritten; commit it and re-run")
+
+
+def test_the_generated_cases_land_either_side_of_the_boundaries_the_web_uses():
+    """The web grades at 19.0 kHz (full) and 16.5 kHz (lossy). These must straddle them."""
+    cases = _web_fixture_cases()
+    assert cases["full_band"]["value"] >= 19_000.0
+    assert 16_500.0 <= cases["lossy_15k7"]["value"] < 19_000.0 or cases["lossy_15k7"]["value"] < 16_500.0
+    assert cases["limited_12k"]["value"] < 16_500.0
+    assert cases["silence"]["value"] is None
+    assert cases["working_copy"]["notes"]

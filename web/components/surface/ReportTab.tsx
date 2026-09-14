@@ -8,6 +8,7 @@ import { btn, btnQuiet, cx } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api/client";
 import { fmtBpm, fmtClock, fmtNumber, fmtSeconds } from "@/lib/format";
 import { displayKey, otherSpelling } from "@/lib/music/keys";
+import { limitsTheFlip, sourceFidelity } from "@/lib/report/bandwidth";
 import { hedgeWord } from "@/lib/report/hedge";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 import { REPORT_SECTIONS, type AnalysisReport, type ReportSection } from "@/lib/types/report";
@@ -338,12 +339,34 @@ function SectionBody({ id, report }: { id: ReportSection; report: AnalysisReport
     }
     case "spectral": {
       const sp = report.spectral!;
+      // Bandwidth leads: it is the one number here a producer can act on, and
+      // the reason a flip off a 128 kbps rip sounds dull however it is
+      // separated. The processing chain has guarded against it since it was
+      // measured; nobody was told.
+      const fidelity = sourceFidelity(sp.bandwidth);
       return (
-        <dl className={dl}>
-          <Row k="Centroid">{fmtNumber(sp.centroid_hz_mean, 0)} Hz</Row>
-          <Row k="Stereo width">{fmtNumber(sp.stereo_width)}</Row>
-          <Row k="Low / high">{fmtNumber(sp.low_high_ratio_db, 1)} dB</Row>
-        </dl>
+        <>
+          <dl className={dl}>
+            <Row k="Bandwidth">
+              {fidelity ? (
+                <>
+                  {fidelity.khz} kHz <ConfidenceDot confidence={fidelity.confidence} />
+                </>
+              ) : (
+                "not measured"
+              )}
+            </Row>
+            <Row k="Centroid">{fmtNumber(sp.centroid_hz_mean, 0)} Hz</Row>
+            <Row k="Stereo width">{fmtNumber(sp.stereo_width)}</Row>
+            <Row k="Low / high">{fmtNumber(sp.low_high_ratio_db, 1)} dB</Row>
+          </dl>
+          {fidelity && (
+            <p className={cx("mt-2 text-xs max-w-[560px]", limitsTheFlip(fidelity) ? "text-pad" : "text-chalk-dim")}>
+              {fidelity.verdict}
+              {fidelity.note && <span className="block text-chalk-dim">{fidelity.note}</span>}
+            </p>
+          )}
+        </>
       );
     }
     case "effects_estimates": {
