@@ -525,6 +525,29 @@ A split is only offered when a model above the `weak` tier produces it. `weak`
 and `stand_in` exist so a row that came from one can be **labelled** as such —
 never so that one can be chosen.
 
+### A claim may not outrun the separation under it
+
+`loops/sample_ready.py` reads the same two tiers — `StemSource.from_row` and
+`from_rows`, against `stems_trustworthy_idx`'s own definition. Three rules:
+
+- **Only `reference` and `strong` carry a claim.** Baseline and weak separators
+  still make audio a producer may want; a "vocal free" said over one is a guess
+  wearing a number, so every claim is **withheld** rather than hedged, and the
+  `why` names the tier so the producer knows to re-separate.
+- **A set of stems is only as good as its worst separation.** A vocal-free claim
+  reading a reference vocal against a weak `other` is a weak claim.
+- **The tier is a ceiling on confidence, not a multiplier.** Claim confidence
+  already carries `separation_quality(isolation_db)`, measured on *this* file;
+  the tier is a prior about the model. Multiplying counts the same doubt twice.
+
+Absent column and null column are read differently. No `model_tier` key at all
+means the database predates `…000800` and the model name is all there is, which
+is the behaviour from before the columns existed — this matters because the
+migration is **not applied yet**, so being strict here would withhold every claim
+in production today. A `model_tier` that is present and null means the schema has
+the column and the row was written without one: unknown, and unknown is
+untrusted.
+
 ### What a stem says about itself
 
 `qualityOf` (`lib/api/stems.ts`) reads the seven quality columns. A null

@@ -588,3 +588,129 @@ def test_a_broken_stem_row_costs_the_claims_not_the_loops(tmp_path, track):
     assert final["status"] == "done", final["error"]
     assert final["result"]["stems_used"] == []
     assert final["result"]["count"] > 0
+
+
+# --- where the stems came from ----------------------------------------------------------------
+#
+# Trust used to be inferred from the model *name*: anything not ending in
+# `-fake` was fully trusted, so a claim off `kuielab_other` -- the separator that
+# cost 17.6 dB of 8-20 kHz on a real upload -- read exactly like one off
+# BS-Roformer. The `stems` row has carried the tier and a confidence since
+# 20260913000800; these tests hold the reader to them.
+
+
+def _stem_row(model, **cols):
+    return {"model": model, "is_stand_in": False, **cols}
+
+
+def test_a_row_from_before_the_quality_columns_behaves_as_it_always_did():
+    """No `model_tier` key at all means the database predates the migration."""
+    src = S.StemSource.from_row({"model": "htdemucs_ft"})
+    assert src.trusted is True
+    assert src.confidence == 1.0
+    assert src.tier is None
+
+
+def test_a_null_tier_is_unknown_and_unknown_is_not_fine():
+    """The column exists and this row was written without one. The migration says untrusted."""
+    src = S.StemSource.from_row(_stem_row("htdemucs_ft", model_tier=None))
+    assert src.trusted is False
+    assert "unknown" in (src.note or "")
+
+
+@pytest.mark.parametrize("tier,trusted", [("reference", True), ("strong", True),
+                                          ("baseline", False), ("weak", False), ("stand_in", False)])
+def test_only_the_top_two_tiers_may_carry_a_claim(tier, trusted):
+    """The same pair as `stems_trustworthy_idx` in the migration."""
+    assert S.StemSource.from_row(_stem_row("m", model_tier=tier)).trusted is trusted
+
+
+def test_a_weak_separation_says_which_tier_it_was_rather_than_calling_itself_a_stand_in():
+    src = S.StemSource.from_row(_stem_row("kuielab_other", model_tier="weak"))
+    assert "weak" in (src.note or "")
+    assert src.tier == "weak"
+
+
+def test_the_stand_in_is_caught_by_the_column_and_by_the_name():
+    by_column = S.StemSource.from_row({"model": "htdemucs_ft", "is_stand_in": True, "model_tier": "strong"})
+    by_name = S.StemSource.from_row({"model": "htdemucs_ft-fake", "is_stand_in": False, "model_tier": "strong"})
+    for src in (by_column, by_name):
+        assert src.trusted is False
+        assert src.tier == "stand_in"
+
+
+def test_a_set_of_stems_is_only_as_good_as_its_worst_separation():
+    src = S.StemSource.from_rows([
+        _stem_row("bs_roformer", model_tier="reference", quality_confidence=0.9),
+        _stem_row("kuielab_other", model_tier="weak", quality_confidence=0.35),
+    ])
+    assert src.trusted is False
+    assert src.confidence == pytest.approx(0.35)
+    assert src.model == "bs_roformer, kuielab_other"
+
+
+def test_a_set_of_good_stems_stays_trusted_and_takes_the_lower_ceiling():
+    src = S.StemSource.from_rows([
+        _stem_row("bs_roformer", model_tier="reference", quality_confidence=0.9),
+        _stem_row("htdemucs_ft", model_tier="strong", quality_confidence=0.75),
+    ])
+    assert src.trusted is True
+    assert src.confidence == pytest.approx(0.75)
+
+
+def test_no_stems_at_all_is_not_an_error():
+    assert S.StemSource.from_rows([]).model is None
+
+
+# --- what the tier does to a claim ------------------------------------------------------------
+
+
+def _source_at(tier, confidence):
+    return S.StemSource.from_row(_stem_row("m", model_tier=tier, quality_confidence=confidence))
+
+
+def test_a_claim_is_never_more_certain_than_the_separation_under_it(track):
+    """The whole rule, in one assertion."""
+    _mix, stems, _truth = track
+    reference = _ready(stems, 0, 4, source=_source_at("reference", 0.9))
+    strong = _ready(stems, 0, 4, source=_source_at("strong", 0.75))
+    vocal_ref = reference.claim("vocal_free")
+    vocal_strong = strong.claim("vocal_free")
+    assert vocal_ref.value is vocal_strong.value, "the same span is the same span"
+    assert vocal_ref.confidence <= 0.9
+    assert vocal_strong.confidence <= 0.75
+
+
+def test_the_ceiling_only_lowers_a_confidence_that_was_above_it(track):
+    """A claim the measurement already hedged is not lifted by a good separator."""
+    _mix, stems, _truth = track
+    hedged = _ready(stems, 1, 4, source=_source_at("reference", 0.9))
+    for name in S.CLAIM_NAMES:
+        claim = hedged.claim(name)
+        if claim.confidence is not None:
+            assert claim.confidence <= 0.9
+
+
+def test_a_weak_separation_withholds_every_claim_and_says_why(track):
+    _mix, stems, _truth = track
+    ready = _ready(stems, 0, 4, source=S.StemSource.from_row(_stem_row("kuielab_other", model_tier="weak")))
+    for name in S.CLAIM_NAMES:
+        assert ready.claim(name).value is None
+    assert any("weak" in c for c in ready.caveats)
+    # and it does not call a real separator a development stand-in
+    assert not any("stand-in" in c for c in ready.caveats)
+
+
+def test_a_weak_separation_makes_no_content_adjustment_to_the_ranking(track):
+    _mix, stems, _truth = track
+    weak = _ready(stems, 0, 4, source=S.StemSource.from_row(_stem_row("kuielab_other", model_tier="weak")))
+    assert weak.ranking_factor == 1.0
+
+
+def test_the_source_travels_with_the_loop_so_the_web_can_show_it(track):
+    _mix, stems, _truth = track
+    ready = _ready(stems, 0, 4, source=_source_at("strong", 0.75))
+    d = ready.source.to_dict()
+    assert d["tier"] == "strong"
+    assert d["confidence"] == pytest.approx(0.75)
+    assert json.dumps(d)

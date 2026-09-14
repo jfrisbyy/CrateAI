@@ -334,15 +334,11 @@ def loop_stems(db: Database, ctx: JobContext, file: dict, sr: int) -> tuple[dict
             return None, None
         from ..loops.sample_ready import StemSource  # imported late, like the finder itself
 
-        labels = sorted({str(r.get("model")) for r in rows.values() if r.get("model")})
-        if not labels:
-            source = StemSource()
-        elif len(labels) == 1:
-            source = StemSource.from_model(labels[0])
-        else:
-            parts = [StemSource.from_model(label) for label in labels]
-            source = StemSource(model=", ".join(labels), trusted=all(p.trusted for p in parts),
-                                note=next((p.note for p in parts if p.note), None))
+        # The whole row, not just its model label: the quality columns say which
+        # tier produced these stems and how far a claim may lean on them.
+        # Reading the label alone made a weak separator indistinguishable from
+        # the best one in the registry.
+        source = StemSource.from_rows(list(rows.values()))
         return arrays, source
     except Exception:  # pragma: no cover - stems are an enrichment, never a failure
         log.warning("could not load stems for the loop finder on file %s", file.get("id"), exc_info=True)

@@ -150,6 +150,25 @@ SEPARATION_CAVEAT = ("separation leaks: this describes the separated stem, not p
 STANDIN_CAVEAT = ("these stems came from the development stand-in, not a separation model: no claim "
                   "is made about what is in the span")
 
+CLAIM_TIERS = ("reference", "strong")
+"""Tiers a claim may rest on.
+
+The same pair as ``stems_trustworthy_idx`` in 20260913000800_stem_quality.sql,
+which already defines "the stems in this file I can build a claim on". Baseline
+and weak separators still produce usable audio -- a producer may want them -- but
+a "vocal free" said over one is a guess wearing a number.
+"""
+
+TIER_CEILING = {"reference": 0.9, "strong": 0.75, "baseline": 0.55, "weak": 0.35, "stand_in": 0.1}
+"""``TIER_CONFIDENCE`` in stems/separate.py: how far a claim built on this tier may go.
+
+A ceiling rather than a multiplier. Claim confidence is already scaled by
+``separation_quality(isolation_db)``, which is *measured on this file*; the tier
+is a prior about the model. Multiplying would count the same doubt twice. The
+rule is one sentence instead: a claim cannot be more certain than the separation
+it rests on.
+"""
+
 
 # --- small helpers --------------------------------------------------------------------------------
 
@@ -211,22 +230,87 @@ def _round(v: Any, nd: int = 2) -> Any:
 
 @dataclass(frozen=True)
 class StemSource:
-    """Where the stems came from, and whether claims may be made from them."""
+    """Where the stems came from, and whether claims may be made from them.
+
+    Read from the ``stems`` row's quality columns when they are there, which is
+    the point: trust used to be inferred from the *model name* -- anything not
+    ending in ``-fake`` was fully trusted, so a claim off the weakest separator
+    in the registry read exactly like one off the best.
+    """
 
     model: Optional[str] = None
     trusted: bool = True
     note: Optional[str] = None
+    tier: Optional[str] = None
+    confidence: float = 1.0
+    """The separation's own confidence; no claim drawn from it may exceed this."""
 
     @classmethod
     def from_model(cls, model: Optional[str]) -> "StemSource":
+        """From a model label alone -- all a row carries before the quality columns exist."""
         label = str(model) if model else None
         if label and label.endswith(FAKE_MODEL_SUFFIX):
-            return cls(model=label, trusted=False,
+            return cls(model=label, trusted=False, tier="stand_in",
+                       confidence=TIER_CEILING["stand_in"],
                        note="development stand-in separation (a band split, not a model)")
         return cls(model=label, trusted=True)
 
+    @classmethod
+    def from_row(cls, row: Mapping[str, Any]) -> "StemSource":
+        """From a ``stems`` row, using the measured columns when the schema has them.
+
+        Absent column and null column are different things and are read
+        differently. No ``model_tier`` key at all means the database predates
+        20260913000800, so there is nothing to read and the model name is all
+        there is -- the behaviour before this existed. A ``model_tier`` that is
+        present and null means the schema has the column and this row was
+        written without one, which the migration says to treat as unknown, and
+        unknown is untrusted rather than fine.
+        """
+        label = str(row.get("model")) if row.get("model") else None
+        if bool(row.get("is_stand_in")) or (label or "").endswith(FAKE_MODEL_SUFFIX):
+            return cls(model=label, trusted=False, tier="stand_in",
+                       confidence=TIER_CEILING["stand_in"],
+                       note="development stand-in separation (a band split, not a model)")
+        if "model_tier" not in row:
+            return cls.from_model(label)
+
+        tier = row.get("model_tier")
+        if tier is None:
+            return cls(model=label, trusted=False, tier=None, confidence=TIER_CEILING["weak"],
+                       note="this separation predates the quality columns, so what produced it is unknown")
+        tier = str(tier)
+        stated = row.get("quality_confidence")
+        ceiling = float(stated) if stated is not None else TIER_CEILING.get(tier, TIER_CEILING["weak"])
+        if tier not in CLAIM_TIERS:
+            return cls(model=label, trusted=False, tier=tier, confidence=ceiling,
+                       note=str(row.get("quality_note") or f"a {tier}-tier separator produced these stems"))
+        return cls(model=label, trusted=True, tier=tier, confidence=ceiling)
+
+    @classmethod
+    def from_rows(cls, rows: Iterable[Mapping[str, Any]]) -> "StemSource":
+        """One source for a set of stems: the weakest of them.
+
+        A claim spans every stem it compares, so it is only as good as the worst
+        separation in the set -- a vocal-free claim reading a reference vocal
+        against a weak "other" is a weak claim.
+        """
+        parts = [cls.from_row(r) for r in rows]
+        if not parts:
+            return cls()
+        if len(parts) == 1:
+            return parts[0]
+        labels = sorted({p.model for p in parts if p.model})
+        worst = min(parts, key=lambda p: (p.trusted, p.confidence))
+        return cls(model=", ".join(labels) if labels else None,
+                   trusted=all(p.trusted for p in parts),
+                   note=next((p.note for p in parts if p.note), None),
+                   tier=worst.tier,
+                   confidence=min(p.confidence for p in parts))
+
     def to_dict(self) -> dict[str, Any]:
-        return {"model": self.model, "trusted": bool(self.trusted), "note": self.note}
+        return {"model": self.model, "trusted": bool(self.trusted), "note": self.note,
+                "tier": self.tier, "confidence": round(float(self.confidence), 3)}
 
 
 # --- per-track energy -------------------------------------------------------------------------------
@@ -700,6 +784,19 @@ class SampleReady:
         }
 
 
+def _under_ceiling(claims: Mapping[str, Claim], ceiling: float) -> dict[str, Claim]:
+    """Hold every claim's confidence to what the separation itself is worth.
+
+    A ceiling rather than a multiplier: the confidence already carries
+    ``separation_quality(isolation_db)``, measured on this file, and the tier is
+    a prior about the model. Multiplying would count the same doubt twice.
+    """
+    if ceiling >= 1.0:
+        return dict(claims)
+    return {name: (c if c.confidence <= ceiling else Claim(value=c.value, confidence=float(ceiling), why=c.why))
+            for name, c in claims.items()}
+
+
 def sample_ready(energies: StemEnergies, start_s: float, end_s: float) -> SampleReady:
     """Measure ``[start_s, end_s)`` per stem and draw the claims a producer asks for."""
     profile = span_profile(energies, start_s, end_s)
@@ -709,15 +806,20 @@ def sample_ready(energies: StemEnergies, start_s: float, end_s: float) -> Sample
     caveats: list[str] = []
 
     if not source.trusted:
+        # A claim is withheld, never hedged, when the separation under it is not
+        # claim-grade -- a stand-in, a baseline or weak separator, or one whose
+        # tier the row never recorded. The `why` says which of those it was, so
+        # a producer reading "no claim" knows whether to re-separate.
         reason = source.note or "these stems are not from a separation model"
+        why = f"no claim: {reason}"
         withheld_claims = {
-            "vocal_free": _withheld(reason, "no claim: the stems are a development stand-in"),
-            "drums_free": _withheld(reason, "no claim: the stems are a development stand-in"),
-            "drums_only": _withheld(reason, "no claim: the stems are a development stand-in"),
-            "fullness": _withheld(reason, "no claim: the stems are a development stand-in",
-                                  {"of": len(profile)}),
+            "vocal_free": _withheld(reason, why),
+            "drums_free": _withheld(reason, why),
+            "drums_only": _withheld(reason, why),
+            "fullness": _withheld(reason, why, {"of": len(profile)}),
         }
-        caveats.append(STANDIN_CAVEAT)
+        caveats.append(STANDIN_CAVEAT if source.tier == "stand_in" else
+                       f"{reason}: no claim is made about what is in the span")
         return SampleReady(claims=withheld_claims, profile=profile, caveats=caveats, ranking_factor=1.0,
                            source=source)
 
@@ -737,6 +839,8 @@ def sample_ready(energies: StemEnergies, start_s: float, end_s: float) -> Sample
         claims["drums_only"] = _drums_only_claim(profile, drums)
     claims["fullness"] = _fullness_claim(profile)
 
+    # A claim cannot be more certain than the separation it rests on.
+    claims = _under_ceiling(claims, source.confidence)
     caveats.append(SEPARATION_CAVEAT)
     for name in {n for n in (vocal, drums) if n}:
         span = profile[name]
