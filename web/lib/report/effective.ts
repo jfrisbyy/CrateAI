@@ -202,6 +202,39 @@ export function emptyReport(partial?: Partial<AnalysisReport>): AnalysisReport {
       section_labels: null,
       edited_at: null,
     },
+    pending: null,
     ...partial,
   };
+}
+
+/**
+ * Is this report still being written? `report.is_partial` in Python, and the
+ * same one-line rule: `pending` is set while the analysis is running and null
+ * on a finished report.
+ *
+ * The analysis publishes its report after every stage now
+ * (`analysis/lockedgroove/jobs/analyze.py`, `on_partial`), so a producer sees a
+ * measured tempo about twenty seconds in rather than a step name. Everything in
+ * a partial report was really measured — a stage either ran or it did not — so
+ * it is safe to *show*. What it must never do is pass for finished: a missing
+ * section in a partial means "not yet", not "we looked and found nothing", and
+ * anything that says "not measured" has to know the difference.
+ *
+ * `effective()` copies the report whole, so a partial stays partial through it,
+ * exactly as in Python. There is a second, independent signal for a reader that
+ * has never heard of this field: a partial is only ever stored while the file's
+ * row says `status = 'analyzing'`.
+ */
+export function isPartial(report: AnalysisReport | null | undefined): boolean {
+  return report?.pending != null;
+}
+
+/**
+ * The measurements a partial report is still waiting on, in the order they will
+ * arrive; empty for a finished report and for one that is not analyzed at all.
+ * Named for the report's own fields ("tempo", "key", "structure"), so a caller
+ * can say which one is still coming rather than only that one is.
+ */
+export function pendingStages(report: AnalysisReport | null | undefined): string[] {
+  return report?.pending?.stages ?? [];
 }

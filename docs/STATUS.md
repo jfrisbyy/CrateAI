@@ -1,22 +1,34 @@
 # STATUS.md — build report
 
-Branch `claude/intelligent-sagan-l0sp03` in `jfrisbyy/CrateAI`. Every phase of
-`docs/BUILD_PACKET.md` has code, tests and docs; what is not exercised is
-listed, not assumed. Read with `docs/OPEN_QUESTIONS.md` (36 questions, each
-with the assumption the build took), `docs/PROPOSALS.md`, `docs/BACKLOG.md`,
-and `docs/RUNBOOK.md` (how to run all of it).
+Repository `jfrisbyy/CrateAI`. Every phase of `docs/BUILD_PACKET.md` has code,
+tests and docs; what is not exercised is listed, not assumed. Read with
+`docs/OPEN_QUESTIONS.md` (each question carries the assumption the build took),
+`docs/PROPOSALS.md`, `docs/BACKLOG.md`, and `docs/RUNBOOK.md` (how to run all
+of it).
+
+The phase reports below cover Phases 0-10. The work after them —
+`docs/PRODUCT_DIRECTION.md`'s four surfaces — landed as seven parallel branches
+whose own handoffs are the record: `HANDOFF_audio_quality`,
+`HANDOFF_session_transport`, `HANDOFF_sample_pairs`, `HANDOFF_timeline`,
+`HANDOFF_keyboard`, `HANDOFF_prototype`, `HANDOFF_export`, `HANDOFF_ranking`,
+`HANDOFF_processing`, `HANDOFF_firstrun`, and `HANDOFF_seams` — which is the
+pass that merged them, verified the migrations they each wrote, and connected
+what they had each built and left unmounted.
 
 ## Verification
 
+*Numbers below are from the seams pass, 2026-09-14, on branch `agent/seams`.*
+
 | Check | Result |
 |---|---|
-| `analysis`: `uv run pytest -q` | 411 tests collected, 409 passed, 2 skipped (optional `modal` and `basic_pitch` not installed here) |
+| `analysis`: `uv run pytest -q` | 765 tests, 763 passed, 2 skipped (optional `modal` and `basic_pitch` not installed here) |
 | `analysis`: `uv run ruff check .` | clean |
 | `web`: `pnpm typecheck`, `pnpm lint` | clean |
-| `web`: `pnpm test` | 44 files, 376 tests passed |
+| `web`: `pnpm test` | 167 files, 1749 tests passed |
 | `web`: `pnpm build` | clean; every API route compiles as dynamic |
 | `scripts/gen_report_types.py --check` | schema and TypeScript types in sync |
-| Supabase project `CrateAI` (`ufmpwtjtyzmfucjyuhqo`) | all five migrations applied; security and performance advisors clean |
+| Supabase project `CrateAI` (`ufmpwtjtyzmfucjyuhqo`) | **five of fourteen migrations applied** (`…000000`–`…000400`); the other nine are written, verified together on a throwaway local Postgres, and waiting for the owner. See `docs/RUNBOOK.md` section 1 and `docs/HANDOFF_seams.md`. |
+| `supabase/migrations/*`, all fourteen in order, local Postgres 16 + pgvector | apply cleanly; advisors clean (RLS on every table, every foreign key covered, `search_path` set on every function the project writes) |
 | Accuracy harness, synthetic set | see the table below |
 
 **Not exercised in this environment** (no browser session, no Modal token,
@@ -180,9 +192,17 @@ cost observations, owner to-dos.
 
 ## Owner to-dos, consolidated
 
-1. Modal: `modal token new`, the `lockedgroove` secret, `modal deploy`; put the printed URL in `COMPUTE_DISPATCH_URL`.
-2. Web env on Vercel from `web/.env.example`: Supabase keys, the dispatch secret, `ANTHROPIC_API_KEY`, the search provider key, Stripe, `NEXT_PUBLIC_APP_URL`.
-3. Upload the five acceptance records and write down what you know about each.
-4. Run `scripts/fetch_public_datasets.py --dataset all` on a machine with egress, then `scripts/eval_accuracy.py --dataset all`.
-5. Answer `docs/OPEN_QUESTIONS.md`; the assumptions stand until you do.
-6. Register the DMCA agent and fill the legal entity placeholders.
+1. **Apply the nine waiting migrations** (`RUNBOOK` section 1, `CONTRACTS`
+   section 12). Until they are applied, `POST /api/export/song` fails on the
+   `jobs.kind` constraint, `POST /api/compat` fails on a missing function,
+   per-track EQ cannot be saved, and every client write to `profiles` — including
+   the `corrections_opt_in` switch that shipped in Phase 10 — fails with
+   "infinite recursion detected in policy". `docs/HANDOFF_seams.md` has the
+   verification and the ordered plan.
+2. Modal: `modal token new`, the `lockedgroove` secret, `modal deploy`; put the printed URL in `COMPUTE_DISPATCH_URL`.
+3. Web env on Vercel from `web/.env.example`: Supabase keys, the dispatch secret, `ANTHROPIC_API_KEY`, the search provider key, Stripe, `NEXT_PUBLIC_APP_URL`.
+4. Upload the five acceptance records and write down what you know about each.
+5. Run `scripts/fetch_public_datasets.py --dataset all` on a machine with egress, then `scripts/eval_accuracy.py --dataset all`.
+6. Answer `docs/OPEN_QUESTIONS.md`; the assumptions stand until you do.
+7. Register the DMCA agent and fill the legal entity placeholders.
+8. Run `node scripts/preflight.mjs` and fix every FAIL before opening signups.

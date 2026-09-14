@@ -117,9 +117,14 @@ def render_ts(schema: dict) -> str:
         out.append("")
     out.append(_interface(schema["title"], schema))
     out.append("")
+    # The measured sections, which is what "what did this record come back
+    # knowing" means. `pending` is bookkeeping about the analysis rather than a
+    # measurement, so it is left out for the same reason `file` and
+    # `user_edits` are: `notAnalyzed()` would otherwise report it as a section
+    # the record has no reading for.
     out.append("export const REPORT_SECTIONS = [")
     for field, prop in schema["properties"].items():
-        if field in ("schema_version", "analysis_version", "file", "tags", "user_edits"):
+        if field in ("schema_version", "analysis_version", "file", "tags", "user_edits", "pending"):
             continue
         out.append(f'  "{field}",')
     out.append("] as const;")

@@ -71,6 +71,15 @@ describe("the stage ladder", () => {
     expect(html).toContain("written in one pass at the end");
   });
 
+  // The compute side publishes the report stage by stage now (report.pending,
+  // analysis/lockedgroove/jobs/analyze.py), so the ladder has a second, equally
+  // true sentence for that case and must not use the wrong one.
+  it("says the numbers above it are final once the report arrives stage by stage", () => {
+    const html = renderToStaticMarkup(<StageLadder position={positionAt(0.3)} progress={0.3} elapsedS={9} past={null} partial />);
+    expect(html).toContain("written down the moment it is made");
+    expect(html).not.toContain("written in one pass at the end");
+  });
+
   it("shows a queued job as waiting rather than as zero progress", () => {
     const html = renderToStaticMarkup(<StageLadder position={positionAt(null)} progress={null} elapsedS={null} past={null} />);
     expect(html).toContain("Waiting for a machine to pick it up.");

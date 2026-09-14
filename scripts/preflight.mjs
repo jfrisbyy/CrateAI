@@ -198,25 +198,80 @@ function checkEnv() {
 // ---------------------------------------------------------------------------
 
 /**
- * Tables and callable functions the SQL in supabase/migrations creates, read
- * out of the files so this list maintains itself when a migration is added.
- * Trigger functions are skipped: PostgREST does not expose them, so there is
- * nothing to probe.
+ * Tables, added columns and callable functions the SQL in supabase/migrations
+ * creates, read out of the files so this list maintains itself when a
+ * migration is added. Trigger functions are skipped: PostgREST does not expose
+ * them, so there is nothing to probe.
+ *
+ * Columns matter as much as tables. Half of the migrations written after the
+ * first deploy add columns to tables that already exist — the separation
+ * quality on `stems`, `processing` on `song_tracks`, the onboarding state and
+ * the personalization switch on `profiles` — so a database that is missing one
+ * of those files answers every table probe and still breaks the feature. The
+ * probe is `select=<column>`: PostgREST answers 400 and names the column when
+ * it is not there, and it is still a read.
  */
 function expectedSchema() {
   const dir = join(ROOT, "supabase", "migrations");
-  if (!existsSync(dir)) return { tables: [], functions: [], files: [] };
+  if (!existsSync(dir)) return { tables: [], functions: [], columns: {}, files: [] };
   const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
   const tables = new Set();
   const functions = new Set();
+  const columns = {};
   for (const file of files) {
     const sql = readFileSync(join(dir, file), "utf8");
     for (const m of sql.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?public\.([a-z_][a-z0-9_]*)/gi)) tables.add(m[1]);
     for (const m of sql.matchAll(/create\s+(?:or\s+replace\s+)?function\s+public\.([a-z_][a-z0-9_]*)\s*\(([\s\S]{0,600}?)\breturns\s+(\w+)/gi)) {
       if (m[3].toLowerCase() !== "trigger") functions.add(m[1]);
     }
+    // `alter table [if exists] public.t add column [if not exists] c ...`, one
+    // statement, however many columns it adds before the semicolon.
+    for (const m of sql.matchAll(/alter\s+table\s+(?:if\s+exists\s+)?public\.([a-z_][a-z0-9_]*)([\s\S]*?);/gi)) {
+      const table = m[1];
+      for (const c of m[2].matchAll(/add\s+column\s+(?:if\s+not\s+exists\s+)?([a-z_][a-z0-9_]*)/gi)) {
+        (columns[table] ??= new Set()).add(c[1]);
+      }
+    }
   }
-  return { tables: [...tables], functions: [...functions], files };
+  for (const table of Object.keys(columns)) columns[table] = [...columns[table]];
+  return { tables: [...tables], functions: [...functions], columns, files };
+}
+
+/**
+ * Every `process.env.X` the web app reads, so the check below can say whether
+ * `.env.example` still describes the app. A variable that only exists in the
+ * code is one a deploy will be missing and nobody will think to set.
+ */
+function envVarsReadByWeb() {
+  const found = new Set();
+  const walk = (dir) => {
+    if (!existsSync(dir)) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (/\.(ts|tsx|mjs|js)$/.test(entry.name) && !/\.test\./.test(entry.name)) {
+        for (const m of readFileSync(path, "utf8").matchAll(/process\.env\.([A-Z][A-Z0-9_]*)/g)) found.add(m[1]);
+      }
+    }
+  };
+  for (const sub of ["app", "lib", "components"]) walk(join(WEB, sub));
+  return [...found].sort();
+}
+
+/** Variables Next.js or the platform sets, which nobody puts in .env.example. */
+const PLATFORM_ENV = new Set(["NODE_ENV", "VERCEL", "VERCEL_ENV", "VERCEL_URL", "CI", "NEXT_RUNTIME", "PORT"]);
+
+function checkEnvExample() {
+  const group = "environment";
+  const path = join(WEB, ".env.example");
+  if (!existsSync(path)) return fail(group, ".env.example", "web/.env.example is missing; there is nothing for a deploy to copy");
+  const documented = new Set(Object.keys(readEnvFile(path)));
+  // a commented-out variable still counts as documented
+  for (const m of readFileSync(path, "utf8").matchAll(/^#\s*([A-Z][A-Z0-9_]*)=/gm)) documented.add(m[1]);
+  const missing = envVarsReadByWeb().filter((v) => !documented.has(v) && !PLATFORM_ENV.has(v));
+  if (missing.length > 0) warn(group, ".env.example", `read by the app but not documented: ${missing.join(", ")}`);
+  else pass(group, ".env.example", `documents every variable the app reads (${documented.size})`);
 }
 
 // ---------------------------------------------------------------------------
@@ -249,7 +304,7 @@ async function checkSupabase() {
     return fail(group, "reachable", `could not reach the project: ${err.message}`);
   }
 
-  const { tables, functions, files } = expectedSchema();
+  const { tables, functions, columns, files } = expectedSchema();
   pass(group, "migration files", `${files.length} on disk, the newest is ${files.at(-1) ?? "none"}`);
 
   const missingTables = [];
@@ -259,6 +314,25 @@ async function checkSupabase() {
   }
   if (missingTables.length > 0) fail(group, "migrations applied", `these tables did not answer: ${missingTables.join(", ")} — run supabase db push`);
   else pass(group, "migrations applied", `all ${tables.length} tables the migrations create are present`);
+
+  // Columns added to tables that already existed. A table probe cannot see
+  // these, and a database missing one of them answers every other check while
+  // the feature that needs the column fails for a real user.
+  const missingColumns = [];
+  let checked = 0;
+  for (const [table, cols] of Object.entries(columns)) {
+    if (missingTables.some((t) => t.startsWith(`${table} `))) continue;
+    for (const column of cols) {
+      checked += 1;
+      const res = await request(`${base}/rest/v1/${table}?select=${column}&limit=1`, { headers });
+      if (!res.ok) missingColumns.push(`${table}.${column}`);
+    }
+  }
+  if (missingColumns.length > 0) {
+    fail(group, "migration columns", `these columns the migrations add are not there: ${missingColumns.join(", ")} — a migration was skipped; run supabase db push`);
+  } else if (checked > 0) {
+    pass(group, "migration columns", `all ${checked} columns the migrations add to existing tables are present`);
+  }
 
   const missingFns = [];
   for (const fn of functions) {
@@ -445,6 +519,7 @@ function report() {
 // ---------------------------------------------------------------------------
 
 checkEnv();
+checkEnvExample();
 checkLegal();
 if (OFFLINE) {
   for (const group of ["supabase", "compute", "anthropic", "stripe"]) skip(group, "all checks", "--offline");

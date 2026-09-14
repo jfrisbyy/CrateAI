@@ -62,6 +62,11 @@ create table if not exists public.song_sessions (
 
 create index if not exists song_sessions_user_idx on public.song_sessions (user_id, updated_at desc);
 
+-- Dropped first so the whole file survives a second pass: every other
+-- statement here is `if not exists`, and a migration an owner may paste into
+-- the SQL editor should not fail halfway through on a re-run. Same guard
+-- 20260913000400_billing.sql uses for its auth trigger.
+drop trigger if exists song_sessions_set_updated_at on public.song_sessions;
 create trigger song_sessions_set_updated_at
   before update on public.song_sessions
   for each row execute function public.set_updated_at();
@@ -90,6 +95,10 @@ create table if not exists public.song_tracks (
 
 create index if not exists song_tracks_session_idx on public.song_tracks (session_id, position);
 create index if not exists song_tracks_file_idx on public.song_tracks (file_id);
+-- Every foreign key gets a covering index (the rule 20260913000100_advisor_fixes.sql
+-- applied to the first seventeen tables). `user_id` cascades from auth.users, so
+-- deleting an account scans this table once per lane without it.
+create index if not exists song_tracks_user_idx on public.song_tracks (user_id);
 
 -- ---------------------------------------------------------------------------
 -- song_regions: a piece of one record, on one lane, at one place
@@ -138,6 +147,10 @@ create index if not exists song_regions_span_idx on public.song_regions (session
 create index if not exists song_regions_track_idx on public.song_regions (session_id, track_id, start_s);
 -- "which of my records is this song built from", and the takedown path
 create index if not exists song_regions_source_idx on public.song_regions (user_id, source_file_id);
+-- and the same column on its own, because the foreign key cascades from files:
+-- deleting one record has to find its regions without a sequential scan
+-- (20260913000100_advisor_fixes.sql, unindexed foreign keys)
+create index if not exists song_regions_source_file_idx on public.song_regions (source_file_id);
 -- containment on the lineage: which songs used a stem from a given separator,
 -- which used a particular candidate the rack ranked
 create index if not exists song_regions_lineage_gin_idx on public.song_regions using gin (lineage jsonb_path_ops);
@@ -160,15 +173,21 @@ begin
   foreach t in array array['song_sessions', 'song_tracks', 'song_regions']
   loop
     execute format('alter table public.%I enable row level security', t);
+    -- dropped first for the same reason as the trigger above: this file has to
+    -- survive being run twice. Postgres has no `create policy if not exists`.
+    execute format('drop policy if exists %I on public.%I', t || '_select_own', t);
     execute format(
       'create policy %I on public.%I for select to authenticated using ((select auth.uid()) = user_id)',
       t || '_select_own', t);
+    execute format('drop policy if exists %I on public.%I', t || '_insert_own', t);
     execute format(
       'create policy %I on public.%I for insert to authenticated with check ((select auth.uid()) = user_id)',
       t || '_insert_own', t);
+    execute format('drop policy if exists %I on public.%I', t || '_update_own', t);
     execute format(
       'create policy %I on public.%I for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id)',
       t || '_update_own', t);
+    execute format('drop policy if exists %I on public.%I', t || '_delete_own', t);
     execute format(
       'create policy %I on public.%I for delete to authenticated using ((select auth.uid()) = user_id)',
       t || '_delete_own', t);

@@ -19,6 +19,11 @@ on different seams agree without talking.
 | `WEB_SEARCH_PROVIDER` | `brave` or `tavily` |
 | `BRAVE_SEARCH_API_KEY` / `TAVILY_API_KEY` | Web information tools |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` | Phase 10 |
+| `LOG_LEVEL` | Optional. Floor for the structured server logs (`web/lib/log.ts`); unset means `info`. |
+
+`web/.env.example` is the copy-and-fill version of this table, and
+`node scripts/preflight.mjs --offline` fails the pair apart if a variable is
+read by the app and documented in neither.
 
 ### compute (Modal secret `lockedgroove`, or `analysis/.env` for the local runner)
 
@@ -98,7 +103,7 @@ Idempotency: `analyze` on `(file_id, analysis_version)` is a no-op when
 
 | kind | params | writes |
 |---|---|---|
-| `analyze` | `{ analysis_version?: int, stages?: string[] }` | `files.report`, `files.peaks`, `files.duration_s/sample_rate/channels/format`, `files.status='ready'`, `tags` rows (source `model`) |
+| `analyze` | `{ analysis_version?: int, stages?: string[], force?: bool }` | `files.report` **after every stage** (see below), then `files.peaks`, `files.duration_s/sample_rate/channels/format`, `files.analysis_version`, `files.status='ready'`, `tags` rows (source `model`) |
 | `stems` | `{ model: "htdemucs_ft" \| "htdemucs_6s" \| "bs_roformer" }` | one `files` row per stem (`kind='stem'`, `parent_file_id`), `stems` rows, and one `analyze` job per stem |
 | `chop` | `{ mode: "transients" \| "grid" \| "manual", count?, start_bar?, end_bar?, markers_s?: number[] }` | `files` rows (`kind='chop'`), `chops` rows |
 | `midi` | `{ kind: "melody" \| "drums" \| "chords" \| "groove" }` | `midi` row; `result.notes` mirrors `midi.notes` |
@@ -114,6 +119,37 @@ Idempotency: `analyze` on `(file_id, analysis_version)` is a no-op when
 
 `jobs.result` always carries `{ ...ids of rows written }` so the client can
 select them on the surface when the job finishes.
+
+### `analyze`: the report arrives in pieces
+
+`files.report` is written once per stage rather than once at the end, so a
+producer watching their first upload sees a measured tempo at about twenty
+seconds instead of a step name lighting up. Realtime pushes each write.
+
+A report that is still being written **says so**, and that is the whole of the
+contract for a reader:
+
+```
+report.pending = { stages: string[], done: string[], fraction: number }   still being written
+report.pending = null                                                     finished
+```
+
+`stages` are the report fields that have not run yet and `done` the ones that
+have, by the report's own field names, so a reader can say *which* measurement
+is still coming. A stage that ran and failed counts as done: its field is
+`null`, which on a finished report already means "it ran and produced nothing".
+
+Everything in a partial report was really measured, so it is safe to show. What
+it must never do is pass for finished: a missing section in a partial means "not
+yet", not "we looked and found nothing". `lockedgroove.report.is_partial` and
+`web/lib/report/effective.ts` `isPartial` are the same one-line test on either
+side, and `effective()` carries `pending` through untouched in both.
+
+Two independent signals, so a reader that has never heard of `pending` is still
+safe: a partial is only ever written while `files.status = 'analyzing'`, and the
+partial patch writes `report` and nothing else — no `analysis_version`, no
+`status`, no vitals. A file left holding a partial report (a job that died) is
+re-analyzed rather than skipped as idempotent.
 
 ### `export`: the song out
 
@@ -309,7 +345,14 @@ the same job kinds as the tabs. Batches over five GPU operations return a
 ```
 from lockedgroove.pipeline import analyze_array, analyze_file
 report = analyze_array(y, sr, file_info=FileInfo(...), stages=None)   # AnalysisReport
+report = analyze_array(..., on_progress=fn, on_partial=fn)            # watch it run
 ```
+
+`on_progress(stage, fraction)` is the progress number. `on_partial(report)` is
+handed the report as it stands after each stage, with `report.pending` set, so a
+caller can publish it; `pending` is cleared before the report is returned
+(section 5, "the report arrives in pieces"). Both are best effort: an exception
+from either is logged and swallowed, never raised into the analysis.
 
 Stages are pure functions `(y: np.ndarray, sr: int, ctx: Context) -> Section`
 in `lockedgroove/analysis/`. `Context` carries the partial report built so
@@ -375,3 +418,59 @@ to it via `web/lib/compat/parity.json`:
 
 The same migration adds `files_effective_bpm_idx` on `(user_id, coalesce(user_edits
 tempo, tempo))`, which `library_filter` and `search_embeddings` also filter on.
+
+## 12. Migrations: what is applied, and what each one is for
+
+The project database has **five** migrations applied (`20260913000000` through
+`20260913000400`). Everything after that was written by an agent that was told
+not to apply it, and is waiting for the owner. Verified as a set on a throwaway
+local Postgres by the seams pass; the ordered apply plan and every problem found
+are in `docs/HANDOFF_seams.md`.
+
+| Migration | Applied | What stops working without it |
+|---|---|---|
+| `…000000_init` … `…000400_billing` | **yes** | — |
+| `…000500_compat` | no | `POST /api/compat` and the "What fits this" rack: `compatible_files` does not exist |
+| `…000620_loops_sample_ready` | no | nothing breaks; the sample-ready claims are read with a sequential scan instead of an index |
+| `…000800_stem_quality` | no | the `stems` quality columns are missing, so the separation write fails and a claim cannot say how far to trust its stem |
+| `…001000_song_arrangement` | no | a song lives only in the browser; a reload turns it back into anonymous blocks of audio |
+| `…001200_loop_ranking_personalization` | no | `profiles.loop_personalization` is missing, so the switch cannot be read or set |
+| `…001300_song_export` | no | **`POST /api/export/song` fails**: `jobs.kind` has no `'export'` |
+| `…001400_track_processing` | no | per-track EQ and the master limiter cannot be saved; they vanish on reload |
+| `…001500_onboarding_state` | no | the first-run state stays in `localStorage`, per device |
+| `…001600_profiles_client_writes` | no | **every client write to `profiles` fails** with "infinite recursion detected in policy" — including `corrections_opt_in`, which shipped in Phase 10 |
+
+### What the unapplied ones add
+
+**The song** (`…001000`, `…001400`). `song_sessions` (one song: bpm,
+`beats_per_bar`, snap, locators, `master_gain`, `master_processing`),
+`song_tracks` (one lane: position, name, gain, mute, solo, `file_id`, `origin`
+∈ `candidate|audition|file|render`, `processing`) and `song_regions` (one piece
+of one record: `start_s`, `duration_s`, `offset_s`, `gain`, `rate`,
+`source_file_id`, `lineage`). Primary keys are `(session_id, id)` with a text
+`id`, matching `web/lib/session/types.ts`. The columns a query needs are
+columns; `lineage` is the jsonb of `web/lib/session/lineage.ts`. RLS is the same
+four-policy loop as every other table. `processing` and `master_processing` are
+`web/lib/processing/persist.ts`'s `StoredProcessing` / `StoredMaster`.
+
+**Separation quality** (`…000800`). `stems` gains `model_family`, `model_tier`
+(`reference > strong > baseline > weak > stand_in`), `model_sdr`,
+`model_sdr_basis`, `is_stand_in`, `quality_confidence`, `quality_note`. A null
+tier means unknown, which is to be treated as untrusted. `files` gains an index
+on `report.spectral.bandwidth.value`, the true bandwidth of the upload.
+
+**Sample-ready loops** (`…000620`). No new column: the finder writes
+`loops.components.sample_ready` with a per-stem profile and the claims
+(`vocal_free`, `drums_free`, `drums_only`, `fullness`), each with a confidence.
+`value = true` is the only thing that means "measured, and yes"; a null claim
+was withheld and must never match a filter.
+
+**The account's own state** (`…001200`, `…001500`, `…001600`). `profiles` gains
+`loop_personalization` and six `onboarding_*` columns, all written by the
+account that owns them; `…001600` is what makes any of them writable at all, and
+moves "a client may not set its own plan" out of a self-referencing RLS policy
+into a trigger that also guards `plan_status` and the two Stripe ids.
+
+`web/lib/testing/schema.ts` is the test double's mirror of all of this — which
+table a row belongs to, which columns a client may not change — and has to move
+when these do.

@@ -4,11 +4,45 @@ How to run CrateAI end to end, from a fresh checkout to a deployed app.
 
 ## 1. Supabase
 
-Project: `CrateAI` (`ufmpwtjtyzmfucjyuhqo`, us-east-2). Both migrations in
-`supabase/migrations/` are applied. To apply future migrations:
+Project: `CrateAI` (`ufmpwtjtyzmfucjyuhqo`, us-east-2).
 
-- with the Supabase CLI: `supabase link --project-ref ufmpwtjtyzmfucjyuhqo && supabase db push`
-- or paste the file into the SQL editor (they are plain SQL, in filename order).
+**Five of the fourteen migrations in `supabase/migrations/` are applied**:
+`20260913000000_init` through `20260913000400_billing`. Everything from
+`20260913000500_compat` onwards was written by an agent under instruction not to
+apply it, and is waiting for you. They were verified as a set — in order, on top
+of the five that are live — on a throwaway local Postgres, and they apply
+cleanly. `docs/CONTRACTS.md` section 12 says what each one is for and what stops
+working without it; `docs/HANDOFF_seams.md` has the verification and every
+problem that was found and fixed.
+
+Apply them in filename order, all nine, in one go:
+
+```bash
+supabase link --project-ref ufmpwtjtyzmfucjyuhqo
+supabase db push          # or paste each file into the SQL editor, in filename order
+```
+
+```
+20260913000500_compat.sql                        compatible_files + the key theory
+20260913000620_loops_sample_ready.sql            indexes for the sample-ready claims
+20260913000800_stem_quality.sql                  separation quality on stems, bandwidth on files
+20260913001000_song_arrangement.sql              song_sessions / song_tracks / song_regions
+20260913001200_loop_ranking_personalization.sql  profiles.loop_personalization
+20260913001300_song_export.sql                   jobs.kind gains 'export'
+20260913001400_track_processing.sql              per-track EQ; DEPENDS ON 001000
+20260913001500_onboarding_state.sql              profiles.onboarding_*
+20260913001600_profiles_client_writes.sql        fixes the recursive profiles UPDATE policy
+```
+
+Order matters twice: `001400` refuses to run before `001000` (it names the file
+to run first), and `001600` is what makes the columns `001200` and `001500` add
+writable by their owner at all. Each file is re-runnable, so a half-finished
+paste can be started again from the top.
+
+Then run the preflight (section 7). It reads the migrations on disk and probes
+for every table, function **and added column** they create, so a migration that
+was skipped shows up as a FAIL naming the column rather than as a broken
+feature three weeks later.
 
 Auth: enable Email (password + magic link) under Authentication → Providers.
 Set the site URL and redirect URL to the web app's origin plus `/auth/callback`.
@@ -164,9 +198,9 @@ What it checks, in order:
 
 | Group | What has to be true |
 |---|---|
-| environment | Every variable set and shaped right: the two Supabase keys are different keys, `ANTHROPIC_API_KEY` looks like one, `COMPUTE_DISPATCH_SECRET` is not still `change-me`, `STRIPE_PRICE_ID` is a price and not a product, the search provider's own key is present. |
+| environment | Every variable set and shaped right: the two Supabase keys are different keys, `ANTHROPIC_API_KEY` looks like one, `COMPUTE_DISPATCH_SECRET` is not still `change-me`, `STRIPE_PRICE_ID` is a price and not a product, the search provider's own key is present. And `web/.env.example` still documents every variable the app actually reads. |
 | legal | `web/app/legal/{terms,privacy,dmca}` all exist and no `TODO(owner)` is left in any of them. |
-| supabase | The project answers, every table and every callable function the migrations in `supabase/migrations/` create is present (the list is read out of the SQL, so it maintains itself), and the `audio` bucket exists and is **private**. |
+| supabase | The project answers; every table, every callable function **and every column added to an existing table** by the migrations in `supabase/migrations/` is present (all three lists are read out of the SQL, so they maintain themselves); and the `audio` bucket exists and is **private**. The column check is what catches a skipped migration that adds to a table already there — `stems.model_tier`, `song_tracks.processing`, `profiles.loop_personalization` and the rest. |
 | compute | The dispatcher's `/health` answers, and it is not a fake or local runner. |
 | anthropic | The key is accepted, and every model id in `web/lib/anthropic/{models,narrate}.ts` is visible to this workspace. |
 | stripe | The key is accepted and `STRIPE_PRICE_ID` is an active recurring price. |

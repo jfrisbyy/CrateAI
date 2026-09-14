@@ -12,6 +12,11 @@ and keeps the native signal in ``ctx.native`` for loudness and spectral.
 Each stage is ``lockedgroove.analysis.<name>.run(y, sr, ctx)`` returning the
 section model or ``None``. A stage that raises leaves its section ``None`` and
 records the error in ``ctx.errors``; the rest of the report still ships.
+
+While the stages run, ``report.pending`` says which have and have not; it is
+cleared before the report is returned, so a report with ``pending`` set is one
+nobody has finished writing (``report.Pending``, ``report.is_partial``). Pass
+``on_partial`` to be handed the report after every stage and publish it.
 """
 
 from __future__ import annotations
@@ -26,7 +31,7 @@ from typing import Any, Optional
 import numpy as np
 
 from . import ANALYSIS_VERSION
-from .report import AnalysisReport, FileInfo
+from .report import AnalysisReport, FileInfo, Pending
 
 log = logging.getLogger(__name__)
 
@@ -119,6 +124,7 @@ def analyze_array(
     options: Optional[dict[str, Any]] = None,
     analysis_version: int = ANALYSIS_VERSION,
     on_progress: Optional[Callable[[str, float], None]] = None,
+    on_partial: Optional[Callable[["AnalysisReport"], None]] = None,
     return_context: bool = False,
     base_report: Optional[AnalysisReport] = None,
 ):
@@ -127,6 +133,16 @@ def analyze_array(
     ``stages`` selects report fields (``"tempo"``, ``"structure"``, ...); the
     default is the Phase 0 set. ``base_report`` lets later phases add
     sections to an existing report without recomputing the earlier ones.
+
+    ``on_partial`` is handed the report as it stands after each stage, with
+    ``report.pending`` set, so a caller can publish it (``analyze`` writes it to
+    ``files.report``, and the first-run screen shows a real tempo at twenty
+    seconds instead of a step name). It is the same object the function will
+    return, not a copy, so a caller that keeps it must serialize it there and
+    then. ``pending`` is cleared before the report is returned, which is the one
+    rule that makes a partial tell itself apart from a finished report
+    (``report.Pending``). Like ``on_progress``, it must never break an
+    analysis: an exception from it is logged and swallowed.
     """
     y = np.asarray(y, dtype=np.float32)
     if y.ndim == 2 and y.shape[0] > y.shape[1]:
@@ -163,6 +179,11 @@ def analyze_array(
     if unknown:
         raise ValueError(f"unknown stages: {sorted(unknown)}")
 
+    # While the stages run the report says it is unfinished, whether or not
+    # anyone is watching, so there is one code path and `pending` cannot be
+    # left set by a caller that forgot to pass `on_partial`.
+    report.pending = Pending(stages=[f for f, _ in ordered], done=[], fraction=0.0)
+
     for i, (field_name, module_name) in enumerate(ordered):
         ctx.progress(field_name, i / max(1, len(ordered)))
         t0 = time.perf_counter()
@@ -180,7 +201,20 @@ def analyze_array(
             ctx.errors[field_name] = f"{type(exc).__name__}: {exc}"
             log.exception("stage %s failed", field_name)
         ctx.timings_s[field_name] = time.perf_counter() - t0
+        # A stage that ran and failed counts as done: its field is None, which
+        # on a finished report already means "it ran and produced nothing". A
+        # consumer must not be left waiting for a measurement that is not coming.
+        report.pending.done.append(field_name)
+        report.pending.stages = [f for f, _ in ordered[i + 1:]]
+        report.pending.fraction = (i + 1) / max(1, len(ordered))
+        if on_partial is not None:
+            try:
+                on_partial(report)
+            except Exception:  # publishing a partial must never break analysis
+                log.debug("partial report callback failed", exc_info=True)
     ctx.progress("done", 1.0)
+    # Finished: no `pending`, which is the whole of the contract for a reader.
+    report.pending = None
 
     if return_context:
         return report, ctx
