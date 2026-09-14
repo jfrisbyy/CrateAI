@@ -14,6 +14,7 @@ separated by a real model (docs/HANDOFF_sample_ready_loops.md says what would).
 from __future__ import annotations
 
 import json
+import pathlib
 import uuid
 
 import numpy as np
@@ -352,7 +353,7 @@ def test_every_claim_carries_a_value_a_confidence_and_a_reason_and_is_json_safe(
     stored = _ready(stems, 0, 4, mix=mix).to_dict()
     json.dumps(stored)  # it goes into the jsonb column
 
-    assert set(stored) == {"source", "claims", "profile", "caveats", "ranking_factor"}
+    assert set(stored) == {"source", "claims", "profile", "caveats", "ranking_factor", "reasons"}
     assert set(stored["claims"]) == set(S.CLAIM_NAMES)
     for claim in stored["claims"].values():
         assert set(claim) >= {"value", "confidence", "why"}
@@ -714,3 +715,56 @@ def test_the_source_travels_with_the_loop_so_the_web_can_show_it(track):
     assert d["tier"] == "strong"
     assert d["confidence"] == pytest.approx(0.75)
     assert json.dumps(d)
+
+
+# --- the shape the web reads ------------------------------------------------------------------
+#
+# `web/lib/report/sampleReady.ts` parses `loops.components.sample_ready`. A
+# hand-written fixture on that side would be the web's *idea* of this shape, and
+# an idea drifts -- which is how the separator registry ended up three models
+# deep out of six. So the blocks the web tests against are generated here, from
+# the same fixture audio and the same code path that writes them in production,
+# and this test fails when the committed file no longer matches.
+
+WEB_FIXTURE = (
+    pathlib.Path(__file__).resolve().parents[2] / "web" / "lib" / "report" / "sampleReadyFixture.json"
+)
+
+
+def _web_fixture_blocks(track):
+    """One block per case the web has to render differently."""
+    _mix, stems, _truth = track
+    strong = S.StemSource.from_row(_stem_row("htdemucs_ft", model_tier="strong", quality_confidence=0.75))
+    weak = S.StemSource.from_row(_stem_row("kuielab_other", model_tier="weak", quality_confidence=0.35))
+    stand_in = S.StemSource.from_row({"model": "htdemucs_ft-fake", "is_stand_in": True})
+    return {
+        "_generated_by": "analysis/tests/test_loops_sample_ready.py::test_the_web_fixture_is_current",
+        "vocal_free_span": _ready(stems, 0, 4, source=strong).to_dict(),
+        "vocal_over_it_span": _ready(stems, 9, 4, source=strong).to_dict(),
+        "weak_separation": _ready(stems, 0, 4, source=weak).to_dict(),
+        "stand_in": _ready(stems, 0, 4, source=stand_in).to_dict(),
+    }
+
+
+def test_the_web_fixture_is_current(track):
+    blocks = _web_fixture_blocks(track)
+    rendered = json.dumps(blocks, indent=2, sort_keys=True) + "\n"
+    if WEB_FIXTURE.read_text() != rendered:
+        WEB_FIXTURE.write_text(rendered)
+        pytest.fail(f"{WEB_FIXTURE.name} was stale and has been rewritten; commit it and re-run")
+
+
+def test_the_generated_blocks_cover_what_the_web_branches_on(track):
+    blocks = _web_fixture_blocks(track)
+    assert blocks["vocal_free_span"]["claims"]["vocal_free"]["value"] is True
+    assert blocks["vocal_over_it_span"]["claims"]["vocal_free"]["value"] is False
+    assert blocks["weak_separation"]["source"]["trusted"] is False
+    weak_chips = blocks["weak_separation"]["reasons"]
+    assert weak_chips == ["stems came from a weak-tier separator: no claim about this span"]
+    assert "stand-in" not in weak_chips[0], "a real separator is not a development stand-in"
+    assert blocks["stand_in"]["source"]["tier"] == "stand_in"
+    for name, block in blocks.items():
+        if name.startswith("_"):
+            continue
+        assert isinstance(block["reasons"], list)
+        assert isinstance(block["caveats"], list) and block["caveats"]

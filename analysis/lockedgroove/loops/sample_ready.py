@@ -781,6 +781,10 @@ class SampleReady:
             "profile": {k: v.to_dict() for k, v in self.profile.items()},
             "caveats": list(self.caveats),
             "ranking_factor": _round(self.ranking_factor, 3),
+            # The chips, written beside the claims that produced them. Deriving
+            # them in TypeScript instead would put the claim-to-sentence rules in
+            # two languages, which is how the separator registry went stale.
+            "reasons": reasons(self),
         }
 
 
@@ -859,7 +863,16 @@ def reasons(ready: SampleReady) -> list[str]:
     """Short chip texts for the Loops tab and the chat, in the finder's style."""
     out: list[str] = []
     if not ready.source.trusted:
-        out.append("stems are the development stand-in: no vocal-free claim")
+        # Say which separation, not "stand-in" for all of them: a weak-tier
+        # separator is a real model that made real audio, and telling a producer
+        # their stems are a development stand-in when they are not is a lie that
+        # sends them looking for the wrong problem.
+        if ready.source.tier == "stand_in":
+            out.append("stems are the development stand-in: no vocal-free claim")
+        elif ready.source.tier:
+            out.append(f"stems came from a {ready.source.tier}-tier separator: no claim about this span")
+        else:
+            out.append("what separated these stems is unknown: no claim about this span")
         return out
     vocal = ready.claim("vocal_free")
     if vocal is not None and vocal.value is True:

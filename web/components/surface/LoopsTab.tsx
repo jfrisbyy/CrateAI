@@ -9,6 +9,7 @@ import { btn, btnPrimary, btnQuiet, cx, input, label, segment, segmentItem, sele
 import { api, errorMessage } from "@/lib/api/client";
 import { fmtClock, fmtNumber } from "@/lib/format";
 import { barsToSeconds, SNAP_MODES } from "@/lib/report/grid";
+import { sampleReadyChips, sampleReadyOf } from "@/lib/report/sampleReady";
 import { useLibrary } from "@/lib/state/LibraryProvider";
 import type { JobRow, LoopRow } from "@/lib/types/db";
 import { jobPersonalization, PersonalizationChip, PersonalizationNote, rowPersonalization } from "./LoopPersonalization";
@@ -207,6 +208,8 @@ function LoopRowView({
   const renderFile = loop.render_file_id ? lib.fileById(loop.render_file_id) : undefined;
   const components = componentsOf(loop.components);
   const personal = rowPersonalization(loop.components);
+  const ready = sampleReadyOf(loop.components);
+  const chips = sampleReadyChips(ready);
 
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(loop.name ?? "");
@@ -309,6 +312,20 @@ function LoopRowView({
             </span>
           ))}
         </div>
+        {chips.length > 0 && (
+          // What is playing in this span, measured per stem by the finder. The
+          // chips are worded in Python beside the claims they come from; an
+          // untrusted separation says so here rather than showing nothing,
+          // which would read as "we looked and there is nothing".
+          <div
+            className={cx("mt-1 text-xs flex flex-wrap items-center gap-x-3 gap-y-1", ready?.source.trusted ? "text-chalk-dim" : "text-pad")}
+            title={ready?.caveats.join(" · ")}
+          >
+            {chips.map((chip) => (
+              <span key={chip}>{chip}</span>
+            ))}
+          </div>
+        )}
         {(renderJob || renderFile) && (
           <div className="mt-1 text-xs text-chalk-dim flex items-center gap-2">
             {renderFile ? (

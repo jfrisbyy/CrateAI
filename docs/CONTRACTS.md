@@ -548,6 +548,24 @@ in production today. A `model_tier` that is present and null means the schema ha
 the column and the row was written without one: unknown, and unknown is
 untrusted.
 
+### The chips are worded once, in Python
+
+`SampleReady.to_dict()` writes `reasons` — the chip text — beside the claims
+that produced it, and `web/lib/report/sampleReady.ts` renders those strings. The
+claim-to-sentence rules do not exist in TypeScript, because rules in two
+languages drift, which is how the separator catalogue ended up three models deep
+out of six.
+
+`web/lib/report/sampleReadyFixture.json` is **generated** by
+`analysis/tests/test_loops_sample_ready.py` from the same fixture audio and the
+same code path production uses, and that test fails when the committed file no
+longer matches. The web's tests read it rather than a shape typed out by hand.
+
+A loop with no `sample_ready` block was never measured, which is not the same as
+a block saying nothing is playing and must not render as one. An untrusted
+separation shows one chip saying so, rather than no chips at all — otherwise the
+row reads as "we looked and found nothing" when we did not look.
+
 ### What a stem says about itself
 
 `qualityOf` (`lib/api/stems.ts`) reads the seven quality columns. A null

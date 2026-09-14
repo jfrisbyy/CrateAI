@@ -1,0 +1,383 @@
+{
+  "_generated_by": "analysis/tests/test_loops_sample_ready.py::test_the_web_fixture_is_current",
+  "stand_in": {
+    "caveats": [
+      "these stems came from the development stand-in, not a separation model: no claim is made about what is in the span"
+    ],
+    "claims": {
+      "drums_free": {
+        "confidence": 0.0,
+        "value": null,
+        "why": "no claim: development stand-in separation (a band split, not a model)",
+        "withheld": "development stand-in separation (a band split, not a model)"
+      },
+      "drums_only": {
+        "confidence": 0.0,
+        "value": null,
+        "why": "no claim: development stand-in separation (a band split, not a model)",
+        "withheld": "development stand-in separation (a band split, not a model)"
+      },
+      "fullness": {
+        "confidence": 0.0,
+        "of": 4,
+        "value": null,
+        "why": "no claim: development stand-in separation (a band split, not a model)",
+        "withheld": "development stand-in separation (a band split, not a model)"
+      },
+      "vocal_free": {
+        "confidence": 0.0,
+        "value": null,
+        "why": "no claim: development stand-in separation (a band split, not a model)",
+        "withheld": "development stand-in separation (a band split, not a model)"
+      }
+    },
+    "profile": {
+      "bass": {
+        "audible_fraction": 0.915,
+        "isolation_db": 99.3,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 8.046,
+        "mean_db": -19.9,
+        "peak_db": -15.0,
+        "presence": "present",
+        "rel_mean_db": 0.7,
+        "rel_mix_db": null,
+        "rel_peak_db": 5.6
+      },
+      "drums": {
+        "audible_fraction": 0.628,
+        "isolation_db": 92.1,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 0.025,
+        "mean_db": -22.6,
+        "peak_db": -11.5,
+        "presence": "present",
+        "rel_mean_db": 5.3,
+        "rel_mix_db": null,
+        "rel_peak_db": 16.4
+      },
+      "other": {
+        "audible_fraction": 1.0,
+        "isolation_db": 0.4,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 8.121,
+        "mean_db": -20.1,
+        "peak_db": -19.7,
+        "presence": "present",
+        "rel_mean_db": -0.0,
+        "rel_mix_db": null,
+        "rel_peak_db": 0.4
+      },
+      "vocals": {
+        "audible_fraction": 0.0,
+        "isolation_db": 101.5,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 0.025,
+        "mean_db": -120.0,
+        "peak_db": -120.0,
+        "presence": "absent",
+        "rel_mean_db": -101.5,
+        "rel_mix_db": null,
+        "rel_peak_db": -101.5
+      }
+    },
+    "ranking_factor": 1.0,
+    "reasons": [
+      "stems are the development stand-in: no vocal-free claim"
+    ],
+    "source": {
+      "confidence": 0.1,
+      "model": "htdemucs_ft-fake",
+      "note": "development stand-in separation (a band split, not a model)",
+      "tier": "stand_in",
+      "trusted": false
+    }
+  },
+  "vocal_free_span": {
+    "caveats": [
+      "separation leaks: this describes the separated stem, not proof the record has nothing there"
+    ],
+    "claims": {
+      "drums_free": {
+        "confidence": 0.75,
+        "value": false,
+        "why": "the drums stem is playing here (5 dB above its own level on average, loudest 50 ms 16 dB above its own level)"
+      },
+      "drums_only": {
+        "confidence": 0.75,
+        "value": false,
+        "why": "drums plus bass, other"
+      },
+      "fullness": {
+        "confidence": 0.75,
+        "value": 3,
+        "why": "bass, drums, other playing"
+      },
+      "vocal_free": {
+        "confidence": 0.75,
+        "value": true,
+        "why": "the vocal stem is at its noise floor across the span: 102 dB below its own level on average, loudest 50 ms 102 dB below its own level"
+      }
+    },
+    "profile": {
+      "bass": {
+        "audible_fraction": 0.915,
+        "isolation_db": 99.3,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 8.046,
+        "mean_db": -19.9,
+        "peak_db": -15.0,
+        "presence": "present",
+        "rel_mean_db": 0.7,
+        "rel_mix_db": null,
+        "rel_peak_db": 5.6
+      },
+      "drums": {
+        "audible_fraction": 0.628,
+        "isolation_db": 92.1,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 0.025,
+        "mean_db": -22.6,
+        "peak_db": -11.5,
+        "presence": "present",
+        "rel_mean_db": 5.3,
+        "rel_mix_db": null,
+        "rel_peak_db": 16.4
+      },
+      "other": {
+        "audible_fraction": 1.0,
+        "isolation_db": 0.4,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 8.121,
+        "mean_db": -20.1,
+        "peak_db": -19.7,
+        "presence": "present",
+        "rel_mean_db": -0.0,
+        "rel_mix_db": null,
+        "rel_peak_db": 0.4
+      },
+      "vocals": {
+        "audible_fraction": 0.0,
+        "isolation_db": 101.5,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 0.025,
+        "mean_db": -120.0,
+        "peak_db": -120.0,
+        "presence": "absent",
+        "rel_mean_db": -101.5,
+        "rel_mix_db": null,
+        "rel_peak_db": -101.5
+      }
+    },
+    "ranking_factor": 1.0,
+    "reasons": [
+      "likely no vocal in this span",
+      "3 of 3 stems playing"
+    ],
+    "source": {
+      "confidence": 0.75,
+      "model": "htdemucs_ft",
+      "note": null,
+      "tier": "strong",
+      "trusted": true
+    }
+  },
+  "vocal_over_it_span": {
+    "caveats": [
+      "separation leaks: this describes the separated stem, not proof the record has nothing there"
+    ],
+    "claims": {
+      "drums_free": {
+        "confidence": 0.75,
+        "value": false,
+        "why": "the drums stem is playing here (5 dB above its own level on average, loudest 50 ms 16 dB above its own level)"
+      },
+      "drums_only": {
+        "confidence": 0.75,
+        "value": false,
+        "why": "drums plus bass, other, vocals"
+      },
+      "fullness": {
+        "confidence": 0.75,
+        "value": 4,
+        "why": "bass, drums, other, vocals playing"
+      },
+      "vocal_free": {
+        "confidence": 0.75,
+        "value": false,
+        "why": "the vocal stem is playing here (1 dB below its own level on average, loudest 50 ms 3 dB above its own level)"
+      }
+    },
+    "profile": {
+      "bass": {
+        "audible_fraction": 0.915,
+        "isolation_db": 99.3,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 32.035,
+        "mean_db": -19.9,
+        "peak_db": -15.0,
+        "presence": "present",
+        "rel_mean_db": 0.7,
+        "rel_mix_db": null,
+        "rel_peak_db": 5.6
+      },
+      "drums": {
+        "audible_fraction": 0.633,
+        "isolation_db": 92.1,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 26.688,
+        "mean_db": -22.7,
+        "peak_db": -11.6,
+        "presence": "present",
+        "rel_mean_db": 5.2,
+        "rel_mix_db": null,
+        "rel_peak_db": 16.3
+      },
+      "other": {
+        "audible_fraction": 1.0,
+        "isolation_db": 0.4,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 30.361,
+        "mean_db": -20.1,
+        "peak_db": -19.6,
+        "presence": "present",
+        "rel_mean_db": -0.0,
+        "rel_mix_db": null,
+        "rel_peak_db": 0.5
+      },
+      "vocals": {
+        "audible_fraction": 0.819,
+        "isolation_db": 101.5,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 32.235,
+        "mean_db": -19.1,
+        "peak_db": -15.6,
+        "presence": "present",
+        "rel_mean_db": -0.6,
+        "rel_mix_db": null,
+        "rel_peak_db": 2.8
+      }
+    },
+    "ranking_factor": 1.0,
+    "reasons": [
+      "the vocal is playing over this",
+      "4 of 4 stems playing"
+    ],
+    "source": {
+      "confidence": 0.75,
+      "model": "htdemucs_ft",
+      "note": null,
+      "tier": "strong",
+      "trusted": true
+    }
+  },
+  "weak_separation": {
+    "caveats": [
+      "a weak-tier separator produced these stems: no claim is made about what is in the span"
+    ],
+    "claims": {
+      "drums_free": {
+        "confidence": 0.0,
+        "value": null,
+        "why": "no claim: a weak-tier separator produced these stems",
+        "withheld": "a weak-tier separator produced these stems"
+      },
+      "drums_only": {
+        "confidence": 0.0,
+        "value": null,
+        "why": "no claim: a weak-tier separator produced these stems",
+        "withheld": "a weak-tier separator produced these stems"
+      },
+      "fullness": {
+        "confidence": 0.0,
+        "of": 4,
+        "value": null,
+        "why": "no claim: a weak-tier separator produced these stems",
+        "withheld": "a weak-tier separator produced these stems"
+      },
+      "vocal_free": {
+        "confidence": 0.0,
+        "value": null,
+        "why": "no claim: a weak-tier separator produced these stems",
+        "withheld": "a weak-tier separator produced these stems"
+      }
+    },
+    "profile": {
+      "bass": {
+        "audible_fraction": 0.915,
+        "isolation_db": 99.3,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 8.046,
+        "mean_db": -19.9,
+        "peak_db": -15.0,
+        "presence": "present",
+        "rel_mean_db": 0.7,
+        "rel_mix_db": null,
+        "rel_peak_db": 5.6
+      },
+      "drums": {
+        "audible_fraction": 0.628,
+        "isolation_db": 92.1,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 0.025,
+        "mean_db": -22.6,
+        "peak_db": -11.5,
+        "presence": "present",
+        "rel_mean_db": 5.3,
+        "rel_mix_db": null,
+        "rel_peak_db": 16.4
+      },
+      "other": {
+        "audible_fraction": 1.0,
+        "isolation_db": 0.4,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 8.121,
+        "mean_db": -20.1,
+        "peak_db": -19.7,
+        "presence": "present",
+        "rel_mean_db": -0.0,
+        "rel_mix_db": null,
+        "rel_peak_db": 0.4
+      },
+      "vocals": {
+        "audible_fraction": 0.0,
+        "isolation_db": 101.5,
+        "leakage_correlation": null,
+        "leaks_from": null,
+        "loudest_at_s": 0.025,
+        "mean_db": -120.0,
+        "peak_db": -120.0,
+        "presence": "absent",
+        "rel_mean_db": -101.5,
+        "rel_mix_db": null,
+        "rel_peak_db": -101.5
+      }
+    },
+    "ranking_factor": 1.0,
+    "reasons": [
+      "stems came from a weak-tier separator: no claim about this span"
+    ],
+    "source": {
+      "confidence": 0.35,
+      "model": "kuielab_other",
+      "note": "a weak-tier separator produced these stems",
+      "tier": "weak",
+      "trusted": false
+    }
+  }
+}
