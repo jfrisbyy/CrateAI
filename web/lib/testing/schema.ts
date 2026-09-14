@@ -36,20 +36,29 @@ function table(owner: string | null, extra: Partial<TableMeta> = {}): TableMeta 
 
 /**
  * `now()` in the double: every row written in one test shares it unless a test
- * moves it with `setNow`.
+ * moves it with `travelTo`.
  *
- * Midday **today**, not a date written down once. It used to be the literal
- * "2026-09-13T12:00:00.000Z", which meant every test asserting a daily count —
- * `chat_turns_today`, the free plan's searches-per-day cap — seeded a row
- * "today" and compared it against the real clock. Those tests passed on the day
- * they were written and failed on the next one, which is how the suite reached
- * this seam three tests down with nothing having changed. A fixture clock that
- * means "now" cannot rot that way, and nothing asserts this literal: the tests
- * that pin a date bring their own.
+ * A literal, and the world freezes the system clock to it (`createWorld`), so
+ * the rows a test seeds and the clock the code under test reads are the same
+ * instant. That equality is the whole point. Without it a test that seeds a row
+ * "today" and asserts a daily count — `chat_turns_today`, the free plan's
+ * searches-per-day cap — passes on the day it is written and fails on the next
+ * one, which is how this suite once arrived at a morning three tests down with
+ * nothing having changed but the date.
+ *
+ * Deriving it from the real clock instead fixes the day and leaves the month:
+ * a test that pins an earlier date to mean "this month, but not today" still
+ * rots the next time the month turns over. Midway through a month is a date
+ * both sides of which are safely inside it.
  */
-export let NOW = `${new Date().toISOString().slice(0, 10)}T12:00:00.000Z`;
+export const DEFAULT_NOW = "2026-09-15T12:00:00.000Z";
+export let NOW = DEFAULT_NOW;
 
-export function setNow(iso: string): void {
+/**
+ * Move the row default. `travelTo` in world.ts calls this and moves the frozen
+ * system clock with it; a test should call that one, so both stay in step.
+ */
+export function setNowValue(iso: string): void {
   NOW = iso;
 }
 

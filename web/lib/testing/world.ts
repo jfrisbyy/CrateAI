@@ -5,8 +5,10 @@
 // `@/lib/supabase/admin` at the active world, so a route handler imported
 // normally gets the double through its own `requireUser()`.
 
+import { vi } from "vitest";
 import { resetRateLimits } from "@/lib/ratelimit";
 import { resetUuids, TestDb } from "./db";
+import { DEFAULT_NOW, NOW, setNowValue } from "./schema";
 import { createTestClient, sessionClient, type TestSupabase } from "./supabase";
 
 export const USER_A = "11111111-1111-4111-8111-111111111111";
@@ -139,6 +141,33 @@ const ENV_KEYS = [
   "NEXT_PUBLIC_APP_URL",
 ] as const;
 let savedEnv: Record<string, string | undefined> = {};
+let clockFrozen = false;
+
+/**
+ * Freeze `Date` at the double's `NOW`, so a row a test seeds and the clock a
+ * route reads are the same instant.
+ *
+ * Only `Date` is faked. `setTimeout` and friends stay real, because nothing in
+ * this suite drives them and a route that awaits one would otherwise hang. The
+ * clock does not advance during a test either, which is what makes a handler
+ * that meters two events in one request put both in the same bucket.
+ */
+function freezeClock(iso: string): void {
+  if (!clockFrozen) {
+    vi.useFakeTimers({ toFake: ["Date"], shouldAdvanceTime: false });
+    clockFrozen = true;
+  }
+  vi.setSystemTime(iso);
+}
+
+/**
+ * Move the whole test world's clock: the row default and the time the code
+ * under test sees, together. Use this rather than touching either alone.
+ */
+export function travelTo(iso: string): void {
+  setNowValue(iso);
+  if (clockFrozen) vi.setSystemTime(iso);
+}
 
 /** The world the mocked Supabase modules read. Throws when a route runs outside one. */
 export function activeWorld(): World {
@@ -175,6 +204,7 @@ export function createWorld(opts: WorldOptions = {}): World {
     else process.env[key] = value;
   }
 
+  freezeClock(NOW);
   realFetch ??= globalThis.fetch;
   globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => world.handleFetch(input, init)) as typeof globalThis.fetch;
   return world;
@@ -182,6 +212,13 @@ export function createWorld(opts: WorldOptions = {}): World {
 
 /** Undo everything createWorld() changed. The shared setup calls it after each test. */
 export function resetWorld(): void {
+  if (clockFrozen) {
+    vi.useRealTimers();
+    clockFrozen = false;
+  }
+  // A test that travelled leaves NOW where it put it; the next world starts
+  // from the literal again.
+  setNowValue(DEFAULT_NOW);
   if (realFetch) {
     globalThis.fetch = realFetch;
     realFetch = null;

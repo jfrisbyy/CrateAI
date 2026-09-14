@@ -5,8 +5,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { TestDb } from "./db";
 import { seedFile, seedJob } from "./rows";
+import { DEFAULT_NOW, NOW } from "./schema";
 import { anonClient, serviceClient, sessionClient } from "./supabase";
-import { USER_A, USER_B } from "./world";
+import { createWorld, resetWorld, travelTo, USER_A, USER_B } from "./world";
 
 let db: TestDb;
 
@@ -188,5 +189,34 @@ describe("rpc", () => {
     };
     const { error } = await client.rpc("no_such_function", {});
     expect(error?.code).toBe("42883");
+  });
+});
+
+// The fixture clock and the clock the code under test reads are one clock.
+//
+// Without this, a route that buckets by day (GET /api/usage, the free plan's
+// searches-per-day cap) compares a row seeded at NOW against the real date, so
+// the test passes on the day it is written and fails on the next one. That
+// actually happened: three tests broke overnight with no commit in between.
+describe("the world's clock", () => {
+  it("is the fixture clock, so a row seeded now is now to the code that reads it", () => {
+    createWorld();
+    expect(new Date().toISOString()).toBe(NOW);
+    expect(Date.now()).toBe(Date.parse(NOW));
+  });
+
+  it("puts the literal an earlier test pinned back where it found it", () => {
+    createWorld();
+    travelTo("2026-11-02T08:00:00.000Z");
+    expect(new Date().toISOString()).toBe("2026-11-02T08:00:00.000Z");
+    createWorld();
+    expect(NOW).toBe(DEFAULT_NOW);
+    expect(new Date().toISOString()).toBe(DEFAULT_NOW);
+  });
+
+  it("leaves the real clock running once the world is gone", () => {
+    createWorld();
+    resetWorld();
+    expect(new Date().toISOString()).not.toBe(NOW);
   });
 });

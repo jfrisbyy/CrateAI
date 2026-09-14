@@ -13,7 +13,7 @@
 // session would show (cookie refresh, tus uploads, range requests).
 
 export { TestDb, testUuid, resetUuids, storagePolicy, type DbError, type Row } from "./db";
-export { NOW, setNow, TABLES, tableMeta, type TableMeta } from "./schema";
+export { DEFAULT_NOW, NOW, TABLES, tableMeta, type TableMeta } from "./schema";
 export {
   anonClient,
   createTestClient,
@@ -25,7 +25,7 @@ export {
   type StorageCall,
   type TestSupabase,
 } from "./supabase";
-export { COMPUTE_URL, createWorld, activeWorld, jsonResponse, resetWorld, textResponse, USER_A, USER_B, World, type WorldOptions } from "./world";
+export { COMPUTE_URL, createWorld, activeWorld, jsonResponse, resetWorld, textResponse, travelTo, USER_A, USER_B, World, type WorldOptions } from "./world";
 export {
   sampleReport,
   seedBeatboxProfile,
